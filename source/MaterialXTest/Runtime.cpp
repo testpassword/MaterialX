@@ -871,6 +871,38 @@ TEST_CASE("Runtime: FileIo", "[runtime]")
     }
 }
 
+#ifdef MATERIALX_BUILD_USD
+TEST_CASE("Runtime: Read USD", "[runtime]")
+{
+    mx::RtScopedApiHandle api;
+
+    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+    api->setSearchPath(searchPath);
+    api->loadLibrary(STDLIB);
+    api->loadLibrary(PBRLIB);
+    api->loadLibrary(BXDFLIB);
+
+    mx::RtStagePtr stage = api->createStage(mx::RtToken("from_usd"));
+    stage->addReference(api->getLibrary());
+
+    mx::FileSearchPath usdFilesSearchPath(mx::FilePath::getCurrentPath() /
+                                      "resources" / 
+                                      "Materials" / 
+                                      "TestSuite" /
+                                      "Usd");
+
+    mx::RtReadOptions rops;
+    rops.desiredMinorVersion = 38;
+    mx::RtFileIo fileIo(stage);
+    std::string usdStem = "node_graphs";
+    CHECK_NOTHROW(fileIo.read(usdStem + ".usda", usdFilesSearchPath, &rops));
+
+    mx::RtWriteOptions wops;
+    wops.writeIncludes = false;
+    fileIo.write(stage->getName().str() + "_" + usdStem + ".mtlx", &wops);
+}
+#endif
+
 TEST_CASE("Runtime: DefaultLook", "[runtime]")
 {
     mx::RtScopedApiHandle api;

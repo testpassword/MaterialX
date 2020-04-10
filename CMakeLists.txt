@@ -14,7 +14,7 @@ option(MATERIALX_BUILD_PYTHON "Build the MaterialX Python package from C++ bindi
 option(MATERIALX_BUILD_VIEWER "Build the MaterialX Viewer." ON)
 option(MATERIALX_BUILD_RUNTIME "Build the MaterialX Runtime data model library." OFF)
 option(MATERIALX_BUILD_DOCS "Create HTML documentation using Doxygen. Requires that Doxygen be installed." OFF)
-option(MATERIALX_PYTHON_LTO "Enable link-time optimizations for MaterialX Python." ON)
+option(MATERIALX_BUILD_USD "Build the USD reader." OFF)
 option(MATERIALX_INSTALL_PYTHON "Install the MaterialX Python package as a third-party library when the install target is built." ON)
 option(MATERIALX_WARNINGS_AS_ERRORS "Interpret all compiler warnings as errors." OFF)
 
@@ -141,8 +141,23 @@ function(assign_source_group prefix)
     endforeach()
 endfunction(assign_source_group)
 
+if (MATERIALX_BUILD_USD)
+    # USD is using some C++14 feature (since Since Fri, 20 Mar)
+    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+
+    include(cmake/utils.cmake)
+    include(cmake/usd.cmake)
+
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+    find_package(USD REQUIRED)
+    add_definitions(-DMATERIALX_BUILD_USD)
+endif()
+
 # Add core subdirectories
 add_subdirectory(source/MaterialXCore)
+
 add_subdirectory(source/MaterialXFormat)
 
 # Add shader generation subdirectories

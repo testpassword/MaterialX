@@ -21,6 +21,18 @@
 #include <MaterialXCore/Types.h>
 
 #include <MaterialXGenShader/Util.h>
+
+#ifdef MATERIALX_BUILD_USD
+#include <pxr/base/tf/token.h>
+#include <pxr/usd/usd/stage.h>
+#include <pxr/usd/usd/primRange.h>
+#include <pxr/usd/usd/prim.h>
+#include <pxr/usd/usdShade/material.h>
+#include <pxr/usd/usdShade/nodeGraph.h> // TODO: remove
+#include <pxr/usd/usdShade/shader.h>
+#include <pxr/usd/usdShade/connectableAPI.h>
+#endif
+
 #include <map>
 #include <sstream>
 
@@ -40,6 +52,15 @@ namespace
     static const RtToken DEFAULT_OUTPUT("out");
     static const RtToken OUTPUT_ELEMENT_PREFIX("OUT_");
     static const RtToken MULTIOUTPUT("multioutput");
+
+#ifdef MATERIALX_BUILD_USD
+    // Usd to MaterialX types
+    const std::map<pxr::TfToken, RtToken> usdToMxTypes {
+        { pxr::TfToken{"float"}, RtToken{"float"} },
+        { pxr::TfToken{"asset"}, RtToken{"filename"} },
+        { pxr::TfToken{"color3f"}, RtToken{"color3"} },
+    };
+#endif
 
     class PvtRenamingMapper {
         typedef RtTokenMap<RtToken> TokenToToken;
@@ -274,6 +295,23 @@ namespace
         return EMPTY_TOKEN;
     }
 
+#ifdef MATERIALX_BUILD_USD
+
+    PvtPrim* readUsdShader(const pxr::UsdPrim& src, PvtStage* stage)
+    {
+        pxr::UsdShadeShader shaderAPI(src);
+        pxr::TfToken id;
+        shaderAPI.GetShaderId(&id);
+
+        const RtToken nodedefName(id.GetText());
+        // TODO: check nodedefName is valid
+
+        const RtToken nodeName(src.GetName());
+        PvtPrim* node = stage->createPrim(PvtPath(nodeName), nodedefName);
+        return node;
+    }
+#endif
+
     PvtPrim* readNode(const NodePtr& src, PvtPrim* parent, PvtStage* stage, PvtRenamingMapper& mapper)
     {
         const RtToken nodedefName = resolveNodeDefName(src);
@@ -326,6 +364,142 @@ namespace
 
         return node;
     }
+
+#ifdef MATERIALX_BUILD_USD
+
+void traverseUsdShader(const pxr::UsdShadeShader& usdShader, PvtPrim* mxShader, PvtStage* mxStage)
+{
+    for(const auto& usdInput : usdShader.GetInputs())
+    {        
+        PvtInput* mxInput = mxShader->getInput(RtToken(usdInput.GetBaseName().GetText()));
+        if(!mxInput)
+        {
+            throw ExceptionRuntimeError("No input named '" + usdInput.GetBaseName().GetString() + "' was found on runtime node '" + mxShader->getName().str() + "'");
+        }
+
+
+
+        pxr::UsdShadeConnectableAPI connectableAPI;
+        pxr::TfToken usdSourceName;
+        pxr::UsdShadeAttributeType sourceType;
+
+        if(usdInput.GetConnectedSource(&connectableAPI, &usdSourceName, &sourceType))
+        {
+            PvtPrim* mxSourceShader = readUsdShader(connectableAPI.GetPrim(), mxStage);
+            if(mxSourceShader)
+            {
+                const RtToken mxSourceName(usdSourceName.GetText());
+                PvtOutput* mxSourceOutput = mxSourceShader->getOutput(mxSourceName);
+                if (!mxSourceOutput)
+                {
+                    throw ExceptionRuntimeError("No output named '" + mxSourceName.str() + "' was found on runtime node '" + mxSourceShader->getName().str() + "'");
+                }
+
+                mxSourceOutput->connect(mxInput);
+        
+                traverseUsdShader(pxr::UsdShadeShader(connectableAPI.GetPrim()), mxSourceShader, mxStage);
+            }
+        }
+        else
+        {
+            const pxr::TfToken usdType = usdInput.GetTypeName().GetAsToken();
+            auto search = usdToMxTypes.find(usdType);
+            if (search != usdToMxTypes.end()) 
+            {
+                if(search->second == RtToken{"float"})
+                {
+                    float usdValue;
+                    usdInput.Get(&usdValue);
+                    mxInput->setValue(RtValue(usdValue));
+                }
+                else if(search->second == RtToken{"filename"})
+                {
+                    pxr::VtValue usdValue;
+                    usdInput.Get(&usdValue);
+                    RtValue::fromString(
+                        RtToken{"filename"}, 
+                        usdValue.UncheckedGet<pxr::TfToken>().GetString(),
+                        mxInput->getValue());
+                }
+            }            
+        }
+    }
+}
+void traverseUsdMaterial(const pxr::UsdShadeMaterial& usdMaterial, PvtPrim* mxMaterial, PvtStage* mxStage)
+{
+    // In USD, material outputs are connected to shader outputs
+    for(const auto& usdOutput : usdMaterial.GetOutputs())
+    {
+        PvtInput* mxInput;
+        if(usdOutput.GetBaseName() == pxr::TfToken("surface"))
+        {
+            mxInput = mxMaterial->getInput(RtToken("surfaceshader"));
+        }
+        else if(usdOutput.GetBaseName() == pxr::TfToken("displacement"))
+        {
+            mxInput = mxMaterial->getInput(RtToken("displacementshader"));
+        }
+        else
+        {
+            continue;
+        }
+
+        pxr::UsdShadeConnectableAPI connectableAPI;
+        pxr::TfToken usdSourceName;
+        pxr::UsdShadeAttributeType sourceType;
+
+        if(usdOutput.GetConnectedSource(&connectableAPI, &usdSourceName, &sourceType))
+        {
+            pxr::UsdShadeShader usdSourceShader(connectableAPI.GetPrim());
+            PvtPrim* mxSourceShader = readUsdShader(connectableAPI.GetPrim(), mxStage);
+            if(mxSourceShader)
+            {
+                const RtToken mxSourceName(usdSourceName.GetText());
+                PvtOutput* mxSourceOutput = mxSourceShader->getOutput(mxSourceName);
+                if (!mxSourceOutput)
+                {
+                    throw ExceptionRuntimeError("No output named '" + mxSourceName.str() + "' was found on runtime node '" + mxSourceShader->getName().str() + "'");
+                }
+
+                mxSourceOutput->connect(mxInput);
+        
+                traverseUsdShader(pxr::UsdShadeShader(connectableAPI.GetPrim()), mxSourceShader, mxStage);
+            }          
+        }
+    }
+}
+
+#endif
+
+#ifdef MATERIALX_BUILD_USD
+    PvtPrim* readUsdMaterial(const pxr::UsdPrim& src, PvtPrim* parent, PvtStage* mxStage)
+    {
+        pxr::UsdShadeMaterial usdMaterial(src);
+        RtToken materialTypeName;
+        if(usdMaterial.GetSurfaceOutput().HasConnectedSource() ||
+           usdMaterial.GetDisplacementOutput().HasConnectedSource())
+        {
+            materialTypeName = "ND_surfacematerial";
+        }
+        else if(usdMaterial.GetVolumeOutput().HasConnectedSource())
+        {
+            materialTypeName = "ND_volumematerial";
+        }
+        else
+        {
+            return nullptr;
+        }
+
+        const RtToken materialName(src.GetName());
+        PvtPrim* mxMaterial = mxStage->createPrim(parent->getPath(), materialName, materialTypeName);
+
+        // TODO: read metadata of the USD Material?
+
+        traverseUsdMaterial(usdMaterial, mxMaterial, mxStage);
+
+        return mxMaterial;
+    }
+#endif
 
     PvtPrim* readNodeGraph(const NodeGraphPtr& src, PvtPrim* parent, PvtStage* stage, PvtRenamingMapper& mapper)
     {
@@ -606,6 +780,30 @@ namespace
             }
         }
     }
+
+#ifdef MATERIALX_BUILD_USD
+    void readUsdStage(const pxr::UsdStageRefPtr& inStage, PvtStage* stage, const RtReadOptions* readOptions)
+    {
+        // TODO: is is needed for USD?
+        stage->addSourceUri(RtToken(inStage->GetRootLayer()->GetIdentifier()));
+
+        // TODO: read USD root layer metadata?
+        // TODO: filters
+
+        // Get all the materials in the USD stage
+        std::vector<pxr::UsdPrim> materials;
+        pxr::UsdPrimRange range = inStage->Traverse();
+        std::copy_if(range.begin(), range.end(), std::back_inserter(materials),
+                 [](pxr::UsdPrim const &prim) {
+                     return prim.IsA<pxr::UsdShadeNodeGraph>();
+                 });
+
+        for(const auto& prim : materials)
+        {
+            readUsdMaterial(prim, stage->getRootPrim(), stage);
+        }
+    }
+#endif
 
     void readDocument(const DocumentPtr& doc, PvtStage* stage, const RtReadOptions* readOptions)
     {
@@ -1197,39 +1395,67 @@ RtWriteOptions::RtWriteOptions() :
 
 void RtFileIo::read(const FilePath& documentPath, const FileSearchPath& searchPaths, const RtReadOptions* readOptions)
 {
-    try
+    if(documentPath.getExtension() == "mtlx")
     {
-        DocumentPtr document = createDocument();
-        XmlReadOptions xmlReadOptions;
-        xmlReadOptions.skipConflictingElements = true;
-        if (readOptions)
+        try
         {
+            DocumentPtr document = createDocument();
+            XmlReadOptions xmlReadOptions;
             xmlReadOptions.skipConflictingElements = true;
-            xmlReadOptions.desiredMajorVersion = readOptions->desiredMajorVersion;
-            xmlReadOptions.desiredMinorVersion = readOptions->desiredMinorVersion;
-        }
-        readFromXmlFile(document, documentPath, searchPaths, &xmlReadOptions);
+            if (readOptions)
+            {
+                xmlReadOptions.skipConflictingElements = true;
+                xmlReadOptions.desiredMajorVersion = readOptions->desiredMajorVersion;
+                xmlReadOptions.desiredMinorVersion = readOptions->desiredMinorVersion;
+            }
+            readFromXmlFile(document, documentPath, searchPaths, &xmlReadOptions);
 
-        string errorMessage;
-        DocumentPtr validationDocument = createDocument();
-        writeUnitDefinitions(validationDocument);
-        CopyOptions cops;
-        cops.skipConflictingElements = true;
-        validationDocument->copyContentFrom(document, &cops);
-        if (validationDocument->validate(&errorMessage))
-        {
-            PvtStage* stage = PvtStage::ptr(_stage);
-            readDocument(document, stage, readOptions);
+            string errorMessage;
+            DocumentPtr validationDocument = createDocument();
+            writeUnitDefinitions(validationDocument);
+            CopyOptions cops;
+            cops.skipConflictingElements = true;
+            validationDocument->copyContentFrom(document, &cops);
+            if (validationDocument->validate(&errorMessage))
+            {
+                PvtStage* stage = PvtStage::ptr(_stage);
+                readDocument(document, stage, readOptions);
+            }
+            else
+            {
+                throw ExceptionRuntimeError("Failed validation: " + errorMessage);
+            }
         }
-        else
+        catch (Exception& e)
         {
-            throw ExceptionRuntimeError("Failed validation: " + errorMessage);
+            throw ExceptionRuntimeError("Could not read file: " + documentPath.asString() + ". Error: " + e.what());
         }
     }
-    catch (Exception& e)
+#ifdef MATERIALX_BUILD_USD
+    else if(documentPath.getExtension() == "usd" || documentPath.getExtension() == "usda")
     {
-        throw ExceptionRuntimeError("Could not read file: " + documentPath.asString() + ". Error: " + e.what());
+        try
+        {
+            FilePath resolvedFilePath = searchPaths.find(documentPath);
+            pxr::UsdStageRefPtr usdStage = pxr::UsdStage::Open(resolvedFilePath.asString());
+            string errorMessage;
+            if(usdStage)
+            {
+                PvtStage* stage = PvtStage::ptr(_stage);
+                readUsdStage(usdStage, stage, readOptions);
+            }
+            else
+            {
+                throw ExceptionRuntimeError("USD Note implemented: " + errorMessage);
+            }
+
+        }
+        catch (Exception& e)
+        {
+            throw ExceptionRuntimeError("Could not read file: " + documentPath.asString() + ". Error: " + e.what());
+        }
     }
+#endif
 }
 
 void RtFileIo::read(std::istream& stream, const RtReadOptions* readOptions)

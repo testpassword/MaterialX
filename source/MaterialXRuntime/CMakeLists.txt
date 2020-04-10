@@ -39,11 +39,22 @@ set_target_properties(
     SOVERSION "${MATERIALX_MAJOR_VERSION}"
     DEBUG_POSTFIX "${MATERIALX_DEBUG_POSTFIX}")
 
+if(MATERIALX_BUILD_USD)
+    set(USD_LIBS
+        sdf
+        usd
+        usdShade
+        tf
+        vt
+      )
+endif()
+
 target_link_libraries(
     MaterialXRuntime
     MaterialXGenShader
     MaterialXCore
     MaterialXFormat
+    ${USD_LIBS}
     ${CMAKE_DL_LIBS})
 
 target_include_directories(MaterialXRuntime
