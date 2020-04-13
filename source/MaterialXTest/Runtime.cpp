@@ -882,10 +882,12 @@ TEST_CASE("Runtime: Read USD", "[runtime]")
     api->loadLibrary(PBRLIB);
     api->loadLibrary(BXDFLIB);
 
-    mx::RtStagePtr stage = api->createStage(mx::RtToken("from_usd"));
-    stage->addReference(api->getLibrary());
+    mx::RtStagePtr fromUsdStage = api->createStage(mx::RtToken("from_usd"));
 
-    mx::FileSearchPath usdFilesSearchPath(mx::FilePath::getCurrentPath() /
+    mx::FilePath usdTestSuiteFolder = mx::FilePath::getCurrentPath() /
+                                      "resources" / "Materials" / "TestSuite" / "Usd";
+
+    mx::FileSearchPath usdFilesSearchPath(usdTestSuiteFolder);
                                       "resources" / 
                                       "Materials" / 
                                       "TestSuite" /
@@ -893,9 +895,64 @@ TEST_CASE("Runtime: Read USD", "[runtime]")
 
     mx::RtReadOptions rops;
     rops.desiredMinorVersion = 38;
-    mx::RtFileIo fileIo(stage);
-    std::string usdStem = "node_graphs";
-    CHECK_NOTHROW(fileIo.read(usdStem + ".usda", usdFilesSearchPath, &rops));
+    mx::RtFileIo fromUsdFileIo(fromUsdStage);
+    std::string filePathStem = "bamboo_wood_material";
+    CHECK_NOTHROW(fromUsdFileIo.read(filePathStem + ".usda", usdFilesSearchPath, &rops));
+
+    auto checkNode = [](const mx::RtNode& node, const char* inputName, const char* nodedefName,
+        const char* nodeName) 
+    {
+        mx::RtInput input = node.getInput(mx::RtToken(inputName));
+        REQUIRE(input.isConnected());
+
+        mx::RtOutput output = input.getConnection();
+        mx::RtPrim prim = output.getParent();
+        REQUIRE(prim);
+        mx::RtNode outNode(prim);
+        REQUIRE(outNode.getNodeDef().getName() == mx::RtToken(nodedefName));
+        REQUIRE(outNode.getName() == mx::RtToken(nodeName));
+        return outNode;
+    };
+
+    // check material1 node
+    mx::RtPrim materialPrim = fromUsdStage->getPrimAtPath("material1");
+    REQUIRE(materialPrim);
+    REQUIRE(materialPrim.hasApi<mx::RtNode>());
+    mx::RtNode material(materialPrim);
+    REQUIRE(material.getNodeDef().getName() == mx::RtToken("ND_surfacematerial"));
+    mx::RtInput surfaceshaderInput = material.getInput(SURFACESHADER);
+    REQUIRE(surfaceshaderInput.isConnected());
+
+    // check standardSurface1 node
+    mx::RtOutput standardSurfaceOuput = surfaceshaderInput.getConnection();
+    mx::RtPrim standardSurfacePrim = standardSurfaceOuput.getParent();
+    REQUIRE(standardSurfacePrim);
+    mx::RtNode standardSurface(standardSurfacePrim);
+    REQUIRE(standardSurface.getNodeDef().getName() == mx::RtToken("ND_standard_surface_surfaceshader"));
+    REQUIRE(standardSurface.getName() == mx::RtToken("standardSurface1"));
+    mx::RtInput baseInput = standardSurface.getInput(mx::RtToken("base"));
+    REQUIRE(baseInput.getType() == mx::RtToken("float"));
+    REQUIRE(baseInput.getValue().asFloat() == 1.f);
+
+    mx::FilePath texturePrefix = mx::FilePath("textures") / "bamboo-wood-semigloss";
+
+    // check base_color node
+    mx::RtNode baseColor = checkNode(standardSurface, "base_color", "ND_tiledimage_color3", "base_color"); 
+    REQUIRE(baseColor.getInput(mx::RtToken("file")).getValue().asString() == texturePrefix.asString() + "-albedo.png" );
+
+    // check specular_roughness node
+    mx::RtNode specularRoughness = checkNode(standardSurface, "specular_roughness", "ND_tiledimage_float", "specular_roughness"); 
+    REQUIRE(specularRoughness.getInput(mx::RtToken("file")).getValue().asString() == texturePrefix.asString() + "-roughness.png");
+
+    // check normalmap node
+    mx::RtNode normalmap = checkNode(standardSurface, "normal", "ND_normalmap", "normalmap");
+    mx::RtInput normalmapInput = normalmap.getInput(IN);
+    REQUIRE(normalmapInput.isConnected());
+
+    // check normal_image node
+    mx::RtNode normalImage = checkNode(normalmap, IN.c_str(), "ND_tiledimage_vector3", "normal_image");
+    REQUIRE(normalImage.getInput(mx::RtToken("file")).getValue().asString() == texturePrefix.asString() + "-normal.png");
+}
 
     mx::RtWriteOptions wops;
     wops.writeIncludes = false;
