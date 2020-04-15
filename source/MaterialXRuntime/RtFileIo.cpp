@@ -28,7 +28,6 @@
 #include <pxr/usd/usd/primRange.h>
 #include <pxr/usd/usd/prim.h>
 #include <pxr/usd/usdShade/material.h>
-#include <pxr/usd/usdShade/nodeGraph.h> // TODO: remove
 #include <pxr/usd/usdShade/shader.h>
 #include <pxr/usd/usdShade/connectableAPI.h>
 #endif
