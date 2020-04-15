@@ -872,6 +872,63 @@ TEST_CASE("Runtime: FileIo", "[runtime]")
 }
 
 #ifdef MATERIALX_BUILD_USD
+
+// void checkReadUsd(const mx::RtStagePtr& fromUsdStage)
+// {
+//     // check material1 node
+//     mx::RtPrim materialPrim = fromUsdStage->getPrimAtPath("material1");
+//     REQUIRE(materialPrim);
+//     REQUIRE(materialPrim.hasApi<mx::RtNode>());
+//     mx::RtNode material(materialPrim);
+//     REQUIRE(material.getNodeDef().getName() == mx::RtToken("ND_surfacematerial"));
+//     mx::RtInput surfaceshaderInput = material.getInput(SURFACESHADER);
+//     REQUIRE(surfaceshaderInput.isConnected());
+
+//     mx::RtOutput standardSurfaceOuput = surfaceshaderInput.getConnection();
+//     mx::RtPrim standardSurfacePrim = standardSurfaceOuput.getParent();
+//     REQUIRE(standardSurfacePrim);
+
+//     auto checkNode = [](const mx::RtNode& node, const char* inputName, const std::string& nodedefName,
+//         const std::string& nodeName) 
+//     {
+//         mx::RtInput input = node.getInput(mx::RtToken(inputName));
+//         REQUIRE(input.isConnected());
+
+//         mx::RtOutput output = input.getConnection();
+//         mx::RtPrim prim = output.getParent();
+//         REQUIRE(prim);
+//         mx::RtNode outNode(prim);
+//         REQUIRE(outNode.getNodeDef().getName().str() == nodedefName);
+//         REQUIRE(outNode.getName().str() == nodeName);
+//         return outNode;
+//     };
+
+//     // check standardSurface1 node
+//     mx::RtNode standardSurface = checkNode(material, SURFACESHADER.c_str(), "ND_standard_surface_surfaceshader", "standardSurface1"); 
+//     mx::RtInput baseInput = standardSurface.getInput(mx::RtToken("base"));
+//     REQUIRE(baseInput.getType() == mx::RtToken("float"));
+//     REQUIRE(baseInput.getValue().asFloat() == 1.f);
+
+//     mx::FilePath texturePrefix = mx::FilePath("textures") / "bamboo-wood-semigloss";
+
+//     // check base_color node
+//     mx::RtNode baseColor = checkNode(standardSurface, "base_color", "ND_tiledimage_color3", "base_color"); 
+//     REQUIRE(baseColor.getInput(mx::RtToken("file")).getValue().asString() == texturePrefix.asString() + "-albedo.png" );
+
+//     // check specular_roughness node
+//     mx::RtNode specularRoughness = checkNode(standardSurface, "specular_roughness", "ND_tiledimage_float", "specular_roughness"); 
+//     REQUIRE(specularRoughness.getInput(mx::RtToken("file")).getValue().asString() == texturePrefix.asString() + "-roughness.png");
+
+//     // check normalmap node
+//     mx::RtNode normalmap = checkNode(standardSurface, "normal", "ND_normalmap", "normalmap");
+//     mx::RtInput normalmapInput = normalmap.getInput(IN);
+//     REQUIRE(normalmapInput.isConnected());
+
+//     // check normal_image node
+//     mx::RtNode normalImage = checkNode(normalmap, IN.c_str(), "ND_tiledimage_vector3", "normal_image");
+//     REQUIRE(normalImage.getInput(mx::RtToken("file")).getValue().asString() == texturePrefix.asString() + "-normal.png");    
+// }
+
 TEST_CASE("Runtime: Read USD", "[runtime]")
 {
     mx::RtScopedApiHandle api;
@@ -888,31 +945,12 @@ TEST_CASE("Runtime: Read USD", "[runtime]")
                                       "resources" / "Materials" / "TestSuite" / "Usd";
 
     mx::FileSearchPath usdFilesSearchPath(usdTestSuiteFolder);
-                                      "resources" / 
-                                      "Materials" / 
-                                      "TestSuite" /
-                                      "Usd");
 
     mx::RtReadOptions rops;
     rops.desiredMinorVersion = 38;
     mx::RtFileIo fromUsdFileIo(fromUsdStage);
     std::string filePathStem = "bamboo_wood_material";
     CHECK_NOTHROW(fromUsdFileIo.read(filePathStem + ".usda", usdFilesSearchPath, &rops));
-
-    auto checkNode = [](const mx::RtNode& node, const char* inputName, const char* nodedefName,
-        const char* nodeName) 
-    {
-        mx::RtInput input = node.getInput(mx::RtToken(inputName));
-        REQUIRE(input.isConnected());
-
-        mx::RtOutput output = input.getConnection();
-        mx::RtPrim prim = output.getParent();
-        REQUIRE(prim);
-        mx::RtNode outNode(prim);
-        REQUIRE(outNode.getNodeDef().getName() == mx::RtToken(nodedefName));
-        REQUIRE(outNode.getName() == mx::RtToken(nodeName));
-        return outNode;
-    };
 
     // check material1 node
     mx::RtPrim materialPrim = fromUsdStage->getPrimAtPath("material1");
@@ -923,13 +961,27 @@ TEST_CASE("Runtime: Read USD", "[runtime]")
     mx::RtInput surfaceshaderInput = material.getInput(SURFACESHADER);
     REQUIRE(surfaceshaderInput.isConnected());
 
-    // check standardSurface1 node
     mx::RtOutput standardSurfaceOuput = surfaceshaderInput.getConnection();
     mx::RtPrim standardSurfacePrim = standardSurfaceOuput.getParent();
     REQUIRE(standardSurfacePrim);
-    mx::RtNode standardSurface(standardSurfacePrim);
-    REQUIRE(standardSurface.getNodeDef().getName() == mx::RtToken("ND_standard_surface_surfaceshader"));
-    REQUIRE(standardSurface.getName() == mx::RtToken("standardSurface1"));
+
+    auto checkNode = [](const mx::RtNode& node, const char* inputName, const std::string& nodedefName,
+        const std::string& nodeName) 
+    {
+        mx::RtInput input = node.getInput(mx::RtToken(inputName));
+        REQUIRE(input.isConnected());
+
+        mx::RtOutput output = input.getConnection();
+        mx::RtPrim prim = output.getParent();
+        REQUIRE(prim);
+        mx::RtNode outNode(prim);
+        REQUIRE(outNode.getNodeDef().getName().str() == nodedefName);
+        REQUIRE(outNode.getName().str() == nodeName);
+        return outNode;
+    };
+
+    // check standardSurface1 node
+    mx::RtNode standardSurface = checkNode(material, SURFACESHADER.c_str(), "ND_standard_surface_surfaceshader", "standardSurface1"); 
     mx::RtInput baseInput = standardSurface.getInput(mx::RtToken("base"));
     REQUIRE(baseInput.getType() == mx::RtToken("float"));
     REQUIRE(baseInput.getValue().asFloat() == 1.f);
@@ -954,9 +1006,148 @@ TEST_CASE("Runtime: Read USD", "[runtime]")
     REQUIRE(normalImage.getInput(mx::RtToken("file")).getValue().asString() == texturePrefix.asString() + "-normal.png");
 }
 
-    mx::RtWriteOptions wops;
-    wops.writeIncludes = false;
-    fileIo.write(stage->getName().str() + "_" + usdStem + ".mtlx", &wops);
+TEST_CASE("Runtime: Write USD", "[runtime]")
+{
+    mx::RtScopedApiHandle api;
+
+    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+    api->setSearchPath(searchPath);
+    api->loadLibrary(STDLIB);
+    api->loadLibrary(PBRLIB);
+    api->loadLibrary(BXDFLIB);
+
+    mx::FilePath usdTestSuiteFolder = mx::FilePath::getCurrentPath() /
+                                      "resources" / "Materials" / "TestSuite" / "Usd";
+
+    mx::FileSearchPath usdFilesSearchPath(usdTestSuiteFolder);
+
+    {
+        // Create a new working space stage
+        mx::RtStagePtr stage = api->createStage(mx::RtToken("to_usd"));
+        stage->addReference(api->getLibrary());
+
+        // Create a small node network.
+        mx::RtNode material = stage->createPrim(mx::RtPath("material1"), mx::RtToken("ND_surfacematerial"));
+        mx::RtNode standardSurface = stage->createPrim(mx::RtPath("standardSurface1"), mx::RtToken("ND_standard_surface_surfaceshader"));
+        standardSurface.getInput(mx::RtToken("base")).getValue().asFloat() = 1.f;
+        mx::RtOutput output = standardSurface.getOutput(OUT);
+        mx::RtInput input = material.getInput(SURFACESHADER);
+        input.connect(output);
+
+        mx::FilePath texturePrefix = mx::FilePath("textures") / "bamboo-wood-semigloss";
+
+        mx::RtNode baseColor = stage->createPrim(mx::RtPath("base_color"), mx::RtToken("ND_tiledimage_color3"));
+        baseColor.getInput(mx::RtToken("file")).getValue().asString() = texturePrefix.asString() + "-albedo.png";
+
+
+        output = baseColor.getOutput(OUT);
+        input = standardSurface.getInput(mx::RtToken("base_color"));
+        output.connect(input);
+
+        mx::RtNode normalImage = stage->createPrim(mx::RtPath("normal_image"), mx::RtToken("ND_tiledimage_vector3"));
+        mx::RtNode normalmap = stage->createPrim(mx::RtPath("normalmap"), mx::RtToken("ND_normalmap"));
+
+        output = normalImage.getOutput(OUT);
+        input = normalmap.getInput(IN);
+        output.connect(input);
+
+        output = normalmap.getOutput(OUT);
+        input = standardSurface.getInput(mx::RtToken("normal"));
+        output.connect(input);
+
+        mx::RtFileIo fileIo(stage);
+        mx::RtWriteOptions wops;
+        wops.writeIncludes = false;
+
+        fileIo.write(usdTestSuiteFolder / "from_runtime_bamboo_wood_material.usda", &wops);
+    }
+    {
+        mx::RtStagePtr fromUsdStage = api->createStage(mx::RtToken("from_usd"));
+        fromUsdStage->addReference(api->getLibrary());
+        mx::RtReadOptions rops;
+        rops.desiredMinorVersion = 38;
+        mx::RtFileIo fromUsdFileIo(fromUsdStage);
+        CHECK_NOTHROW(fromUsdFileIo.read("from_runtime_bamboo_wood_material.usda", usdFilesSearchPath, &rops));
+
+        // check material1 node
+        mx::RtPrim materialPrim = fromUsdStage->getPrimAtPath("material1");
+        REQUIRE(materialPrim);
+        REQUIRE(materialPrim.hasApi<mx::RtNode>());
+        mx::RtNode material(materialPrim);
+        REQUIRE(material.getNodeDef().getName() == mx::RtToken("ND_surfacematerial"));
+        mx::RtInput surfaceshaderInput = material.getInput(SURFACESHADER);
+        REQUIRE(surfaceshaderInput.isConnected());
+
+        mx::RtOutput standardSurfaceOuput = surfaceshaderInput.getConnection();
+        mx::RtPrim standardSurfacePrim = standardSurfaceOuput.getParent();
+        REQUIRE(standardSurfacePrim);
+
+        auto checkNode = [](const mx::RtNode& node, const std::string& inputName, const std::string& nodedefName,
+            const std::string& nodeName, std::string& status)
+        {
+            mx::RtPrim invalidPrim;
+            mx::RtInput input = node.getInput(mx::RtToken(inputName));
+            if(!input.isConnected())
+            {
+                status = node.getName().str() + "." + inputName + " is not connected";
+                return invalidPrim;
+            }
+
+            mx::RtOutput output = input.getConnection();
+            mx::RtPrim prim = output.getParent();
+            if(!prim.isValid())
+            {
+                status = node.getName().str() + "." + inputName + " connection is not valid";
+                return invalidPrim;
+            }
+
+            mx::RtNode outNode(prim);
+            if(outNode.getNodeDef().getName().str() != nodedefName)
+            {
+                status = outNode.getNodeDef().getName().str() + " does not match " + nodedefName;
+                return invalidPrim;                
+            }
+            if(outNode.getName().str() != nodeName)
+            {
+                status = outNode.getName().str() + " does not match " + nodeName;
+                return invalidPrim;                
+
+            }
+            return outNode.getPrim();
+        };
+
+        // check standardSurface1 node
+        std::string status;
+        mx::RtNode standardSurface = checkNode(
+            material, SURFACESHADER.c_str(), "ND_standard_surface_surfaceshader", "standardSurface1", status);
+        REQUIRE(status == "");
+
+        mx::RtInput baseInput = standardSurface.getInput(mx::RtToken("base"));
+        REQUIRE(baseInput.getType() == mx::RtToken("float"));
+        REQUIRE(baseInput.getValue().asFloat() == 1.f);
+
+        mx::FilePath texturePrefix = mx::FilePath("textures") / "bamboo-wood-semigloss";
+
+        // check base_color node
+        mx::RtNode baseColor = checkNode(standardSurface, "base_color", "ND_tiledimage_color3", "base_color", status);
+        REQUIRE(status == "");
+
+        REQUIRE(baseColor.getInput(mx::RtToken("file")).getValue().asString() == texturePrefix.asString() + "-albedo.png" );
+
+        // // check specular_roughness node
+        // mx::RtNode specularRoughness = checkNode(standardSurface, "specular_roughness", "ND_tiledimage_float", "specular_roughness"); 
+        // REQUIRE(specularRoughness.getInput(mx::RtToken("file")).getValue().asString() == texturePrefix.asString() + "-roughness.png");
+
+        // // check normalmap node
+        // mx::RtNode normalmap = checkNode(standardSurface, "normal", "ND_normalmap", "normalmap");
+        // mx::RtInput normalmapInput = normalmap.getInput(IN);
+        // REQUIRE(normalmapInput.isConnected());
+
+        // // check normal_image node
+        // mx::RtNode normalImage = checkNode(normalmap, IN.c_str(), "ND_tiledimage_vector3", "normal_image");
+        // REQUIRE(normalImage.getInput(mx::RtToken("file")).getValue().asString() == texturePrefix.asString() + "-normal.png"); 
+    }
+
 }
 #endif
 

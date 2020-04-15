@@ -59,6 +59,7 @@ namespace
         { pxr::TfToken{"float"}, RtToken{"float"} },
         { pxr::TfToken{"asset"}, RtToken{"filename"} },
         { pxr::TfToken{"color3f"}, RtToken{"color3"} },
+        { pxr::TfToken{"vector3f"}, RtToken{"vector3"} },
     };
 #endif
 
@@ -1374,6 +1375,208 @@ void traverseUsdMaterial(const pxr::UsdShadeMaterial& usdMaterial, PvtPrim* mxMa
         }
     }
 
+    std::vector<RtNode> getMaterialNodes(const RtStagePtr& mxStage)
+    {
+        std::vector<RtNode> result;
+        RtSchemaPredicate<RtNode> nodeFilter;
+        for (auto it = mxStage->traverse(nodeFilter); !it.isDone(); ++it)
+        {
+            RtNode node((*it));
+            RtNodeDef nodedef(node.getNodeDef());
+            if( nodedef.getName() == "ND_surfacematerial" || 
+                nodedef.getName() == "ND_volumematerial")
+            {
+                result.push_back(node);
+            }
+        }
+        return result;
+    }
+
+    void setUsdShader(const RtNode& mxShader, const RtInput& input, pxr::UsdShadeShader& usdShader)
+    {
+        ValueElementPtr valueElem;
+
+        RtValue val(input.getValue());
+        if(input.getType() == RtToken("float"))
+        {
+            usdShader.CreateInput(pxr::TfToken(input.getName().c_str()), 
+                pxr::SdfValueTypeNames->Float).Set(val.asFloat());
+        }
+        else if(input.getType() == RtToken("color3"))
+        {
+            pxr::VtValue vtVal(pxr::GfVec3f(val.asColor3()[0], val.asColor3()[1], val.asColor3()[2]));
+            usdShader.CreateInput(pxr::TfToken(input.getName().c_str()), 
+                pxr::SdfValueTypeNames->Color3f).Set(vtVal);
+        }
+        else if(input.getType() == RtToken("filename"))
+        {
+            pxr::UsdShadeInput usdFileInput = usdShader.CreateInput(pxr::TfToken(input.getName().c_str()), pxr::SdfValueTypeNames->Asset);
+            usdFileInput.Set(pxr::VtValue(pxr::SdfAssetPath(val.asString())));
+        }
+    }
+
+    void createUsdShaderFromShader(const RtInput& mxInput, const pxr::SdfPath& usdMaterialPath, pxr::UsdShadeShader& inUsdShader)
+    {
+        RtOutput mxShaderOuput = mxInput.getConnection();
+        RtPrim parent = mxShaderOuput.getParent();
+        RtNode mxShader(parent);
+
+        pxr::UsdStageRefPtr usdStage = inUsdShader.GetPrim().GetStage();
+        pxr::SdfPath usdShaderPath = usdMaterialPath.AppendPath(pxr::SdfPath(mxShader.getName()));
+        pxr::UsdShadeShader usdShader = pxr::UsdShadeShader::Get(usdStage, usdShaderPath);
+        RtNodeDef nodedef(mxShader.getNodeDef());
+        if(!usdShader)
+        {
+            usdShader = pxr::UsdShadeShader::Define(
+                usdStage,
+                usdShaderPath
+            );
+            usdShader.CreateIdAttr(pxr::VtValue(pxr::TfToken(nodedef.getName())));
+        }
+        else
+        {
+            pxr::TfToken id;
+            usdShader.GetShaderId(&id);
+            if(id.GetString() != nodedef.getName().str())
+            {
+                return;
+            }
+        }
+
+        // connect shader output to input
+        pxr::SdfValueTypeName usdType;
+        if(mxInput.getType() == "color3")
+        {
+            usdType = pxr::SdfValueTypeNames->Color3f;
+        }
+        else if(mxInput.getType() == "vector3")
+        {
+            usdType = pxr::SdfValueTypeNames->Vector3f;
+        }
+
+        if(usdType)
+        {
+            inUsdShader.CreateInput(
+                pxr::TfToken(mxInput.getName()), usdType).ConnectToSource(
+                usdShader, pxr::TfToken(mxShaderOuput.getName()));
+        }
+
+        for (RtAttribute attrDef : nodedef.getPrim().getAttributes())
+        {
+            RtAttribute attr = mxShader.getPrim().getAttribute(attrDef.getName());
+            RtInput input = attr.asA<RtInput>();         
+            if (!input)
+            {
+                continue;
+            }
+
+
+            // Write input if it's connected or different from default value.
+            if (!RtValue::compare(input.getType(), input.getValue(), attrDef.getValue()))
+            {
+                setUsdShader(mxShader, input, usdShader);
+            }
+            else if(input.isConnected())
+            {
+                createUsdShaderFromShader(input, usdMaterialPath, usdShader);
+            }            
+        }
+    }
+
+    void createUsdShaderFromMaterial(const RtInput& mxInput, pxr::UsdShadeMaterial& usdMaterial)
+    {
+        RtOutput mxShaderOuput = mxInput.getConnection();
+        RtPrim parent = mxShaderOuput.getParent();
+        RtNode mxShader(parent);
+        RtNodeDef nodedef(mxShader.getNodeDef());
+
+        pxr::UsdStageRefPtr usdStage = usdMaterial.GetPrim().GetStage();
+        pxr::SdfPath usdShaderPath = usdMaterial.GetPath().AppendPath(pxr::SdfPath(mxShader.getName()));
+        pxr::UsdShadeShader usdShader = pxr::UsdShadeShader::Get(usdStage, usdShaderPath);
+        if(!usdShader)
+        {
+            usdShader = pxr::UsdShadeShader::Define(usdStage, usdShaderPath);
+            usdShader.CreateIdAttr(pxr::VtValue(pxr::TfToken(nodedef.getName())));
+        }
+        else
+        {
+            pxr::TfToken id;
+            usdShader.GetShaderId(&id);
+            if(id.GetString() != nodedef.getName().str())
+            {
+                return;
+            }
+        }
+
+        // connect the Usd shader to the Usd material surface or displacement
+        if(mxInput.getName() == "surfaceshader")
+        {
+            usdMaterial.CreateSurfaceOutput().ConnectToSource(usdShader, pxr::TfToken(mxShaderOuput.getName()));
+        }
+        else if(mxInput.getName() == "displacementshader")
+        {
+            usdMaterial.CreateDisplacementOutput().ConnectToSource(usdShader, pxr::TfToken(mxShaderOuput.getName()));
+        }
+
+        for (RtAttribute attrDef : nodedef.getPrim().getAttributes())
+        {            
+            RtAttribute attr = mxShader.getPrim().getAttribute(attrDef.getName());
+            RtInput input = attr.asA<RtInput>();         
+            if (!input)
+            {
+                continue;
+            }
+
+            if (!RtValue::compare(input.getType(), input.getValue(), attrDef.getValue()))
+            {
+                setUsdShader(mxShader, input, usdShader);
+            }
+            else if(input.isConnected())
+            {
+                createUsdShaderFromShader(input, usdMaterial.GetPath(), usdShader);
+            }
+        }
+    }
+
+    void createUsdMaterialNetwork(const RtNode& mxMaterial, pxr::UsdPrim& materialxPrim)
+    {
+        pxr::UsdShadeMaterial usdMaterial = pxr::UsdShadeMaterial::Define(
+            materialxPrim.GetStage(),
+            materialxPrim.GetPath().AppendPath(pxr::SdfPath(mxMaterial.getName()))
+        );
+
+        for(auto attr : mxMaterial.getInputs())
+        {
+            RtInput mxInput = attr.asA<RtInput>();
+            if(mxInput.isConnected())
+            {
+                createUsdShaderFromMaterial(mxInput, usdMaterial);
+            }
+        }
+
+    }
+
+    void rtStageToUsdStage(const RtStagePtr& mxStage, pxr::UsdStageRefPtr& usdStage)
+    {
+        // Every MaterialX nodes will be under a 'MaterialX' UsdPrim
+        pxr::UsdPrim materialxPrim = usdStage->DefinePrim(
+            pxr::SdfPath("/MaterialX"), pxr::TfToken("Scope"));
+
+
+        std::vector<RtNode> mxMaterials = getMaterialNodes(mxStage);
+        for(const auto& node : mxMaterials)
+        {
+            createUsdMaterialNetwork(node, materialxPrim);
+        }    
+    }
+
+    void writeToUsdFile(const FilePath& documentPath, const RtStagePtr& mxStage)
+    {
+        pxr::UsdStageRefPtr usdStage = pxr::UsdStage::CreateNew(documentPath.asString());
+        rtStageToUsdStage(mxStage, usdStage);
+
+        usdStage->Save();
+    }
 } // end anonymous namespace
 
 RtReadOptions::RtReadOptions() :
@@ -1559,20 +1762,29 @@ void RtFileIo::write(const FilePath& documentPath, const RtWriteOptions* options
 {
     PvtStage* stage = PvtStage::ptr(_stage);
 
-    DocumentPtr document = createDocument();
-    writeDocument(document, stage, options);
+    if(documentPath.getExtension() == "mtlx")
+    {
+        DocumentPtr document = createDocument();
+        writeDocument(document, stage, options);
 
-    XmlWriteOptions xmlWriteOptions;
-    if (options)
-    {
-        xmlWriteOptions.writeXIncludeEnable = options->writeIncludes;
-        document->setVersionString(makeVersionString(options->desiredMajorVersion, options->desiredMinorVersion));
+        XmlWriteOptions xmlWriteOptions;
+        if (options)
+        {
+            xmlWriteOptions.writeXIncludeEnable = options->writeIncludes;
+            document->setVersionString(makeVersionString(options->desiredMajorVersion, options->desiredMinorVersion));
+        }
+        else
+        {
+            document->setVersionString(makeVersionString(MATERIALX_MAJOR_VERSION, MATERIALX_MINOR_VERSION + 1));
+        }
+        writeToXmlFile(document, documentPath, &xmlWriteOptions);
     }
-    else
+#ifdef MATERIALX_BUILD_USD
+    else if(documentPath.getExtension() == "usd" || documentPath.getExtension() == "usda")
     {
-        document->setVersionString(makeVersionString(MATERIALX_MAJOR_VERSION, MATERIALX_MINOR_VERSION + 1));
+        writeToUsdFile(documentPath, _stage);
     }
-    writeToXmlFile(document, documentPath, &xmlWriteOptions);
+#endif    
 }
 
 void RtFileIo::write(std::ostream& stream, const RtWriteOptions* options)
