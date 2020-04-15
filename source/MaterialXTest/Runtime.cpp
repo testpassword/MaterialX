@@ -553,7 +553,7 @@ TEST_CASE("Runtime: Prims", "[runtime]")
     REQUIRE(!graph.isValid());
 #ifndef NDEBUG
     // In debug builds accessing a disposed object should throw
-    REQUIRE_THROWS(graph.getName() != NONAME);
+    REQUIRE_THROWS(graph.getName());
     REQUIRE_THROWS(graph_out.isConnected());
 #endif
 }
