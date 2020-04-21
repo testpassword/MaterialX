@@ -1452,6 +1452,10 @@ void traverseUsdMaterial(const pxr::UsdShadeMaterial& usdMaterial, PvtPrim* mxMa
         {
             usdType = pxr::SdfValueTypeNames->Vector3f;
         }
+        else if(mxInput.getType() == "float")
+        {
+            usdType = pxr::SdfValueTypeNames->Float;
+        }
 
         if(usdType)
         {

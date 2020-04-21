@@ -901,8 +901,8 @@ TEST_CASE("Runtime: Write and Read USD", "[runtime]")
 
     mx::FileSearchPath usdFilesSearchPath(usdTestSuiteFolder);
 
+    // This scope create an RtNode network and save it to a USD file
     {
-        // This scope create an RtNode network and save it to a USD file
         mx::RtStagePtr stage = api->createStage(mx::RtToken("to_usd"));
         stage->addReference(api->getLibrary());
 
@@ -910,26 +910,39 @@ TEST_CASE("Runtime: Write and Read USD", "[runtime]")
         mx::RtNode material = stage->createPrim(mx::RtPath("material1"), mx::RtToken("ND_surfacematerial"));
         mx::RtNode standardSurface = stage->createPrim(mx::RtPath("standardSurface1"), mx::RtToken("ND_standard_surface_surfaceshader"));
         standardSurface.getInput(mx::RtToken("base")).getValue().asFloat() = 1.f;
+        standardSurface.getInput(mx::RtToken("specular_IOR")).getValue().asFloat() = 1.66f;
         mx::RtOutput output = standardSurface.getOutput(OUT);
         mx::RtInput input = material.getInput(SURFACESHADER);
         input.connect(output);
 
+        // base_color node
         mx::FilePath texturePrefix = mx::FilePath("textures") / "bamboo-wood-semigloss";
-
         mx::RtNode baseColor = stage->createPrim(mx::RtPath("base_color"), mx::RtToken("ND_tiledimage_color3"));
         baseColor.getInput(mx::RtToken("file")).getValue().asString() = texturePrefix.asString() + "-albedo.png";
-
 
         output = baseColor.getOutput(OUT);
         input = standardSurface.getInput(mx::RtToken("base_color"));
         output.connect(input);
 
+        // specular_roughness node
+        mx::RtNode specularRoughness = stage->createPrim(mx::RtPath("specular_roughness"), mx::RtToken("ND_tiledimage_float"));
+        specularRoughness.getInput(mx::RtToken("file")).getValue().asString() = texturePrefix.asString() + "-roughness.png";
+
+        output = specularRoughness.getOutput(OUT);
+        input = standardSurface.getInput(mx::RtToken("specular_roughness"));
+        output.connect(input);
+
+        // normal_image and normalmap node
         mx::RtNode normalImage = stage->createPrim(mx::RtPath("normal_image"), mx::RtToken("ND_tiledimage_vector3"));
+        normalImage.getInput(mx::RtToken("file")).getValue().asString() = texturePrefix.asString() + "-normal.png";
+
         mx::RtNode normalmap = stage->createPrim(mx::RtPath("normalmap"), mx::RtToken("ND_normalmap"));
 
         output = normalImage.getOutput(OUT);
         input = normalmap.getInput(IN);
         output.connect(input);
+
+        normalmap.getInput(mx::RtToken("scale")).getValue().asFloat() = -1.f;
 
         output = normalmap.getOutput(OUT);
         input = standardSurface.getInput(mx::RtToken("normal"));
@@ -941,8 +954,9 @@ TEST_CASE("Runtime: Write and Read USD", "[runtime]")
 
         fileIo.write(usdFilePath, &wops);
     }
+
+    // This scop check saved USD data using USD API
     {
-        // This scop check saved USD data using USD API
         pxr::UsdStageRefPtr stage = pxr::UsdStage::Open(usdFilePath);
         REQUIRE(stage);
 
@@ -1028,12 +1042,11 @@ TEST_CASE("Runtime: Write and Read USD", "[runtime]")
         normalimage.GetShaderId(&normalImageId);
         REQUIRE(normalImageId == pxr::TfToken("ND_tiledimage_vector3"));
 
-        // // TODO: this test fail for the moment!
-        // pxr::UsdShadeInput fileInput2 = normalimage.GetInput(pxr::TfToken("file"));
-        // REQUIRE(fileInput2);
+        pxr::UsdShadeInput fileInput2 = normalimage.GetInput(pxr::TfToken("file"));
+        REQUIRE(fileInput2);
     }
     {
-
+        // This scope load the USD file and check the node network using MaterialXRuntime API
         auto getPrimFromInput = [](const mx::RtInput& input, std::string& status)
         {
             mx::RtPrim invalidPrim;
@@ -1048,7 +1061,6 @@ TEST_CASE("Runtime: Write and Read USD", "[runtime]")
         };
 
 
-        // This scope load the USD file and check the node network using MaterialXRuntime API
         mx::RtStagePtr stage = api->createStage(mx::RtToken("from_usd"));
 
         mx::RtReadOptions rops;
