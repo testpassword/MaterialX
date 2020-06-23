@@ -51,6 +51,7 @@ import swizzle::*;
 import ::math::*;
 import ::state::*;
 import ::anno::*;
+import ::limits::*;
 
 float mx_bilerp_float(float v0, float v1, float v2, float v3, float s, float t)
 {
@@ -368,4 +369,207 @@ export float3 mx_fractal_noise_float3(
         mxp_p *= mxp_lacunarity;
     }
     return result;
+}
+
+export float3 mx_worley_noise_float3(
+  float3 texcoord=state::transform_point(state::coordinate_internal, state::coordinate_object, state::position()),
+  float jitter = 1.0)
+{
+    float3 cell = math::floor(texcoord);
+    float3 f1f2f3 = float3(limits::FLOAT_MAX,limits::FLOAT_MAX,limits::FLOAT_MAX);
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            for (int k = -1; k <= 1; ++k)
+            {
+                float3 localcell = cell + float3(i,j,k);
+                int3 localcell_i = int3(localcell); 
+                int3 offseti = mx_hash_int3(localcell_i.x,localcell_i.y,localcell_i.z);
+                float3 offset = float3(offseti)/255.;
+                float3 localpos = localcell + offset*jitter;
+                float3 diff = localpos-texcoord;
+                float dist = math::dot(diff,diff);
+                if (dist < f1f2f3.x)
+                {
+                    f1f2f3.z = f1f2f3.y;
+                    f1f2f3.y = f1f2f3.x;
+                    f1f2f3.x = dist;
+                }
+                else if(dist < f1f2f3.y)
+                {
+                    f1f2f3.z = f1f2f3.y;
+                    f1f2f3.y = dist;
+                }
+                else if(dist < f1f2f3.z)
+                {
+                    f1f2f3.z = dist;
+                }
+            }
+        }
+    }
+    return math::sqrt(f1f2f3);
+}
+
+export float2 mx_worley_noise_float2(
+  float3 texcoord=state::transform_point(state::coordinate_internal, state::coordinate_object, state::position()),
+  float jitter = 1.)
+{
+    float3 cell = math::floor(texcoord);
+    float2 f1f2 = float2(limits::FLOAT_MAX,limits::FLOAT_MAX);
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            for (int k = -1; k <= 1; ++k)
+            {
+                float3 localcell = cell + float3(i,j,k);
+                int3 localcell_i = int3(localcell); 
+                int3 offseti = mx_hash_int3(localcell_i.x,localcell_i.y,localcell_i.z);
+                float3 offset = float3(offseti)/255.;
+                float3 localpos = localcell + offset*jitter;
+                float3 diff = localpos-texcoord;
+                float dist = math::dot(diff,diff);
+                if (dist < f1f2.x)
+                {
+                    f1f2.y = f1f2.x;
+                    f1f2.x = dist;
+                }
+                else if(dist < f1f2.y)
+                {
+                    f1f2.y = dist;
+                }
+            }
+        }
+    }
+    return math::sqrt(f1f2);
+}
+
+export float mx_worley_noise_float(
+  float3 texcoord=state::transform_point(state::coordinate_internal, state::coordinate_object, state::position()),
+  float jitter = 1.)
+{
+    float3 cell = math::floor(texcoord);
+    float f1 = limits::FLOAT_MAX;
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            for (int k = -1; k <= 1; ++k)
+            {
+                float3 localcell = cell + float3(i,j,k);
+                int3 localcell_i = int3(localcell);
+                int3 offseti = mx_hash_int3(localcell_i.x,localcell_i.y,localcell_i.z);
+                float3 offset = float3(offseti)/255.;
+                float3 localpos = localcell + offset*jitter;
+                float3 diff = localpos-texcoord;
+                float dist = math::dot(diff,diff);
+                if (dist < f1)
+                {
+                    f1 = dist;
+                }
+            }
+        }
+    }
+    return math::sqrt(f1);
+}
+
+export float3 mx_worley_noise_float3(
+  float2 texcoord=swizzle::xy( ::state::texture_coordinate(0)),
+  float jitter = 1.)
+{
+    float2 cell = math::floor(texcoord);
+    float3 f1f2f3 = float3(limits::FLOAT_MAX,limits::FLOAT_MAX,limits::FLOAT_MAX);
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            float2 localcell = cell + float2(i,j);
+            int2 localcell_i = int2(localcell); 
+            int3 offseti = mx_hash_int(localcell_i.x,localcell_i.y);
+            float2 offset = float2(offseti.x/255.,offseti.y/255.);
+            float2 localpos = localcell + offset*jitter;
+            float2 diff = localpos-texcoord;
+            float dist = math::dot(diff,diff);
+            if (dist < f1f2f3.x)
+            {
+                f1f2f3.z = f1f2f3.y;
+                f1f2f3.y = f1f2f3.x;
+                f1f2f3.x = dist;
+            }
+            else if(dist < f1f2f3.y)
+            {
+                f1f2f3.z = f1f2f3.y;
+                f1f2f3.y = dist;
+            }
+            else if(dist < f1f2f3.z)
+            {
+                f1f2f3.z = dist;
+            }
+        }
+    }
+    return math::sqrt(f1f2f3);
+}
+
+export float2 mx_worley_noise_float2(
+  float2 texcoord=swizzle::xy( ::state::texture_coordinate(0)),
+  float jitter = 1.)
+{
+    float2 cell = math::floor(texcoord);
+    float2 f1f2 = float2(limits::FLOAT_MAX,limits::FLOAT_MAX);
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            float2 localcell = cell + float2(i,j);
+            int2 localcell_i = int2(localcell); 
+            int3 offseti = mx_hash_int3(localcell_i.x,localcell_i.y);
+            float2 offset = float2(offseti.x/255.,offseti.y/255.);
+            float2 localpos = localcell + offset*jitter;
+            float2 diff = localpos-texcoord;
+            float dist = math::dot(diff,diff);
+            if (dist < f1f2.x)
+            {
+                f1f2.y = f1f2.x;
+                f1f2.x = dist;
+            }
+            else if(dist < f1f2.y)
+            {
+                f1f2.y = dist;
+            }
+        }
+    }
+    return math::sqrt(f1f2);
+}
+
+export float mx_worley_noise_float(
+  float2 texcoord=swizzle::xy( ::state::texture_coordinate(0)),
+  float jitter = 1.)
+{
+    float2 cell = math::floor(texcoord);
+    float f1 = limits::FLOAT_MAX;
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            float2 localcell = cell + float2(i,j);
+            int2 localcell_i = int2(localcell); 
+            int3 offseti = mx_hash_int3(localcell_i.x,localcell_i.y);
+            float2 offset = float2(offseti.x/255.,offseti.y/255.);
+            float2 localpos = localcell + offset*jitter;
+            float2 diff = localpos-texcoord;
+            float dist = math::dot(diff,diff);
+            if (dist < f1)
+            {
+                f1 = dist;
+            }
+        }
+    }
+    return math::sqrt(f1);
 }
