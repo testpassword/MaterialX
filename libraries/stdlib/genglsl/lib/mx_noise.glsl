@@ -55,6 +55,16 @@ int mx_floor(float x)
     return x < 0.0 ? int(x) - 1 : int(x);
 }
 
+vec2 mx_floor(vec2 p)
+{
+    return vec2(float(mx_floor(p.x)), float(mx_floor(p.y)));
+}
+
+vec3 mx_floor(vec3 p)
+{
+    return vec3(float(mx_floor(p.x)), float(mx_floor(p.y)), float(mx_floor(p.z)));
+}
+
 // return mx_floor as well as the fractional remainder
 float mx_floorfrac(float x, out int i)
 {
@@ -318,4 +328,195 @@ vec3 mx_fractal_noise_vec3(vec3 p, int octaves, float lacunarity, float diminish
         p *= lacunarity;
     }
     return result;
+}
+
+vec3 mx_worley_noise_vec3(vec3 p, float jitter)
+{
+    vec3 cell = mx_floor(p);
+    vec3 f1f2f3 = vec3(M_FLOAT_MAX, M_FLOAT_MAX, M_FLOAT_MAX);
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            for (int k = -1; k <= 1; ++k)
+            {
+                vec3 localcell = cell + vec3(i,j,k);
+                ivec3 localcell_i = ivec3(localcell);
+                uvec3 offseti = mx_hash_vec3(localcell_i.x, localcell_i.y, localcell_i.z);
+                vec3 offset = vec3(offseti) / 255.0;
+                vec3 localpos = localcell + offset*jitter;
+                vec3 diff = localpos - p;
+                float dist = dot(diff, diff);
+                if (dist < f1f2f3.x)
+                {
+                    f1f2f3.z = f1f2f3.y;
+                    f1f2f3.y = f1f2f3.x;
+                    f1f2f3.x = dist;
+                }
+                else if(dist < f1f2f3.y)
+                {
+                    f1f2f3.z = f1f2f3.y;
+                    f1f2f3.y = dist;
+                }
+                else if(dist < f1f2f3.z)
+                {
+                    f1f2f3.z = dist;
+                }
+            }
+        }
+    }
+    return sqrt(f1f2f3);
+}
+
+vec2 mx_worley_noise_vec2(vec3 p, float jitter)
+{
+    vec3 cell = mx_floor(p);
+    vec2 f1f2 = vec2(M_FLOAT_MAX, M_FLOAT_MAX);
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            for (int k = -1; k <= 1; ++k)
+            {
+                vec3 localcell = cell + vec3(i,j,k);
+                ivec3 localcell_i = ivec3(localcell);
+                uvec3 offseti = mx_hash_vec3(localcell_i.x, localcell_i.y, localcell_i.z);
+                vec3 offset = vec3(offseti) / 255.0;
+                vec3 localpos = localcell + offset*jitter;
+                vec3 diff = localpos - p;
+                float dist = dot(diff, diff);
+                if (dist < f1f2.x)
+                {
+                    f1f2.y = f1f2.x;
+                    f1f2.x = dist;
+                }
+                else if(dist < f1f2.y)
+                {
+                    f1f2.y = dist;
+                }
+            }
+        }
+    }
+    return sqrt(f1f2);
+}
+
+float mx_worley_noise_float(vec3 p, float jitter)
+{
+    vec3 cell = mx_floor(p);
+    float f1 = M_FLOAT_MAX;
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            for (int k = -1; k <= 1; ++k)
+            {
+                vec3 localcell = cell + vec3(i,j,k);
+                ivec3 localcell_i = ivec3(localcell);
+                uvec3 offseti = mx_hash_vec3(localcell_i.x, localcell_i.y, localcell_i.z);
+                vec3 offset = vec3(offseti) / 255.0;
+                vec3 localpos = localcell + offset*jitter;
+                vec3 diff = localpos - p;
+                float dist = dot(diff, diff);
+                if (dist < f1)
+                {
+                    f1 = dist;
+                }
+            }
+        }
+    }
+    return sqrt(f1);
+}
+
+vec3 mx_worley_noise_vec3(vec2 p, float jitter)
+{
+    vec2 cell = mx_floor(p);
+    vec3 f1f2f3 = vec3(M_FLOAT_MAX, M_FLOAT_MAX, M_FLOAT_MAX);
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            vec2 localcell = cell + vec2(i,j);
+            ivec2 localcell_i = ivec2(localcell);
+            uvec3 offseti = mx_hash_vec3(localcell_i.x, localcell_i.y);
+            vec2 offset = vec2(float(offseti.x) / 255.0, float(offseti.y) / 255.0);
+            vec2 localpos = localcell + offset*jitter;
+            vec2 diff = localpos - p;
+            float dist = dot(diff, diff);
+            if (dist < f1f2f3.x)
+            {
+                f1f2f3.z = f1f2f3.y;
+                f1f2f3.y = f1f2f3.x;
+                f1f2f3.x = dist;
+            }
+            else if(dist < f1f2f3.y)
+            {
+                f1f2f3.z = f1f2f3.y;
+                f1f2f3.y = dist;
+            }
+            else if(dist < f1f2f3.z)
+            {
+                f1f2f3.z = dist;
+            }
+        }
+    }
+    return sqrt(f1f2f3);
+}
+
+vec2 mx_worley_noise_vec2(vec2 p, float jitter)
+{
+    vec2 cell = mx_floor(p);
+    vec2 f1f2 = vec2(M_FLOAT_MAX, M_FLOAT_MAX);
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            vec2 localcell = cell + vec2(i,j);
+            ivec2 localcell_i = ivec2(localcell);
+            uvec3 offseti = mx_hash_vec3(localcell_i.x, localcell_i.y);
+            vec2 offset = vec2(float(offseti.x) / 255.0, float(offseti.y) / 255.0);
+            vec2 localpos = localcell + offset*jitter;
+            vec2 diff = localpos - p;
+            float dist = dot(diff, diff);
+            if (dist < f1f2.x)
+            {
+                f1f2.y = f1f2.x;
+                f1f2.x = dist;
+            }
+            else if(dist < f1f2.y)
+            {
+                f1f2.y = dist;
+            }
+        }
+    }
+    return sqrt(f1f2);
+}
+
+float mx_worley_noise_float(vec2 p, float jitter)
+{
+    vec2 cell = mx_floor(p);
+    float f1 = M_FLOAT_MAX;
+
+    for (int i = -1; i <= 1; ++i)
+    {
+        for (int j = -1; j <= 1; ++j)
+        {
+            vec2 localcell = cell + vec2(i,j);
+            ivec2 localcell_i = ivec2(localcell);
+            uvec3 offseti = mx_hash_vec3(localcell_i.x, localcell_i.y);
+            vec2 offset = vec2(float(offseti.x) / 255.0, float(offseti.y) / 255.0);
+            vec2 localpos = localcell + offset*jitter;
+            vec2 diff = localpos - p;
+            float dist = dot(diff, diff);
+            if (dist < f1)
+            {
+                f1 = dist;
+            }
+        }
+    }
+    return sqrt(f1);
 }

@@ -123,6 +123,16 @@
   <implementation name="IM_noise3d_vector3FA_genglsl" nodedef="ND_noise3d_vector3FA" file="stdlib/genglsl/mx_noise3d_fa_vector3.glsl" function="mx_noise3d_fa_vector3" language="genglsl"/>
   <implementation name="IM_noise3d_vector4FA_genglsl" nodedef="ND_noise3d_vector4FA" file="stdlib/genglsl/mx_noise3d_fa_vector4.glsl" function="mx_noise3d_fa_vector4" language="genglsl"/>
 
+  <!-- <worleynoise2d> -->
+  <implementation name="IM_worleynoise2d_float_genglsl" nodedef="ND_worleynoise2d_float" file="stdlib/genglsl/mx_worleynoise2d_float.glsl" function="mx_worleynoise2d_float" language="genglsl"/>
+  <implementation name="IM_worleynoise2d_vector2_genglsl" nodedef="ND_worleynoise2d_vector2" file="stdlib/genglsl/mx_worleynoise2d_vector2.glsl" function="mx_worleynoise2d_vector2" language="genglsl"/>
+  <implementation name="IM_worleynoise2d_vector3_genglsl" nodedef="ND_worleynoise2d_vector3" file="stdlib/genglsl/mx_worleynoise2d_vector3.glsl" function="mx_worleynoise2d_vector3" language="genglsl"/>
+
+  <!-- <worleynoise3d> -->
+  <implementation name="IM_worleynoise3d_float_genglsl" nodedef="ND_worleynoise3d_float" file="stdlib/genglsl/mx_worleynoise3d_float.glsl" function="mx_worleynoise3d_float" language="genglsl"/>
+  <implementation name="IM_worleynoise3d_vector2_genglsl" nodedef="ND_worleynoise3d_vector2" file="stdlib/genglsl/mx_worleynoise3d_vector2.glsl" function="mx_worleynoise3d_vector2" language="genglsl"/>
+  <implementation name="IM_worleynoise3d_vector3_genglsl" nodedef="ND_worleynoise3d_vector3" file="stdlib/genglsl/mx_worleynoise3d_vector3.glsl" function="mx_worleynoise3d_vector3" language="genglsl"/>
+
   <!-- <fractal3d> -->
   <implementation name="IM_fractal3d_float_genglsl" nodedef="ND_fractal3d_float" file="stdlib/genglsl/mx_fractal3d_float.glsl" function="mx_fractal3d_float" language="genglsl"/>
   <implementation name="IM_fractal3d_color2_genglsl" nodedef="ND_fractal3d_color2" file="stdlib/genglsl/mx_fractal3d_vector2.glsl" function="mx_fractal3d_vector2" language="genglsl"/>
