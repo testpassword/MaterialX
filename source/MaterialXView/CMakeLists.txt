@@ -46,6 +46,9 @@ set(LIBS
     MaterialXGenGlsl
     MaterialXRenderGlsl)
 
+if (MATERIALX_BUILD_GEN_OGSFX)
+    LIST(APPEND LIBS MaterialXGenOgsFx)
+endif()
 if (MATERIALX_BUILD_GEN_OSL)
     LIST(APPEND LIBS MaterialXGenOsl)
 endif()
