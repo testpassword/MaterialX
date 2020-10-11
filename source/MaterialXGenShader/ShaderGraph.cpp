@@ -415,44 +415,6 @@ void ShaderGraph::addUnitTransformNode(ShaderOutput* output, const UnitTransform
     }
 }
 
-ShaderGraphPtr ShaderGraph::create(const ShaderGraph* parent, const NodeGraph& nodeGraph, GenContext& context)
-{
-    NodeDefPtr nodeDef = nodeGraph.getNodeDef();
-    if (!nodeDef)
-    {
-        throw ExceptionShaderGenError("Can't find nodedef '" + nodeGraph.getNodeDefString() + "' referenced by nodegraph '" + nodeGraph.getName() + "'");
-    }
-
-    string graphName = nodeGraph.getName();
-    context.getShaderGenerator().getSyntax().makeValidName(graphName);
-    ShaderGraphPtr graph = std::make_shared<ShaderGraph>(parent, graphName, nodeGraph.getDocument(), context.getReservedWords());
-
-    // Clear classification
-    graph->_classification = 0;
-
-    // Create input sockets from the nodedef
-    graph->addInputSockets(*nodeDef, context);
-
-    // Create output sockets from the nodegraph
-    graph->addOutputSockets(nodeGraph);
-
-    // Traverse all outputs and create all internal nodes
-    for (OutputPtr graphOutput : nodeGraph.getActiveOutputs())
-    {
-        graph->addUpstreamDependencies(*graphOutput, nullptr, context);
-    }
-
-    // Add classification according to last node
-    // TODO: What if the graph has multiple outputs?
-    ShaderGraphOutputSocket* outputSocket = graph->getOutputSocket();
-    graph->_classification |= outputSocket->getConnection() ? outputSocket->getConnection()->getNode()->_classification : 0;
-
-    // Finalize the graph
-    graph->finalize(context);
-
-    return graph;
-}
-
 ShaderGraphPtr ShaderGraph::createSurfaceShader(
     const string& name,
     const ShaderGraph* parent,
@@ -1797,5 +1759,105 @@ void ShaderGraphEdgeIterator::returnPathDownstream(ShaderOutput* upstream)
     _upstream = nullptr;
     _downstream = nullptr;
 }
+
+
+namespace ShaderGraphTools
+{
+
+    ShaderGraphPtr createFromNodeGraph(GenContext& context, const NodeGraph& nodeGraph, const ShaderGraph* parent)
+    {
+        NodeDefPtr nodeDef = nodeGraph.getNodeDef();
+        if (!nodeDef)
+        {
+            throw ExceptionShaderGenError("Can't find nodedef '" + nodeGraph.getNodeDefString() + "' referenced by nodegraph '" + nodeGraph.getName() + "'");
+        }
+
+        string graphName = nodeGraph.getName();
+        context.getShaderGenerator().getSyntax().makeValidName(graphName);
+
+        ShaderGraphPtr graph = std::make_shared<ShaderGraph>(parent, graphName, nodeGraph.getDocument(), context.getReservedWords());
+
+        // Create input sockets from the nodedef
+        graph->addInputSockets(*nodeDef, context);
+
+        // Create output sockets from the nodegraph
+        graph->addOutputSockets(nodeGraph);
+
+        // Traverse all outputs and create all internal nodes
+        for (OutputPtr graphOutput : nodeGraph.getActiveOutputs())
+        {
+            graph->addUpstreamDependencies(*graphOutput, nullptr, context);
+        }
+
+        // Add classification according to last node
+        // TODO: What if the graph has multiple outputs?
+        ShaderGraphOutputSocket* outputSocket = graph->getOutputSocket();
+        graph->setClassification(outputSocket->getConnection() ? outputSocket->getConnection()->getNode()->getClassification() : 0);
+
+        // Finalize the graph
+        graph->finalize(context);
+
+        return graph;
+    }
+
+    ShaderGraphPtr createFromOutput(GenContext& context, const Output& output, const ShaderGraph* parent)
+    {
+        ConstElementPtr outputParent = output.getParent();
+
+        ConstInterfaceElementPtr interface;
+        if (outputParent->isA<NodeGraph>())
+        {
+            // A nodegraph output.
+            ConstNodeGraphPtr nodeGraph = outputParent->asA<NodeGraph>();
+            NodeDefPtr nodeDef = nodeGraph->getNodeDef();
+            if (nodeDef)
+            {
+                interface = nodeDef;
+            }
+            else
+            {
+                interface = nodeGraph;
+            }
+        }
+        else if (outputParent->isA<Document>())
+        {
+            // A free floating output.
+            outputParent = output.getConnectedNode();
+            interface = outputParent ? outputParent->asA<InterfaceElement>() : nullptr;
+        }
+        if (!interface)
+        {
+            throw ExceptionShaderGenError("Given output '" + output.getName() + "' has no interface valid for shader generation");
+        }
+
+        const string name = outputParent->getName() + "_" + output.getName();
+        ShaderGraphPtr graph = std::make_shared<ShaderGraph>(parent, name, output.getDocument(), context.getReservedWords());
+
+        // Create input sockets
+        graph->addInputSockets(*interface, context);
+
+        // Create the given output socket
+        ShaderGraphOutputSocket* outputSocket = graph->addOutputSocket(output.getName(), TypeDesc::get(output.getType()));
+        outputSocket->setPath(output.getNamePath());
+        outputSocket->setChannels(output.getChannels());
+        const string& outputUnit = output.getUnit();
+        if (!outputUnit.empty())
+        {
+            outputSocket->setUnit(outputUnit);
+        }
+
+        // Traverse and create all dependencies upstream
+        graph->addUpstreamDependencies(output, nullptr, context);
+
+        // Add classification according to root node
+        graph->setClassification(outputSocket->getConnection() ? outputSocket->getConnection()->getNode()->getClassification() : 0);
+
+        graph->finalize(context);
+
+        return graph;
+    }
+
+} // namespace ShaderGraphTools
+
 
 } // namespace MaterialX

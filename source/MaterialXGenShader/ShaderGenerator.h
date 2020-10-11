@@ -42,6 +42,9 @@ class ShaderGenerator
     /// the element and all dependencies upstream into shader code.
     virtual ShaderPtr generate(const string& name, ElementPtr element, GenContext& context) const = 0;
 
+    /// Generate a shader from the give shader graph.
+    virtual ShaderPtr generate(ShaderGraphPtr, GenContext&) const { return nullptr; } // = 0;
+
     /// Start a new scope using the given bracket type.
     virtual void emitScopeBegin(ShaderStage& stage, Syntax::Punctuation punc = Syntax::CURLY_BRACKETS) const;
 

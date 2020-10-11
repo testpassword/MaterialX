@@ -381,6 +381,7 @@ protected:
 
     /// Create and initialize a new HW shader for shader generation.
     virtual ShaderPtr createShader(const string& name, ElementPtr element, GenContext& context) const;
+    virtual ShaderPtr createShader(ShaderGraphPtr graph, GenContext& context) const;
 
     /// Override the source code implementation creator.
     ShaderNodeImplPtr createSourceCodeImplementation(const Implementation& impl) const override;

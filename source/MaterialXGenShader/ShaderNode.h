@@ -425,6 +425,18 @@ class ShaderNode
         return _parent;
     }
 
+    /// Set the classification for this node.
+    void setClassification(uint32_t c)
+    {
+        _classification = c;
+    }
+
+    /// Retunr the classification for this node.
+    uint32_t getClassification() const
+    {
+        return _classification;
+    }
+
     /// Return true if this node matches the given classification.
     bool hasClassification(uint32_t c) const
     {

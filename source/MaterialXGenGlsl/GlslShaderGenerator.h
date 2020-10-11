@@ -29,6 +29,9 @@ class GlslShaderGenerator : public HwShaderGenerator
     /// the element and all dependencies upstream into shader code.
     ShaderPtr generate(const string& name, ElementPtr element, GenContext& context) const override;
 
+    ShaderPtr generate(ShaderGraphPtr graph, GenContext& context) const override;
+
+
     /// Return a unique identifier for the language used by this generator
     const string& getLanguage() const override { return LANGUAGE; }
 

@@ -55,10 +55,6 @@ class ShaderGraph : public ShaderNode
     static ShaderGraphPtr create(const ShaderGraph* parent, const string& name, ElementPtr element, 
                                  GenContext& context);
 
-    /// Create a new shader graph from a nodegraph.
-    static ShaderGraphPtr create(const ShaderGraph* parent, const NodeGraph& nodeGraph,
-                                 GenContext& context);
-
     /// Return true if this node is a graph.
     bool isAGraph() const override { return true; }
 
@@ -106,7 +102,6 @@ class ShaderGraph : public ShaderNode
     /// Return the map of unique identifiers used in the scope of this graph.
     IdentifierMap& getIdentifierMap() { return _identifiers; }
 
-  protected:
     static ShaderGraphPtr createSurfaceShader(
         const string& name,
         const ShaderGraph* parent,
@@ -190,6 +185,7 @@ class ShaderGraph : public ShaderNode
     /// Break all connections on a node
     void disconnect(ShaderNode* node) const;
 
+  protected:
     ConstDocumentPtr _document;
     std::unordered_map<string, ShaderNodePtr> _nodeMap;
     std::vector<ShaderNode*> _nodeOrder;
@@ -267,6 +263,16 @@ class ShaderGraphEdgeIterator
     std::vector<StackFrame> _stack;
     std::set<ShaderOutput*> _path;
 };
+
+
+
+namespace ShaderGraphTools
+{
+
+    ShaderGraphPtr createFromNodeGraph(GenContext& context, const NodeGraph& nodeGraph, const ShaderGraph* parent = nullptr);
+    ShaderGraphPtr createFromOutput(GenContext& context, const Output& output, const ShaderGraph* parent = nullptr);
+
+} // namespace ShaderGraphTools
 
 } // namespace MaterialX
 

@@ -226,7 +226,12 @@ ShaderPtr HwShaderGenerator::createShader(const string& name, ElementPtr element
 {
     // Create the root shader graph
     ShaderGraphPtr graph = ShaderGraph::create(nullptr, name, element, context);
-    ShaderPtr shader = std::make_shared<Shader>(name, graph);
+    return createShader(graph, context);
+}
+
+ShaderPtr HwShaderGenerator::createShader(ShaderGraphPtr graph, GenContext& context) const
+{
+    ShaderPtr shader = std::make_shared<Shader>(graph->getName(), graph);
 
     // Create vertex stage.
     ShaderStagePtr vs = createStage(Stage::VERTEX, *shader);

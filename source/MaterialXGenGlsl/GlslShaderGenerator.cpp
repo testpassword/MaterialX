@@ -320,6 +320,35 @@ ShaderPtr GlslShaderGenerator::generate(const string& name, ElementPtr element, 
     return shader;
 }
 
+ShaderPtr GlslShaderGenerator::generate(ShaderGraphPtr graph, GenContext& context) const
+{
+    ShaderPtr shader = createShader(graph, context);
+
+    // Turn on fixed float formatting to make sure float values are
+    // emitted with a decimal point and not as integers, and to avoid
+    // any scientific notation which isn't supported by all OpenGL targets.
+    ScopedFloatFormatting fmt(Value::FloatFormatFixed);
+
+    // Make sure we initialize/reset the binding context before generation.
+    HwResourceBindingContextPtr resourceBindingCtx = context.getUserData<HwResourceBindingContext>(HW::USER_DATA_BINDING_CONTEXT);
+    if (resourceBindingCtx)
+    {
+        resourceBindingCtx->initialize();
+    }
+
+    // Emit code for vertex shader stage
+    ShaderStage& vs = shader->getStage(Stage::VERTEX);
+    emitVertexStage(shader->getGraph(), context, vs);
+    replaceTokens(_tokenSubstitutions, vs);
+
+    // Emit code for pixel shader stage
+    ShaderStage& ps = shader->getStage(Stage::PIXEL);
+    emitPixelStage(shader->getGraph(), context, ps);
+    replaceTokens(_tokenSubstitutions, ps);
+
+    return shader;
+}
+
 void GlslShaderGenerator::emitVertexStage(const ShaderGraph& graph, GenContext& context, ShaderStage& stage) const
 {
     HwResourceBindingContextPtr resourceBindingCtx = context.getUserData<HwResourceBindingContext>(HW::USER_DATA_BINDING_CONTEXT);
