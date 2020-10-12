@@ -25,6 +25,9 @@ using ConstImagePtr = shared_ptr<const Image>;
 /// A map from strings to images.
 using ImageMap = std::unordered_map<string, ImagePtr>;
 
+/// A vetor of images.
+using ImageVec = std::vector<ImagePtr>;
+
 /// A pair of images.
 using ImagePair = std::pair<ImagePtr, ImagePtr>;
 
@@ -189,7 +192,7 @@ class Image
 ImagePtr createUniformImage(unsigned int width, unsigned int height, unsigned int channelCount, Image::BaseType baseType, const Color4& color);
 
 /// Create a horizontal image strip from a vector of images with identical resolutions and formats.
-ImagePtr createImageStrip(vector<ImagePtr> imageVec);
+ImagePtr createImageStrip(const vector<ImagePtr>& imageVec);
 
 } // namespace MaterialX
 

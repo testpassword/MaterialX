@@ -32,9 +32,9 @@ ImagePtr createUniformImage(unsigned int width, unsigned int height, unsigned in
     return image;
 }
 
-ImagePtr createImageStrip(vector<ImagePtr> imageVec)
+ImagePtr createImageStrip(const vector<ImagePtr>& imageVec)
 {
-    if (imageVec.empty())
+    if (imageVec.empty() || !imageVec[0])
     {
         return nullptr;
     }
@@ -53,7 +53,8 @@ ImagePtr createImageStrip(vector<ImagePtr> imageVec)
     unsigned int xOffset = 0;
     for (ImagePtr srcImage : imageVec)
     {
-        if (srcImage->getWidth() != srcWidth ||
+        if (!srcImage || 
+            srcImage->getWidth() != srcWidth ||
             srcImage->getHeight() != srcHeight ||
             srcImage->getChannelCount() != channelCount ||
             srcImage->getBaseType() != baseType)
