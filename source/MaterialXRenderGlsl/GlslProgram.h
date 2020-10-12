@@ -94,8 +94,6 @@ class GlslProgram
         bool isConstant;
         /// Element path (if any)
         string path;
-        /// Unit
-        string unit;
 
         /// Program input constructor
         Input(int inputLocation, int inputType, int inputSize, string inputPath)
