@@ -160,30 +160,11 @@ class ShaderPort : public std::enable_shared_from_this<ShaderPort>
     /// Return the variable name of this port.
     const string& getVariable() const { return _variable; }
 
-    /// Set the variable semantic of this port.
-    void setSemantic(const string& semantic) { _semantic = semantic; }
-
-    /// Return the variable semantic of this port.
-    const string& getSemantic() const { return _semantic; }
-
     /// Set a value on this port.
     void setValue(ValuePtr value) { _value = value; }
 
     /// Return the value set on this port.
     ValuePtr getValue() const { return _value; }
-
-    /// Set a unit type for the value on this port.
-    void setUnit(const string& unit) { _unit = unit; }
-
-    /// Return the unit type for the value on this port.
-    const string& getUnit() const { return _unit; }
-
-    /// Set geomprop name if the input has a default
-    /// geomprop to be assigned when it is unconnected.
-    void setGeomProp(const string& geomprop) { _geomprop = geomprop; }
-
-    /// Get geomprop name.
-    const string& getGeomProp() const { return _geomprop; }
 
     /// Set the path to this port.
     void setPath(const string& path) { _path = path; }
@@ -236,18 +217,47 @@ class ShaderPort : public std::enable_shared_from_this<ShaderPort>
     /// Get the metadata vector.
     const ShaderMetadataVecPtr& getMetadata() const { return _metadata; }
 
+    /// Set the variable semantic of this port.
+    void setSemantic(const string& semantic) { _semantic = semantic; }
+
+    /// Return the variable semantic of this port.
+    const string& getSemantic() const { return _semantic; }
+
+    /// Set a colorspace for the value on this port.
+    void setColorSpace(const string& colorSpace) { _colorSpace = colorSpace; }
+
+    /// Return the colorspace for the value on this port.
+    const string& geColorSpace() const { return _colorSpace; }
+
+    /// Set a unit type for the value on this port.
+    void setUnit(const string& unit) { _unit = unit; }
+
+    /// Return the unit type for the value on this port.
+    const string& getUnit() const { return _unit; }
+
+    /// Set geomprop name if the input has a default
+    /// geomprop to be assigned when it is unconnected.
+    void setGeomProp(const string& geomprop) { _geomprop = geomprop; }
+
+    /// Get geomprop name.
+    const string& getGeomProp() const { return _geomprop; }
+
   protected:
     ShaderNode* _node;
     const TypeDesc* _type;
     string _name;
     string _path;
-    string _semantic;
     string _variable;
     ValuePtr _value;
-    string _unit;
-    string _geomprop;
     ShaderMetadataVecPtr _metadata;
     uint32_t _flags;
+
+    // TODO: Change the following members to optional metadata
+    // since they are used very sparsely on the ports.
+    string _semantic;
+    string _colorSpace;
+    string _unit;
+    string _geomprop;
 };
 
 /// @class ShaderInput
