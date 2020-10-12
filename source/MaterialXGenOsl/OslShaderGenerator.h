@@ -51,7 +51,8 @@ class OslShaderGenerator : public ShaderGenerator
 protected:
 
     /// Create and initialize a new OSL shader for shader generation.
-    virtual ShaderPtr createShader(const string& name, ElementPtr element, GenContext& context) const;
+    ShaderPtr createShader(const string& name, ElementPtr element, GenContext& context) const;
+    ShaderPtr createShader(ShaderGraphPtr graph, GenContext& context) const;
 
     /// Emit include headers needed by the generated shader code.
     virtual void emitIncludes(ShaderStage& stage, GenContext& context) const;

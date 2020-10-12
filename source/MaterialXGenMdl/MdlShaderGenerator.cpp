@@ -488,11 +488,18 @@ namespace
     }
 }
 
+
 ShaderPtr MdlShaderGenerator::createShader(const string& name, ElementPtr element, GenContext& context) const
 {
     // Create the root shader graph
-    ShaderGraphPtr graph = ShaderGraph::create(nullptr, name, element, context);
-    ShaderPtr shader = std::make_shared<Shader>(name, graph);
+    ShaderGraphPtr graph = ShaderGraphTools::createFromElement(context, name, element);
+    return createShader(graph, context);
+}
+
+ShaderPtr MdlShaderGenerator::createShader(ShaderGraphPtr graph, GenContext& context) const
+{
+    // Create the root shader graph
+    ShaderPtr shader = std::make_shared<Shader>(graph->getName(), graph);
 
     // Create our stage.
     ShaderStagePtr stage = createStage(Stage::PIXEL, *shader);

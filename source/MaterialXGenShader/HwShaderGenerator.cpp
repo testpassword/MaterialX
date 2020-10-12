@@ -225,7 +225,7 @@ HwShaderGenerator::HwShaderGenerator(SyntaxPtr syntax) :
 ShaderPtr HwShaderGenerator::createShader(const string& name, ElementPtr element, GenContext& context) const
 {
     // Create the root shader graph
-    ShaderGraphPtr graph = ShaderGraph::create(nullptr, name, element, context);
+    ShaderGraphPtr graph = ShaderGraphTools::createFromElement(context, name, element);
     return createShader(graph, context);
 }
 

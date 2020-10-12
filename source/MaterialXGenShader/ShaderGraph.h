@@ -50,21 +50,14 @@ class ShaderGraph : public ShaderNode
     /// Desctructor.
     virtual ~ShaderGraph() { }
 
-    /// Create a new shader graph from an element.
-    /// Supported elements are outputs and shaderrefs.
-    static ShaderGraphPtr create(const ShaderGraph* parent, const string& name, ElementPtr element, 
-                                 GenContext& context);
-
     /// Return true if this node is a graph.
     bool isAGraph() const override { return true; }
 
-    /// Get an internal node by name
+    /// Get an internal node by name.
     ShaderNode* getNode(const string& name);
-
-    /// Get an internal node by name
     const ShaderNode* getNode(const string& name) const;
 
-    /// Get a vector of all nodes in order
+    /// Get a vector of all nodes in order.
     const vector<ShaderNode*>& getNodes() const { return _nodeOrder; }
 
     /// Get number of input sockets
@@ -73,27 +66,35 @@ class ShaderGraph : public ShaderNode
     /// Get number of output sockets
     size_t numOutputSockets() const { return numInputs(); }
 
-    /// Get socket by index
+    /// Get input socket by index.
     ShaderGraphInputSocket* getInputSocket(size_t index) { return getOutput(index); }
-    ShaderGraphOutputSocket* getOutputSocket(size_t index = 0) { return getInput(index); }
     const ShaderGraphInputSocket* getInputSocket(size_t index) const { return getOutput(index); }
+
+    /// Get output socket by index.
+    ShaderGraphOutputSocket* getOutputSocket(size_t index = 0) { return getInput(index); }
     const ShaderGraphOutputSocket* getOutputSocket(size_t index = 0) const { return getInput(index); }
 
-    /// Get socket by name
+    /// Get input socket by name.
     ShaderGraphInputSocket* getInputSocket(const string& name) { return getOutput(name); }
-    ShaderGraphOutputSocket* getOutputSocket(const string& name) { return getInput(name); }
     const ShaderGraphInputSocket* getInputSocket(const string& name) const { return getOutput(name); }
+
+    /// Get output socket by name.
+    ShaderGraphOutputSocket* getOutputSocket(const string& name) { return getInput(name); }
     const ShaderGraphOutputSocket* getOutputSocket(const string& name) const { return getInput(name); }
 
-    /// Get vector of sockets
+    /// Get vector of all input sockets.
     const vector<ShaderGraphInputSocket*>& getInputSockets() const { return _outputOrder; }
+
+    /// Get vector of all output sockets.
     const vector<ShaderGraphOutputSocket*>& getOutputSockets() const { return _inputOrder; }
 
     /// Create a new node in the graph
     ShaderNode* createNode(const Node& node, GenContext& context);
 
-    /// Add input/output sockets
+    /// Add a new input socket.
     ShaderGraphInputSocket* addInputSocket(const string& name, const TypeDesc* type);
+
+    /// Add a new output socket.
     ShaderGraphOutputSocket* addOutputSocket(const string& name, const TypeDesc* type);
 
     /// Return an iterator for traversal upstream from the given output
@@ -102,25 +103,6 @@ class ShaderGraph : public ShaderNode
     /// Return the map of unique identifiers used in the scope of this graph.
     IdentifierMap& getIdentifierMap() { return _identifiers; }
 
-    static ShaderGraphPtr createSurfaceShader(
-        const string& name,
-        const ShaderGraph* parent,
-        NodePtr node,
-        GenContext& context,
-        ElementPtr& root,
-        MaterialPtr& material);
-
-    /// Create node connections corresponding to the connection between a pair of elements.
-    /// @param downstreamElement Element representing the node to connect to.
-    /// @param upstreamElement Element representing the node to connect from
-    /// @param connectingElement If non-null, specifies the element on on the downstream node to connect to.
-    /// @param context Context for generation.
-    /// @param rootNode Root node for downstream element. Only required for handing ShaderRef elements.
-    void createConnectedNodes(const ElementPtr& downstreamElement,
-                              const ElementPtr& upstreamElement,
-                              ElementPtr connectingElement,
-                              GenContext& context,
-                              ShaderNode* rootNode = nullptr);
 
     /// Add a node to the graph
     void addNode(ShaderNodePtr node);
@@ -138,6 +120,8 @@ class ShaderGraph : public ShaderNode
 
     /// Add a default geometric node and connect to the given input.
     void addDefaultGeomNode(ShaderInput* input, const GeomPropDef& geomprop, GenContext& context);
+
+
 
     /// Add a color transform node and connect to the given input.
     void addColorTransformNode(ShaderInput* input, const ColorSpaceTransform& transform, GenContext& context);
@@ -264,12 +248,12 @@ class ShaderGraphEdgeIterator
     std::set<ShaderOutput*> _path;
 };
 
-
-
 namespace ShaderGraphTools
 {
+    ShaderGraphPtr createFromElement(GenContext& context, const string& name, ElementPtr element, const ShaderGraph* parent = nullptr);
 
     ShaderGraphPtr createFromNodeGraph(GenContext& context, const NodeGraph& nodeGraph, const ShaderGraph* parent = nullptr);
+
     ShaderGraphPtr createFromOutput(GenContext& context, const Output& output, const ShaderGraph* parent = nullptr);
 
 } // namespace ShaderGraphTools
