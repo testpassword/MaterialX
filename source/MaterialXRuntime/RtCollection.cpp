@@ -16,10 +16,7 @@ namespace
     static const RtToken INCLUDE_GEOM("includegeom");
     static const RtToken EXCLUDE_GEOM("excludegeom");
     static const RtToken INCLUDE_COLLECTION("includecollection");
-
-    static const RtToken COLLECTION1("collection1");
-
-    static const string MSG_NONE_ROOT_COLLECTION("A collection can only be created at the top / root level");
+    static const RtToken DEFAULT_PRIM_NAME("collection1");
 }
 
 DEFINE_TYPED_SCHEMA(RtCollection, "bindelement:collection");
@@ -30,9 +27,12 @@ RtPrim RtCollection::createPrim(const RtToken& typeName, const RtToken& name, Rt
     {
         throw ExceptionRuntimeError("Type names mismatch when creating prim '" + name.str() + "'");
     }
-    PvtPath::throwIfNotRoot(parent.getPath(), MSG_NONE_ROOT_COLLECTION);
+    if (!parent.getPath().isRoot())
+    {
+        throw ExceptionRuntimeError("A collection prim can only be created at the top / root level");
+    }
 
-    const RtToken primName = name == EMPTY_TOKEN ? COLLECTION1 : name;
+    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_PRIM_NAME : name;
     PvtDataHandle primH = PvtPrim::createNew(&_typeInfo, primName, PvtObject::ptr<PvtPrim>(parent));
 
     PvtPrim* prim = primH->asA<PvtPrim>();

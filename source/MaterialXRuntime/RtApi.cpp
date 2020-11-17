@@ -132,14 +132,49 @@ bool RtApi::hasNodeDef(const RtToken& name) const
     return _cast(_ptr)->hasNodeDef(name);
 }
 
+size_t RtApi::numNodeDefs() const
+{
+    return _cast(_ptr)->numNodeDefs();
+}
+
+RtPrim RtApi::getNodeDef(size_t index) const
+{
+    return _cast(_ptr)->getNodeDef(index);
+}
+
 RtPrim RtApi::getNodeDef(const RtToken& name) const
 {
     return _cast(_ptr)->getNodeDef(name);
 }
 
-RtPrimIterator RtApi::getNodeDefs() const
+void RtApi::registerNodeImpl(const RtPrim& prim)
 {
-    return _cast(_ptr)->getNodeDefs();
+    _cast(_ptr)->registerNodeImpl(prim);
+}
+
+void RtApi::unregisterNodeImpl(const RtToken& name)
+{
+    _cast(_ptr)->unregisterNodeImpl(name);
+}
+
+bool RtApi::hasNodeImpl(const RtToken& name) const
+{
+    return _cast(_ptr)->hasNodeImpl(name);
+}
+
+size_t RtApi::numNodeImpls() const
+{
+    return _cast(_ptr)->numNodeImpls();
+}
+
+RtPrim RtApi::getNodeImpl(size_t index) const
+{
+    return _cast(_ptr)->getNodeImpl(index);
+}
+
+RtPrim RtApi::getNodeImpl(const RtToken& name) const
+{
+    return _cast(_ptr)->getNodeImpl(name);
 }
 
 void RtApi::clearSearchPath()

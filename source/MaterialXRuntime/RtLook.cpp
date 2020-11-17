@@ -23,14 +23,9 @@ namespace
     static const RtToken MATERIAL_ASSIGN("materialassign");
     static const RtToken ACTIVELOOK("active");
     static const RtToken LOOKS("looks");
-
-    static const RtToken LOOKGROUP1("lookgroup1");
-    static const RtToken LOOK1("look1");
-    static const RtToken MATERIALASSIGN1("materialassign1");
-
-    static const string MSG_NONE_ROOT_LOOKGROUP("A lookgroup can only be created at the top / root level");
-    static const string MSG_NONE_ROOT_LOOK("A look can only be created at the top / root level");
-    static const string MSG_NONE_ROOT_MATERIALASSIGN("A materialassign can only be created at the top / root level");
+    static const RtToken DEFAULT_LOOKGROUP_NAME("lookgroup1");
+    static const RtToken DEFAULT_LOOK_NAMELOOK_NAME("look1");
+    static const RtToken DEFAULT_MATERIALASSIGN_NAME("materialassign1");
 }
 
 DEFINE_TYPED_SCHEMA(RtLookGroup, "bindelement:lookgroup");
@@ -41,9 +36,12 @@ RtPrim RtLookGroup::createPrim(const RtToken& typeName, const RtToken& name, RtP
     {
         throw ExceptionRuntimeError("Type names mismatch when creating prim '" + name.str() + "'");
     }
-    PvtPath::throwIfNotRoot(parent.getPath(), MSG_NONE_ROOT_LOOKGROUP);
+    if (!parent.getPath().isRoot())
+    {
+        throw ExceptionRuntimeError("A lookgroup prim can only be created at the top / root level");
+    }
 
-    const RtToken primName = name == EMPTY_TOKEN ? LOOKGROUP1 : name;
+    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_LOOKGROUP_NAME : name;
     PvtDataHandle primH = PvtPrim::createNew(&_typeInfo, primName, PvtObject::ptr<PvtPrim>(parent));
 
     PvtPrim* prim = primH->asA<PvtPrim>();
@@ -93,9 +91,12 @@ RtPrim RtLook::createPrim(const RtToken& typeName, const RtToken& name, RtPrim p
     {
         throw ExceptionRuntimeError("Type names mismatch when creating prim '" + name.str() + "'");
     }
-    PvtPath::throwIfNotRoot(parent.getPath(), MSG_NONE_ROOT_LOOK);
+    if (!parent.getPath().isRoot())
+    {
+        throw ExceptionRuntimeError("A look prim can only be created at the top / root level");
+    }
 
-    const RtToken primName = name == EMPTY_TOKEN ? LOOK1 : name;
+    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_LOOK_NAMELOOK_NAME : name;
     PvtDataHandle primH = PvtPrim::createNew(&_typeInfo, primName, PvtObject::ptr<PvtPrim>(parent));
 
     PvtPrim* prim = primH->asA<PvtPrim>();
@@ -149,9 +150,12 @@ RtPrim RtMaterialAssign::createPrim(const RtToken& typeName, const RtToken& name
     {
         throw ExceptionRuntimeError("Type names mismatch when creating prim '" + name.str() + "'");
     }
-    PvtPath::throwIfNotRoot(parent.getPath(), MSG_NONE_ROOT_MATERIALASSIGN);
+    if (!parent.getPath().isRoot())
+    {
+        throw ExceptionRuntimeError("A materialassign prim can only be created at the top / root level");
+    }
 
-    const RtToken primName = name == EMPTY_TOKEN ? MATERIALASSIGN1 : name;
+    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_MATERIALASSIGN_NAME : name;
     PvtDataHandle primH = PvtPrim::createNew(&_typeInfo, primName, PvtObject::ptr<PvtPrim>(parent));
 
     PvtPrim* prim = primH->asA<PvtPrim>();

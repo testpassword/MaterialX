@@ -34,6 +34,7 @@ public:
     /// Shutdown the API session.
     void shutdown();
 
+
     /// Registers a logger with the API
     void registerLogger(RtLoggerPtr logger);
 
@@ -42,6 +43,7 @@ public:
 
     /// Logs a message with the registered loggers
     void log(RtLogger::MessageType type, const string& msg);
+
 
     /// Register a create function for a typename.
     void registerCreateFunction(const RtToken& typeName, RtPrimCreateFunc func);
@@ -56,6 +58,7 @@ public:
     /// Or nullptr if no such create function has been registered.
     RtPrimCreateFunc getCreateFunction(const RtToken& typeName) const;
 
+
     /// Register a nodedef prim to be used for creating node instances from.
     void registerNodeDef(const RtPrim& prim);
 
@@ -65,12 +68,35 @@ public:
     /// Return true if a nodedef prim with the given name has been registered.
     bool hasNodeDef(const RtToken& name) const;
 
-    /// Return the nodedef prim with given name. Or a null object if no such 
-    /// nodedef prim has been registered.
+    /// Return the number of registered nodedefs prims.
+    size_t numNodeDefs() const;
+
+    /// Return a registered nodedef prim by index.
+    RtPrim getNodeDef(size_t index) const;
+
+    /// Return a registered nodedef prim by name.
     RtPrim getNodeDef(const RtToken& name) const;
 
-    /// Return and iterator over all registered nodedefs.
-    RtPrimIterator getNodeDefs() const;
+
+    /// Register a node implementation prim to be used as the implementation
+    /// of a nodedef for a specific target.
+    void registerNodeImpl(const RtPrim& prim);
+
+    /// Unregister a node implementation prim.
+    void unregisterNodeImpl(const RtToken& name);
+
+    /// Return true if a node implementation prim with the given name has been registered.
+    bool hasNodeImpl(const RtToken& name) const;
+
+    /// Return the number of registered node implementation prims.
+    size_t numNodeImpls() const;
+
+    /// Return a registered node implementation prim by index.
+    RtPrim getNodeImpl(size_t index) const;
+
+    /// Return a registered noded implementation prim by name.
+    RtPrim getNodeImpl(const RtToken& name) const;
+
 
     /// Register a typed prim schema.
     template<class T, class ConnectableApi = RtConnectableApi>
@@ -87,6 +113,7 @@ public:
         unregisterCreateFunction(T::typeName());
         RtConnectableApi::unregisterApi<T>();
     }
+
 
     /// Clear the definition search path
     void clearSearchPath();
@@ -118,6 +145,13 @@ public:
     /// Get search path for implemntations used by libraries. 
     const FileSearchPath& getImplementationSearchPath() const;
 
+    /// Set location for non-library user definitions
+    const FilePath& getUserDefinitionPath() const;
+
+    /// Set location for non-library user definitions
+    void setUserDefinitionPath(const FilePath& path);
+
+
     /// Create a library.
     void createLibrary(const RtToken& name);
 
@@ -136,11 +170,6 @@ public:
     /// Return the library stage containing all loaded libraries.
     RtStagePtr getLibrary();
 
-    /// Set location for non-library user definitions
-    const FilePath& getUserDefinitionPath() const;
-
-    /// Set location for non-library user definitions
-    void setUserDefinitionPath(const FilePath& path);
 
     /// Create a new empty stage.
     RtStagePtr createStage(const RtToken& name);
@@ -157,8 +186,10 @@ public:
     /// Return a list of all stages created.
     RtTokenVec getStageNames() const;
 
+
     /// Return a registry of unit definitions
     UnitConverterRegistryPtr getUnitDefinitions();
+
 
     /// Get the singleton API instance.
     static RtApi& get();

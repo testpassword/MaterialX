@@ -28,6 +28,58 @@ using PvtDataHandleVec = vector<PvtDataHandle>;
 using PvtDataHandleMap = RtTokenMap<PvtDataHandle>;
 using PvtDataHandleSet = std::set<PvtDataHandle>;
 
+struct PvtDataHandleRecord
+{
+    PvtDataHandleMap map;
+    PvtDataHandleVec vec;
+
+    size_t size() const
+    {
+        return vec.size();
+    }
+
+    PvtDataHandle get(const RtToken& name) const
+    {
+        auto it = map.find(name);
+        return it != map.end() ? it->second : PvtDataHandle();
+    }
+
+    PvtDataHandle get(size_t index) const
+    {
+        return index < vec.size() ? vec[index] : PvtDataHandle();
+    }
+
+    void add(const RtToken& name, const PvtDataHandle& hnd)
+    {
+        map[name] = hnd;
+        vec.push_back(hnd);
+    }
+
+    void remove(const RtToken& name)
+    {
+        auto i = map.find(name);
+        if (i != map.end())
+        {
+            PvtDataHandle hnd = i->second;
+            for (auto j = vec.begin(); j != vec.end(); ++j)
+            {
+                if ((*j).get() == hnd)
+                {
+                    vec.erase(j);
+                    break;
+                }
+            }
+            map.erase(i);
+        }
+    }
+
+    void clear()
+    {
+        map.clear();
+        vec.clear();
+    }
+};
+
 // Class representing an object in the scene hierarchy.
 // This is the base class for prims, attributes and relationships.
 class PvtObject : public RtRefCounted<PvtObject>
@@ -143,16 +195,27 @@ public:
 
     void removeMetadata(const RtToken& name);
 
+    // Get metadata without a type check.
     const RtTypedValue* getMetadata(const RtToken& name) const
     {
         auto it = _metadataMap.find(name);
         return it != _metadataMap.end() ? &it->second : nullptr;
     }
 
+    // Get metadata without a type check.
     RtTypedValue* getMetadata(const RtToken& name)
     {
         auto it = _metadataMap.find(name);
         return it != _metadataMap.end() ? &it->second : nullptr;
+    }
+
+    // Get metadata with type check.
+    RtTypedValue* getMetadata(const RtToken& name, const RtToken& type);
+
+    // Get metadata with type check.
+    const RtTypedValue* getMetadata(const RtToken& name, const RtToken& type) const
+    {
+        return const_cast<PvtObject*>(this)->getMetadata(name, type);
     }
 
     // For serialization to file we need the order.

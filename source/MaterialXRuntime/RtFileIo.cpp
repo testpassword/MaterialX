@@ -307,8 +307,10 @@ namespace
         const RtToken nodeName(node->getCategory());
         const RtToken nodeType(node->getType());
         const vector<ValueElementPtr> nodePorts = node->getActiveValueElements();
-        for (RtPrim prim : RtApi::get().getNodeDefs())
+        const size_t numNodeDefs = RtApi::get().numNodeDefs();
+        for (size_t i=0; i<numNodeDefs; ++i)
         {
+            RtPrim prim = RtApi::get().getNodeDef(i);
             RtNodeDef candidate(prim);
             if (candidate.getNamespacedNode() == nodeName && 
                 matchingSignature(PvtObject::ptr<PvtPrim>(prim), nodeType, nodePorts))
@@ -1231,8 +1233,10 @@ namespace
         if (names.empty())
         {
             // Write all nodedefs.
-            for (const RtPrim& prim : api.getNodeDefs())
+            const size_t numNodeDefs = RtApi::get().numNodeDefs();
+            for (size_t i = 0; i < numNodeDefs; ++i)
             {
+                RtPrim prim = api.getNodeDef(i);
                 writeNodeDefAndImplementation(document, stage, PvtObject::ptr<PvtPrim>(prim), options);
             }
         }

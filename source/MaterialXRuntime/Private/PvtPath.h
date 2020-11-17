@@ -115,7 +115,10 @@ public:
         return _elements == other._elements;
     }
 
-    static void throwIfNotRoot(const RtPath& path, const std::string& msg);
+    bool isRoot() const
+    {
+        return getName() == ROOT_NAME;
+    }
 
     static const string SEPARATOR;
     static const RtToken ROOT_NAME;

@@ -4,6 +4,7 @@
 //
 
 #include <MaterialXRuntime/RtNodeDef.h>
+#include <MaterialXRuntime/RtNodeImpl.h>
 #include <MaterialXRuntime/RtPrim.h>
 #include <MaterialXRuntime/RtApi.h>
 
@@ -14,6 +15,7 @@ namespace MaterialX
 
 RtToken RtNodeDef::NODE("node");
 RtToken RtNodeDef::NODEDEF("nodedef");
+RtToken RtNodeDef::NODEIMPL("nodeimpl");
 RtToken RtNodeDef::NODEGROUP("nodegroup");
 RtToken RtNodeDef::INHERIT("inherit");
 RtToken RtNodeDef::TARGET("target");
@@ -35,6 +37,7 @@ RtPrim RtNodeDef::createPrim(const RtToken& typeName, const RtToken& name, RtPri
 
     PvtPrim* prim = primH->asA<PvtPrim>();
     prim->addMetadata(NODE, RtType::TOKEN);
+    prim->createRelationship(NODEIMPL);
 
     return primH;
 }
@@ -211,6 +214,29 @@ RtAttrIterator RtNodeDef::getOutputs() const
 {
     RtObjTypePredicate<RtOutput> filter;
     return RtAttrIterator(getPrim(), filter);
+}
+
+RtRelationship RtNodeDef::getNodeImpls() const
+{
+    PvtRelationship* rel = prim()->getRelationship(NODEIMPL);
+    return rel ? rel->hnd() : RtRelationship();
+}
+
+RtPrim RtNodeDef::getNodeImpl(const RtToken& target) const
+{
+    RtRelationship rel = getNodeImpls();
+    for (RtObject obj : rel.getTargets())
+    {
+        if (obj.isA<RtPrim>())
+        {
+            RtNodeImpl impl(obj);
+            if (impl.isValid() && (target == EMPTY_TOKEN || impl.getTarget() == target))
+            {
+                return impl.getPrim();
+            }
+        }
+    }
+    return RtPrim();
 }
 
 RtNodeLayout RtNodeDef::getNodeLayout()
