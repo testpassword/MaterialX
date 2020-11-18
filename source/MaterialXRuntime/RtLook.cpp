@@ -5,6 +5,7 @@
 
 #include <MaterialXRuntime/RtLook.h>
 #include <MaterialXRuntime/RtCollection.h>
+#include <MaterialXRuntime/Tokens.h>
 #include <MaterialXRuntime/Private/PvtPath.h>
 #include <MaterialXRuntime/Private/PvtPrim.h>
 
@@ -12,21 +13,6 @@
 
 namespace MaterialX
 {
-
-namespace
-{
-    static const RtToken INHERIT("inherit");
-    static const RtToken MATERIAL("material");
-    static const RtToken COLLECTION("collection");
-    static const RtToken GEOM("geom");
-    static const RtToken EXCLUSIVE("exclusive");
-    static const RtToken MATERIAL_ASSIGN("materialassign");
-    static const RtToken ACTIVELOOK("active");
-    static const RtToken LOOKS("looks");
-    static const RtToken DEFAULT_LOOKGROUP_NAME("lookgroup1");
-    static const RtToken DEFAULT_LOOK_NAMELOOK_NAME("look1");
-    static const RtToken DEFAULT_MATERIALASSIGN_NAME("materialassign1");
-}
 
 DEFINE_TYPED_SCHEMA(RtLookGroup, "bindelement:lookgroup");
 
@@ -41,19 +27,20 @@ RtPrim RtLookGroup::createPrim(const RtToken& typeName, const RtToken& name, RtP
         throw ExceptionRuntimeError("A lookgroup prim can only be created at the top / root level");
     }
 
-    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_LOOKGROUP_NAME : name;
+    static const RtToken DEFAULT_NAME("lookgroup1");
+    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_NAME : name;
     PvtDataHandle primH = PvtPrim::createNew(&_typeInfo, primName, PvtObject::ptr<PvtPrim>(parent));
 
     PvtPrim* prim = primH->asA<PvtPrim>();
-    prim->createAttribute(ACTIVELOOK, RtType::STRING);
-    prim->createRelationship(LOOKS);
+    prim->createAttribute(Tokens::ACTIVELOOK, RtType::STRING);
+    prim->createRelationship(Tokens::LOOKS);
 
     return primH;
 }
 
 RtAttribute RtLookGroup::getActiveLook() const
 {
-    return prim()->getAttribute(ACTIVELOOK)->hnd();
+    return prim()->getAttribute(Tokens::ACTIVELOOK)->hnd();
 }
 
 void RtLookGroup::addLook(const RtObject& look)
@@ -68,12 +55,12 @@ void RtLookGroup::removeLook(const RtObject& look)
 
 RtRelationship RtLookGroup::getLooks() const
 {
-    return prim()->getRelationship(LOOKS)->hnd();
+    return prim()->getRelationship(Tokens::LOOKS)->hnd();
 }
 
 bool RtLookGroupConnectableApi::acceptRelationship(const RtRelationship& rel, const RtObject& target) const
 {
-    if (rel.getName() == LOOKS)
+    if (rel.getName() == Tokens::LOOKS)
     {
         // 'looks' relationship only accepts looks or lookgroups as target.
         return target.isA<RtPrim>() && 
@@ -96,19 +83,20 @@ RtPrim RtLook::createPrim(const RtToken& typeName, const RtToken& name, RtPrim p
         throw ExceptionRuntimeError("A look prim can only be created at the top / root level");
     }
 
-    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_LOOK_NAMELOOK_NAME : name;
+    static const RtToken DEFAULT_NAME("look1");
+    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_NAME : name;
     PvtDataHandle primH = PvtPrim::createNew(&_typeInfo, primName, PvtObject::ptr<PvtPrim>(parent));
 
     PvtPrim* prim = primH->asA<PvtPrim>();
-    prim->createRelationship(INHERIT);
-    prim->createRelationship(MATERIAL_ASSIGN);
+    prim->createRelationship(Tokens::INHERIT);
+    prim->createRelationship(Tokens::MATERIAL_ASSIGN);
 
     return primH;
 }
 
 RtRelationship RtLook::getInherit() const
 {
-    return prim()->getRelationship(INHERIT)->hnd();
+    return prim()->getRelationship(Tokens::INHERIT)->hnd();
 }
 
 void RtLook::addMaterialAssign(const RtObject& assignment)
@@ -123,17 +111,17 @@ void RtLook::removeMaterialAssign(const RtObject& assignment)
 
 RtRelationship RtLook::getMaterialAssigns() const
 {
-    return prim()->getRelationship(MATERIAL_ASSIGN)->hnd();
+    return prim()->getRelationship(Tokens::MATERIAL_ASSIGN)->hnd();
 }
 
 bool RtLookConnectableApi::acceptRelationship(const RtRelationship& rel, const RtObject& target) const
 {
-    if (rel.getName() == INHERIT)
+    if (rel.getName() == Tokens::INHERIT)
     {
         // 'inherit' relationship only accepts other looks as target.
         return target.isA<RtPrim>() && target.asA<RtPrim>().hasApi<RtLook>();
     }
-    else if (rel.getName() == MATERIAL_ASSIGN)
+    else if (rel.getName() == Tokens::MATERIAL_ASSIGN)
     {
         // 'materialassign' relationship only accepts materialassigns as target.
         return target.isA<RtPrim>() && target.asA<RtPrim>().hasApi<RtMaterialAssign>();
@@ -155,42 +143,43 @@ RtPrim RtMaterialAssign::createPrim(const RtToken& typeName, const RtToken& name
         throw ExceptionRuntimeError("A materialassign prim can only be created at the top / root level");
     }
 
-    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_MATERIALASSIGN_NAME : name;
+    static const RtToken DEFAULT_NAME("materialassign1");
+    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_NAME : name;
     PvtDataHandle primH = PvtPrim::createNew(&_typeInfo, primName, PvtObject::ptr<PvtPrim>(parent));
 
     PvtPrim* prim = primH->asA<PvtPrim>();
-    prim->createInput(MATERIAL, RtType::MATERIAL);
-    PvtAttribute* exclusive = prim->createAttribute(EXCLUSIVE, RtType::BOOLEAN);
+    prim->createInput(Tokens::MATERIAL, RtType::MATERIAL);
+    PvtAttribute* exclusive = prim->createAttribute(Tokens::EXCLUSIVE, RtType::BOOLEAN);
     exclusive->getValue().asBool() = true;
-    prim->createAttribute(GEOM, RtType::STRING);
-    prim->createRelationship(COLLECTION);
+    prim->createAttribute(Tokens::GEOM, RtType::STRING);
+    prim->createRelationship(Tokens::COLLECTION);
 
     return primH;
 }
 
 RtInput RtMaterialAssign::getMaterial() const
 {
-    return prim()->getInput(MATERIAL)->hnd();
+    return prim()->getInput(Tokens::MATERIAL)->hnd();
 }
 
 RtRelationship RtMaterialAssign::getCollection() const
 {
-    return prim()->getRelationship(COLLECTION)->hnd();
+    return prim()->getRelationship(Tokens::COLLECTION)->hnd();
 }
 
 RtAttribute RtMaterialAssign::getGeom() const
 {
-    return prim()->getAttribute(GEOM)->hnd();
+    return prim()->getAttribute(Tokens::GEOM)->hnd();
 }
 
 RtAttribute RtMaterialAssign::getExclusive() const
 {
-    return prim()->getAttribute(EXCLUSIVE)->hnd();
+    return prim()->getAttribute(Tokens::EXCLUSIVE)->hnd();
 }
 
 bool RtMaterialAssignConnectableApi::acceptRelationship(const RtRelationship& rel, const RtObject& target) const
 {
-    if (rel.getName() == COLLECTION)
+    if (rel.getName() == Tokens::COLLECTION)
     {
         // 'collection' relationship only accepts other collections as target.
         return target.isA<RtPrim>() && target.asA<RtPrim>().hasApi<RtCollection>();

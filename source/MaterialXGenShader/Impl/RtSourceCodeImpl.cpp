@@ -11,11 +11,6 @@
 namespace MaterialX
 {
 
-namespace
-{
-    static const RtToken DEFAULT_PRIM_NAME("sourcecodeimpl1");
-}
-
 DEFINE_TYPED_SCHEMA(RtSourceCodeImpl, "nodeimpl:sourcecodeimpl");
 
 RtPrim RtSourceCodeImpl::createPrim(const RtToken& typeName, const RtToken& name, RtPrim parent)
@@ -28,7 +23,9 @@ RtPrim RtSourceCodeImpl::createPrim(const RtToken& typeName, const RtToken& name
     {
         throw ExceptionRuntimeError("A sourcecodeimpl prim can only be created at the top / root level");
     }
-    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_PRIM_NAME : name;
+
+    static const RtToken DEFAULT_NAME("sourcecodeimpl1");
+    const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_NAME : name;
     PvtDataHandle primH = PvtPrim::createNew(&_typeInfo, primName, PvtObject::ptr<PvtPrim>(parent));
 
     return primH;
@@ -36,12 +33,10 @@ RtPrim RtSourceCodeImpl::createPrim(const RtToken& typeName, const RtToken& name
 
 void RtSourceCodeImpl::emitFunctionDefinition(const RtNode& /*node*/, GenContext& /*context*/, ShaderStage& /*stage*/) const
 {
-
 }
 
 void RtSourceCodeImpl::emitFunctionCall(const RtNode& /*node*/, GenContext& /*context*/, ShaderStage& /*stage*/) const
 {
-
 }
 
 }

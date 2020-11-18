@@ -125,17 +125,6 @@ public:
     /// Return a node layout struct for this nodedef.
     /// Containing its input ordering and uifolder hierarchy.
     RtNodeLayout getNodeLayout();
-
-    static RtToken NODE;
-    static RtToken NODEDEF;
-    static RtToken NODEIMPL;
-    static RtToken NODEGROUP;
-    static RtToken INHERIT;
-    static RtToken TARGET;
-    static RtToken VERSION;
-    static RtToken IS_DEFAULT_VERSION;
-    static RtToken NAMESPACE;
-    static RtToken UIFOLDER;
 };
 
 }
