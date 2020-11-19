@@ -24,14 +24,14 @@ public:
     /// Constructor.
     RtSourceCodeImpl(const RtPrim& prim) : RtCodegenImpl(prim) {}
 
-    /// Emit function definition for the given node instance in the given context.
-    void emitFunctionDefinition(const RtNode& node, GenContext& context, ShaderStage& stage) const override;
+    /// Set a string containing the source code to use for this implementation.
+    void setFile(const string& file);
 
-    /// Emit the function call or inline source code for given node instance in the given context.
-    void emitFunctionCall(const RtNode& node, GenContext& context, ShaderStage& stage) const override;
+    /// Return a string containing the source code used by this implementation.
+    const string& getFile() const;
 
-    /// Set a string containing the source code used to use for this implementation.
-    void setSourceCode(const string& source) const;
+    /// Set a string containing the source code to use for this implementation.
+    void setSourceCode(const string& source);
 
     /// Return a string containing the source code used by this implementation.
     const string& getSourceCode() const;
@@ -41,6 +41,18 @@ public:
 
     /// Return the format used by the source code in this implementation.
     const RtToken& getFormat() const;
+
+    /// Set the function name to use for this implementation.
+    void setFunction(const string& function);
+
+    /// Return the function name to use for this implementation.
+    const string& getFunction() const;
+
+    /// Emit function definition for the given node instance in the given context.
+    void emitFunctionDefinition(const RtNode& node, GenContext& context, ShaderStage& stage) const override;
+
+    /// Emit the function call or inline source code for given node instance in the given context.
+    void emitFunctionCall(const RtNode& node, GenContext& context, ShaderStage& stage) const override;
 };
 
 }

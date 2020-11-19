@@ -19,6 +19,9 @@
 #include <MaterialXRuntime/Private/PvtApi.h>
 #include <MaterialXRuntime/Private/PvtPrim.h>
 
+#include <MaterialXGenShader/Impl/RtSourceCodeImpl.h>
+#include <MaterialXGenShader/Impl/RtSubGraphImpl.h>
+
 namespace MaterialX
 {
 
@@ -50,6 +53,9 @@ void RtApi::initialize()
     registerTypedSchema<RtNode>();
     registerTypedSchema<RtNodeDef>();
     registerTypedSchema<RtNodeGraph>();
+    registerTypedSchema<RtNodeImpl>();
+    registerTypedSchema<RtSourceCodeImpl>();
+    registerTypedSchema<RtSubGraphImpl>();
     registerTypedSchema<RtBackdrop>();
     registerTypedSchema<RtBindElement>();
     registerTypedSchema<RtLookGroup, RtLookGroupConnectableApi>();
@@ -71,6 +77,9 @@ void RtApi::shutdown()
     unregisterTypedSchema<RtNode>();
     unregisterTypedSchema<RtNodeDef>();
     unregisterTypedSchema<RtNodeGraph>();
+    unregisterTypedSchema<RtNodeImpl>();
+    unregisterTypedSchema<RtSourceCodeImpl>();
+    unregisterTypedSchema<RtSubGraphImpl>();
     unregisterTypedSchema<RtBackdrop>();
     unregisterTypedSchema<RtBindElement>();
     unregisterTypedSchema<RtLookGroup>();

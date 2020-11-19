@@ -17,6 +17,10 @@ namespace Tokens
     const RtToken EXCLUSIVE("exclusive");
     const RtToken MATERIAL_ASSIGN("materialassign");
     const RtToken ACTIVELOOK("active");
+    const RtToken FORMAT("format");
+    const RtToken FILE("file");
+    const RtToken FRAGMENT("fragment");
+    const RtToken FUNCTION("function");
     const RtToken LOOKS("looks");
     const RtToken INCLUDE_GEOM("includegeom");
     const RtToken EXCLUDE_GEOM("excludegeom");
@@ -26,15 +30,19 @@ namespace Tokens
     const RtToken HEIGHT("height");
     const RtToken IMPLNAME("implname");
     const RtToken IS_DEFAULT_VERSION("isdefaultversion");
+    const RtToken KIND("kind");
     const RtToken NAMESPACE("namespace");
     const RtToken NODE("node");
     const RtToken NODEDEF("nodedef");
     const RtToken NODEGROUP("nodegroup");
     const RtToken NODEIMPL("nodeimpl");
     const RtToken NOTE("note");
+    const RtToken SHADER("shader");
+    const RtToken SOURCECODE("sourcecode");
     const RtToken TARGET("target");
     const RtToken VERSION("version");
     const RtToken UIFOLDER("uifolder");
+    const RtToken UNKNOWN("unknown");
 }
 
 }

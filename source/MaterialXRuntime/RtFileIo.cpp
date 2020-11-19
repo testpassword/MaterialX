@@ -16,12 +16,18 @@
 #include <MaterialXRuntime/RtTraversal.h>
 #include <MaterialXRuntime/RtApi.h>
 #include <MaterialXRuntime/RtLogger.h>
+#include <MaterialXRuntime/Tokens.h>
+#include <MaterialXRuntime/RtNodeImpl.h>
+
+#include <MaterialXGenShader/Impl/RtSourceCodeImpl.h>
+#include <MaterialXGenShader/Impl/RtSubGraphImpl.h>
 
 #include <MaterialXRuntime/Private/PvtStage.h>
 
 #include <MaterialXCore/Types.h>
 
 #include <MaterialXFormat/Util.h>
+
 #include <sstream>
 #include <fstream>
 #include <map>
@@ -480,6 +486,53 @@ namespace
         return prim;
     }
 
+    PvtPrim* readImplementation(const ImplementationPtr& src, PvtPrim* parent, PvtStage* stage, PvtRenamingMapper& mapper)
+    {
+        const RtToken name(src->getName());
+        PvtPrim* prim = nullptr;
+
+        const string& sourcecode = src->getAttribute(Tokens::SOURCECODE.str());
+        const string& file = src->getAttribute(Tokens::FILE.str());
+
+        if (file.empty() && sourcecode.empty())
+        {
+            // Create a generic node implementation.
+            prim = stage->createPrim(parent->getPath(), name, RtNodeImpl::typeName());
+        }
+        else
+        {
+            // Create a source code implementation.
+            prim = stage->createPrim(parent->getPath(), name, RtSourceCodeImpl::typeName());
+
+            RtSourceCodeImpl impl(prim->hnd());
+            if (!sourcecode.empty())
+            {
+                impl.setSourceCode(sourcecode);
+            }
+            else
+            {
+                impl.setFile(file);
+            }
+
+            const string& function = src->getAttribute(Tokens::FUNCTION.str());
+            if (!function.empty())
+            {
+                impl.setFunction(function);
+            }
+
+            const string& format = src->getAttribute(Tokens::FORMAT.str());
+            if (!format.empty())
+            {
+                impl.setFormat(RtToken(format));
+            }
+        }
+
+        readMetadata(src, prim, collectionMetadata);
+        mapper.addMapping(parent, name, prim->getName());
+
+        return prim;
+    }
+
     // Note that this function reads in a single collection. After all required collections
     // have been read in, the createCollectionConnections() function can be called
     // to create collection inclusion connections.
@@ -714,6 +767,10 @@ namespace
                     }
                     readNodeGraph(elem->asA<NodeGraph>(), stage->getRootPrim(), stage, mapper);
                 }
+                else if (elem->isA<Implementation>())
+                {
+                    readImplementation(elem->asA<Implementation>(), stage->getRootPrim(), stage, mapper);
+                }
                 else
                 {
                     const RtToken category(elem->getCategory());
@@ -721,7 +778,8 @@ namespace
                         category != RtLookGroup::typeName() &&
                         category != RtMaterialAssign::typeName() &&
                         category != RtCollection::typeName() &&
-                        category != RtNodeDef::typeName()) {
+                        category != RtNodeDef::typeName())
+                    {
                         readGenericPrim(elem, stage->getRootPrim(), stage, mapper);
                     }
                 }
@@ -1373,6 +1431,10 @@ void RtFileIo::readLibraries(const FilePathVec& libraryPaths, const FileSearchPa
             else if (elem->isA<NodeGraph>())
             {
                 readNodeGraph(elem->asA<NodeGraph>(), stage->getRootPrim(), stage, mapper);
+            }
+            else if (elem->isA<Implementation>())
+            {
+                readImplementation(elem->asA<Implementation>(), stage->getRootPrim(), stage, mapper);
             }
             else
             {

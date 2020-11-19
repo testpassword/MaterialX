@@ -115,13 +115,13 @@ public:
     }
 
 
-    /// Clear the definition search path
+    /// Clear the definition search path.
     void clearSearchPath();
 
-    /// Clear the texture search path 
+    /// Clear the texture search path.
     void clearTextureSearchPath();
 
-    /// Clear the implementation saerch path
+    /// Clear the implementation saerch path.
     void clearImplementationSearchPath();
 
     /// Set search path for definition libraries. Can be called multiple times
@@ -136,13 +136,13 @@ public:
     /// to append to the current search path.
     void setImplementationSearchPath(const FileSearchPath& searchPath);
 
-    /// Get the search path for definition libraries. 
+    /// Get the search path for definition libraries.
     const FileSearchPath& getSearchPath() const;
 
     /// Get search path for texture resources.
     const FileSearchPath& getTextureSearchPath() const;
 
-    /// Get search path for implemntations used by libraries. 
+    /// Get search path for implemntations used by libraries.
     const FileSearchPath& getImplementationSearchPath() const;
 
     /// Set location for non-library user definitions

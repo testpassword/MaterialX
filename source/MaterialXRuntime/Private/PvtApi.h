@@ -185,7 +185,6 @@ public:
         _implementationSearchPaths.clear();
     }
 
-
     void setSearchPath(const FileSearchPath& searchPath)
     {
         _searchPaths.append(searchPath);

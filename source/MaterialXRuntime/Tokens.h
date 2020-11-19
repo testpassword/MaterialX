@@ -23,6 +23,10 @@ namespace Tokens
     extern const RtToken EXCLUSIVE;
     extern const RtToken MATERIAL_ASSIGN;
     extern const RtToken ACTIVELOOK;
+    extern const RtToken FORMAT;
+    extern const RtToken FILE;
+    extern const RtToken FRAGMENT;
+    extern const RtToken FUNCTION;
     extern const RtToken LOOKS;
     extern const RtToken INCLUDE_GEOM;
     extern const RtToken EXCLUDE_GEOM;
@@ -33,15 +37,19 @@ namespace Tokens
     extern const RtToken IMPLNAME;
     extern const RtToken INHERIT;
     extern const RtToken IS_DEFAULT_VERSION;
+    extern const RtToken KIND;
     extern const RtToken NAMESPACE;
     extern const RtToken NODE;
     extern const RtToken NODEDEF;
     extern const RtToken NODEGROUP;
     extern const RtToken NODEIMPL;
     extern const RtToken NOTE;
+    extern const RtToken SHADER;
+    extern const RtToken SOURCECODE;
     extern const RtToken TARGET;
     extern const RtToken UIFOLDER;
     extern const RtToken VERSION;
+    extern const RtToken UNKNOWN;
 };
 
 }
