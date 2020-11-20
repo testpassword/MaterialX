@@ -89,6 +89,9 @@ class PvtObject : public RtRefCounted<PvtObject>
 public:
     using TypeBits = uint8_t;
 
+public:
+    virtual ~PvtObject() {}
+
     bool isDisposed() const
     {
         return (_typeBits & TypeBits(RtObjType::DISPOSED)) != 0;
@@ -128,7 +131,11 @@ public:
     {
         static_assert(std::is_base_of<PvtObject, T>::value,
             "Templated type must be an PvtObject or a subclass of PvtObject");
-
+// TODO: We enable these runtime checks for all build configurations for now,
+//       but disabled this later to avoid the extra cost in release builds.
+// #ifndef NDEBUG
+        // In debug mode we do safety checks on object validity
+        // and type cast compatibility.
         if (isDisposed())
         {
             throw ExceptionRuntimeError("Trying to access a disposed object '" + getName().str() + "'");
@@ -137,6 +144,7 @@ public:
         {
             throw ExceptionRuntimeError("Types are incompatible for type cast, '" + getName().str() + "' is not a '" + T::className().str() + "'");
         }
+// #endif
         return static_cast<T*>(this);
     }
 
