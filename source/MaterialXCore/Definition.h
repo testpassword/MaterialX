@@ -22,6 +22,7 @@ extern const string SHADER_SEMANTIC;
 class NodeDef;
 class Implementation;
 class TypeDef;
+class TargetDef;
 class Member;
 class ShaderRef;
 class Unit;
@@ -43,6 +44,11 @@ using ConstImplementationPtr = shared_ptr<const Implementation>;
 using TypeDefPtr = shared_ptr<TypeDef>;
 /// A shared pointer to a const TypeDef
 using ConstTypeDefPtr = shared_ptr<const TypeDef>;
+
+/// A shared pointer to a TargetDef
+using TargetDefPtr = shared_ptr<TargetDef>;
+/// A shared pointer to a const TargetDef
+using ConstTargetDefPtr = shared_ptr<const TargetDef>;
 
 /// A shared pointer to a Member
 using MemberPtr = shared_ptr<Member>;
@@ -390,6 +396,21 @@ class TypeDef : public Element
     static const string CATEGORY;
     static const string SEMANTIC_ATTRIBUTE;
     static const string CONTEXT_ATTRIBUTE;
+};
+
+/// @class TargetDef
+/// A definition of an implementation target.
+class TargetDef : public TypedElement
+{
+  public:
+    TargetDef(ElementPtr parent, const string& name) :
+        TypedElement(parent, CATEGORY, name)
+    {
+    }
+    virtual ~TargetDef() { }
+
+  public:
+    static const string CATEGORY;
 };
 
 /// @class Member
