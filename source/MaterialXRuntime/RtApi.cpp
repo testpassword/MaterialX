@@ -54,6 +54,7 @@ void RtApi::initialize()
     registerTypedSchema<RtNodeDef>();
     registerTypedSchema<RtNodeGraph>();
     registerTypedSchema<RtNodeImpl>();
+    registerTypedSchema<RtTargetDef>();
     registerTypedSchema<RtSourceCodeImpl>();
     registerTypedSchema<RtSubGraphImpl>();
     registerTypedSchema<RtBackdrop>();
@@ -78,6 +79,7 @@ void RtApi::shutdown()
     unregisterTypedSchema<RtNodeDef>();
     unregisterTypedSchema<RtNodeGraph>();
     unregisterTypedSchema<RtNodeImpl>();
+    unregisterTypedSchema<RtTargetDef>();
     unregisterTypedSchema<RtSourceCodeImpl>();
     unregisterTypedSchema<RtSubGraphImpl>();
     unregisterTypedSchema<RtBackdrop>();
@@ -184,6 +186,21 @@ RtPrim RtApi::getNodeImpl(size_t index) const
 RtPrim RtApi::getNodeImpl(const RtToken& name) const
 {
     return _cast(_ptr)->getNodeImpl(name);
+}
+
+void RtApi::registerTargetDef(const RtPrim& prim)
+{
+    _cast(_ptr)->registerTargetDef(prim);
+}
+
+void RtApi::unregisterTargetDef(const RtToken& name)
+{
+    _cast(_ptr)->unregisterTargetDef(name);
+}
+
+bool RtApi::hasTargetDef(const RtToken& name) const
+{
+    return _cast(_ptr)->hasTargetDef(name);
 }
 
 void RtApi::clearSearchPath()

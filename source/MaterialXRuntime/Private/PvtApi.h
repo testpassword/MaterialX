@@ -14,6 +14,7 @@
 #include <MaterialXRuntime/RtSchema.h>
 #include <MaterialXRuntime/RtNodeDef.h>
 #include <MaterialXRuntime/RtNodeImpl.h>
+#include <MaterialXRuntime/RtTargetDef.h>
 
 #include <MaterialXRuntime/Private/PvtObject.h>
 #include <MaterialXRuntime/Private/PvtPrim.h>
@@ -168,6 +169,29 @@ public:
     RtPrim getNodeImpl(size_t index)
     {
         return _nodeimpls.get(index);
+    }
+
+    void registerTargetDef(const RtPrim& prim)
+    {
+        if (!prim.hasApi<RtTargetDef>())
+        {
+            throw ExceptionRuntimeError("Given prim '" + prim.getName().str() + "' is not a valid targetdef");
+        }
+        if (hasTargetDef(prim.getName()))
+        {
+            throw ExceptionRuntimeError("A targetdef with name '" + prim.getName().str() + "' is already registered");
+        }
+        _targetdefs.add(prim.getName(), PvtObject::hnd(prim));
+    }
+
+    void unregisterTargetDef(const RtToken& name)
+    {
+        _targetdefs.remove(name);
+    }
+
+    bool hasTargetDef(const RtToken& name)
+    {
+        return _targetdefs.get(name) != nullptr;
     }
 
     void clearSearchPath()
@@ -325,6 +349,7 @@ public:
     RtTokenMap<RtStagePtr> _stages;
     PvtDataHandleRecord _nodedefs;
     PvtDataHandleRecord _nodeimpls;
+    PvtDataHandleRecord _targetdefs;
 };
 
 }

@@ -34,7 +34,7 @@ RtPrim RtNodeImpl::createPrim(const RtToken& typeName, const RtToken& name, RtPr
 
 void RtNodeImpl::setTarget(const RtToken& target)
 {
-    RtTypedValue* data = getMetadata(Tokens::TARGET, RtType::TOKEN);
+    RtTypedValue* data = addMetadata(Tokens::TARGET, RtType::TOKEN);
     data->getValue().asToken() = target;
 }
 
@@ -58,7 +58,7 @@ const RtToken& RtNodeImpl::getNodeDef() const
 
 void RtNodeImpl::setImplName(const RtToken& implname)
 {
-    RtTypedValue* data = getMetadata(Tokens::IMPLNAME, RtType::TOKEN);
+    RtTypedValue* data = addMetadata(Tokens::IMPLNAME, RtType::TOKEN);
     data->getValue().asToken() = implname;
 }
 

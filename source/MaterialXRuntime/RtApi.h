@@ -98,6 +98,16 @@ public:
     RtPrim getNodeImpl(const RtToken& name) const;
 
 
+    /// Register a targetdef prim specifying the name and inheritance of an implementation target.
+    void registerTargetDef(const RtPrim& prim);
+
+    /// Unregister a targetdef prim.
+    void unregisterTargetDef(const RtToken& name);
+
+    /// Return true if a targetdef prim with the given name has been registered.
+    bool hasTargetDef(const RtToken& name) const;
+
+
     /// Register a typed prim schema.
     template<class T, class ConnectableApi = RtConnectableApi>
     void registerTypedSchema()

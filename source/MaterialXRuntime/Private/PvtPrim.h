@@ -69,7 +69,14 @@ class PvtPrim : public PvtObject
     RT_DECLARE_RUNTIME_OBJECT(PvtPrim)
 
 public:
-    static PvtDataHandle createNew(const RtTypeInfo* typeInfo, const RtToken& name, PvtPrim* parent);
+//    static PvtDataHandle createNew(const RtTypeInfo* typeInfo, const RtToken& name, PvtPrim* parent);
+    template<class T = PvtPrim>
+    static PvtDataHandle createNew(const RtTypeInfo* type, const RtToken& name, PvtPrim* parent)
+    {
+        // Make the name unique.
+        const RtToken primName = parent->makeUniqueChildName(name);
+        return PvtDataHandle(new T(type, primName, parent));
+    }
 
     RtPrim prim() const
     {

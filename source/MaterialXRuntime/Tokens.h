@@ -38,6 +38,7 @@ namespace Tokens
     extern const RtToken INHERIT;
     extern const RtToken IS_DEFAULT_VERSION;
     extern const RtToken KIND;
+    extern const RtToken LANGUAGE;
     extern const RtToken NAMESPACE;
     extern const RtToken NODE;
     extern const RtToken NODEDEF;
