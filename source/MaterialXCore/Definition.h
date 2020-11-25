@@ -142,16 +142,13 @@ class NodeDef : public InterfaceElement
     /// @{
 
     /// Return the first implementation for this nodedef, optionally filtered
-    /// by the given target and language names.
+    /// by the given target name.
     /// @param target An optional target name, which will be used to filter
-    ///    the implementations that are considered.
-    /// @param language An optional language name, which will be used to filter
     ///    the implementations that are considered.
     /// @return An implementation for this nodedef, or an empty shared pointer
     ///    if none was found.  Note that a node implementation may be either
     ///    an Implementation element or a NodeGraph element.
-    InterfaceElementPtr getImplementation(const string& target = EMPTY_STRING, 
-                                          const string& language = EMPTY_STRING) const;
+    InterfaceElementPtr getImplementation(const string& target = EMPTY_STRING) const;
 
     /// @}
     /// @name Shader References
@@ -256,28 +253,6 @@ class Implementation : public InterfaceElement
     }
 
     /// @}
-    /// @name Language String
-    /// @{
-
-    /// Set the language string for the Implementation.
-    void setLanguage(const string& language)
-    {
-        setAttribute(LANGUAGE_ATTRIBUTE, language);
-    }
-
-    /// Return true if the given Implementation has a language string.
-    bool hasLanguage() const
-    {
-        return hasAttribute(LANGUAGE_ATTRIBUTE);
-    }
-
-    /// Return the language string for the Implementation.
-    const string& getLanguage() const
-    {
-        return getAttribute(LANGUAGE_ATTRIBUTE);
-    }
-
-    /// @}
     /// @name NodeDef References
     /// @{
 
@@ -301,7 +276,6 @@ class Implementation : public InterfaceElement
     static const string CATEGORY;
     static const string FILE_ATTRIBUTE;
     static const string FUNCTION_ATTRIBUTE;
-    static const string LANGUAGE_ATTRIBUTE;
 };
 
 /// @class TypeDef

@@ -409,7 +409,7 @@ ListofBakedDocuments TextureBaker::bakeAllMaterials(DocumentPtr doc, const FileS
     genContext.getOptions().fileTextureVerticalFlip = true;
     genContext.getOptions().targetDistanceUnit = _targetUnitSpace;
 
-    DefaultColorManagementSystemPtr cms = DefaultColorManagementSystem::create(genContext.getShaderGenerator().getLanguage());
+    DefaultColorManagementSystemPtr cms = DefaultColorManagementSystem::create(genContext.getShaderGenerator().getTarget());
     cms->loadLibrary(doc);
     genContext.registerSourceCodeSearchPath(getDefaultSearchPath());
     genContext.getShaderGenerator().setColorManagementSystem(cms);
@@ -494,7 +494,7 @@ void TextureBaker::setupUnitSystem(DocumentPtr unitDefinitions)
         return;
     }
 
-    UnitSystemPtr unitSystem = UnitSystem::create(_generator->getLanguage());
+    UnitSystemPtr unitSystem = UnitSystem::create(_generator->getTarget());
     if (!unitSystem)
     {
         return;

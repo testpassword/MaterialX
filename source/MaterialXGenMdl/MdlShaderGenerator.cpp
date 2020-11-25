@@ -58,8 +58,7 @@ namespace
     };
 }
 
-const string MdlShaderGenerator::LANGUAGE = "genmdl";
-const string MdlShaderGenerator::TARGET = "mdl";
+const string MdlShaderGenerator::TARGET = "genmdl";
 
 //
 // MdlShaderGenerator methods

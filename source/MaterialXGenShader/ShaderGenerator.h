@@ -32,10 +32,7 @@ class ShaderGenerator
     /// Destructor
     virtual ~ShaderGenerator() { }
 
-    /// Return a unique identifier for the language used by this generator
-    virtual const string& getLanguage() const = 0;
-
-    /// Return a unique identifier for the target this generator is for
+    /// Return the name of the target this generator is for.
     virtual const string& getTarget() const = 0;
 
     /// Generate a shader starting from the given element, translating
@@ -182,6 +179,15 @@ class ShaderGenerator
     /// export of metadata.
     virtual void registerShaderMetadata(const DocumentPtr& doc, GenContext& context) const;
 
+    /// Register a new implementation target.
+    static void registerTarget(const TargetDefPtr& targetdef);
+
+    /// Determine if an implementation target has been registered.
+    static bool targetRegistered(const string& name);
+
+    /// Clear all registered implementation targets.
+    static void clearTargets();
+
   protected:
     /// Protected constructor
     ShaderGenerator(SyntaxPtr syntax);
@@ -221,6 +227,8 @@ class ShaderGenerator
     ColorManagementSystemPtr _colorManagementSystem;
     UnitSystemPtr _unitSystem;
     mutable StringMap _tokenSubstitutions;
+
+    static std::unordered_map<string, TargetDefPtr> _targets;
 
     friend ShaderGraph;
 };
