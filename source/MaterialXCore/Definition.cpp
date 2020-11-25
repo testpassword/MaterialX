@@ -10,6 +10,38 @@
 namespace MaterialX
 {
 
+namespace
+{
+    InterfaceElementPtr findMatchingImplementation(const NodeDef& nodedef, const string& target, const vector<InterfaceElementPtr>& candidates)
+    {
+        // Search for the first implementation which matches the given target string.
+        for (InterfaceElementPtr interface : candidates)
+        {
+            if (!interface->isA<Implementation>() ||
+                !targetStringsMatch(interface->getTarget(), target) ||
+                !nodedef.isVersionCompatible(interface))
+            {
+                continue;
+            }
+            return interface;
+        }
+
+        // Search for a node graph match if no implementation match was found.
+        for (InterfaceElementPtr interface : candidates)
+        {
+            if (!interface->isA<NodeGraph>() ||
+                !targetStringsMatch(interface->getTarget(), target) ||
+                !nodedef.isVersionCompatible(interface))
+            {
+                continue;
+            }
+            return interface;
+        }
+
+        return InterfaceElementPtr();
+    }
+}
+
 const string COLOR_SEMANTIC = "color";
 const string SHADER_SEMANTIC = "shader";
 
@@ -62,29 +94,24 @@ InterfaceElementPtr NodeDef::getImplementation(const string& target) const
     vector<InterfaceElementPtr> secondary = getDocument()->getMatchingImplementations(getName());
     interfaces.insert(interfaces.end(), secondary.begin(), secondary.end());
 
-    // Search for the first implementation which matches a given target string.
-    for (InterfaceElementPtr interface : interfaces)
+    if (target.empty())
     {
-        ImplementationPtr implement = interface->asA<Implementation>();
-        if (!implement||
-            !targetStringsMatch(interface->getTarget(), target) ||
-            !isVersionCompatible(interface))
-        {
-            continue;
-        }
-        return interface;
+        return findMatchingImplementation(*this, target, interfaces);
     }
 
-    // Search for a node graph match if no implementation match was found.
-    for (InterfaceElementPtr interface : interfaces)
+    // Get all candidate targets matching the given target,
+    // taking inheritance into account.
+    const TargetDefPtr targetDef = getDocument()->getTargetDef(target);
+    const StringVec candidateTargets = targetDef ? targetDef->getMatchingTargets() : StringVec();
+
+    // Search the candidate targets in order
+    for (const string& candidateTarget : candidateTargets)
     {
-        if (interface->isA<Implementation>() ||
-            !targetStringsMatch(interface->getTarget(), target) ||
-            !isVersionCompatible(interface))
+        InterfaceElementPtr impl = findMatchingImplementation(*this, candidateTarget, interfaces);
+        if (impl)
         {
-            continue;
+            return impl;
         }
-        return interface;
     }
 
     return InterfaceElementPtr();
@@ -155,6 +182,18 @@ NodeDefPtr Implementation::getNodeDef() const
 ConstNodeDefPtr Implementation::getDeclaration(const string&) const
 {
     return getNodeDef();
+}
+
+StringVec TargetDef::getMatchingTargets() const
+{
+    StringVec result = { getName() };
+    ElementPtr base = getInheritsFrom();
+    while (base)
+    {
+        result.push_back(base->getName());
+        base = base->getInheritsFrom();
+    }
+    return result;
 }
 
 vector<UnitDefPtr> UnitTypeDef::getUnitDefs() const

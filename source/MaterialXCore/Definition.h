@@ -383,6 +383,12 @@ class TargetDef : public TypedElement
     }
     virtual ~TargetDef() { }
 
+    /// Return a vector of target names that is matching this targetdef
+    /// either by itself of by its inheritance.
+    /// The vector is ordered by priority starting with this targetdef
+    /// itself and then upwards in the inheritance hierarchy.
+    StringVec getMatchingTargets() const;
+
   public:
     static const string CATEGORY;
 };
