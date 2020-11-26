@@ -59,7 +59,7 @@ TEST_CASE("GenReference: Reference implementation file test", "[genreference]")
     mx::DocumentPtr stdlibDoc = mx::createDocument();
     mx::FileSearchPath searchPath;
     searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
-    loadLibraries({ LIBRARY }, searchPath, stdlibDoc);    
+    loadLibraries({ "targets", LIBRARY }, searchPath, stdlibDoc);
 
     const std::string DEFINITION_PREFIX = "ND_";
     const std::string IMPLEMENTATION_PREFIX = "IM_";
@@ -154,7 +154,7 @@ TEST_CASE("GenReference: OSL Reference", "[genreference]")
 
     mx::FileSearchPath searchPath;
     searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
-    loadLibraries({ "stdlib" }, searchPath, stdlibDoc);
+    loadLibraries({ "targets", "stdlib" }, searchPath, stdlibDoc);
 
     mx::FilePath librariesPath = mx::FilePath::getCurrentPath() / mx::FilePath("libraries");
     mx::FilePath outputPathRel = "stdlib/reference/osl";

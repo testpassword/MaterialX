@@ -69,7 +69,7 @@ void checkImplementations(mx::GenContext& context,
 
     mx::FileSearchPath searchPath; 
     searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
-    loadLibraries({ "adsk", "stdlib", "pbrlib" }, searchPath, doc);
+    loadLibraries({ "targets", "adsk", "stdlib", "pbrlib" }, searchPath, doc);
 
     const std::string& target = shadergen.getTarget();
 
@@ -286,7 +286,7 @@ void testUniqueNames(mx::GenContext& context, const std::string& stage)
 
     mx::FileSearchPath searchPath;
     searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
-    loadLibraries({ "stdlib" }, searchPath, doc);
+    loadLibraries({ "targets", "stdlib" }, searchPath, doc);
 
     const std::string exampleName = "unique_names";
 
@@ -482,8 +482,7 @@ void ShaderGeneratorTester::setupDependentLibraries()
     _dependLib = mx::createDocument();
 
     // Load the standard libraries.
-    const mx::FilePathVec libraries = { "adsk", "stdlib", "pbrlib", "lights" };
-
+    const mx::FilePathVec libraries = { "targets", "adsk", "stdlib", "pbrlib", "lights" };
     loadLibraries(libraries, _libSearchPath, _dependLib, _skipLibraryFiles);
 
     // Load shader definitions used in the test suite.

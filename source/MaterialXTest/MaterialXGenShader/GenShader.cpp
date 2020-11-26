@@ -48,7 +48,7 @@ TEST_CASE("GenShader: Valid Libraries", "[genshader]")
 
     mx::FileSearchPath searchPath;
     searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
-    loadLibraries({ "stdlib", "pbrlib" }, searchPath, doc);
+    loadLibraries({ "targets", "stdlib", "pbrlib" }, searchPath, doc);
 
     std::string validationErrors;
     bool valid = doc->validate(&validationErrors);
@@ -111,7 +111,7 @@ TEST_CASE("GenShader: Shader Translation", "[translate]")
     for (mx::FilePath& mtlxFile : testPath.getFilesInDirectory("mtlx"))
     {
         mx::DocumentPtr doc = mx::createDocument();
-        mx::StringSet libFiles = loadLibraries({ "stdlib", "pbrlin", "bxdf", "translation" }, searchPath, doc);
+        mx::StringSet libFiles = loadLibraries({ "targets", "stdlib", "pbrlin", "bxdf", "translation" }, searchPath, doc);
 
         mx::readFromXmlFile(doc, testPath / mtlxFile, searchPath);
         mtlxFile.removeExtension();
