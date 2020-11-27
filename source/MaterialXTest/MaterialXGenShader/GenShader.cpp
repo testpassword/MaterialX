@@ -101,7 +101,9 @@ TEST_CASE("GenShader: TypeDesc Check", "[genshader]")
 TEST_CASE("GenShader: Shader Translation", "[translate]")
 {
     mx::FileSearchPath searchPath;
-    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+    const mx::FilePath currentPath = mx::FilePath::getCurrentPath();
+    searchPath.append(currentPath / mx::FilePath("libraries"));
+    searchPath.append(currentPath / mx::FilePath("resources/Materials/TestSuite"));
 
     mx::ShaderTranslatorPtr shaderTranslator = mx::ShaderTranslator::create();
 
