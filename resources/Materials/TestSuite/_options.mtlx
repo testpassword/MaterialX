@@ -21,7 +21,7 @@
       <!-- Comma separated list of target" specifiers to indicate which
            code generators to use.
        -->
-      <parameter name="targets" type="string" value="genglsl,genosl,arnold,ogsfx,ogsxml" />
+      <parameter name="targets" type="string" value="genglsl,genosl,genmdl,arnold,ogsfx,ogsxml" />
 
       <!-- Check the count of number of implementations used for a given generator
         -->
