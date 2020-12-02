@@ -73,7 +73,6 @@ class GlslShaderGenerator : public HwShaderGenerator
 class GlslImplementation : public ShaderNodeImpl
 {
   public:
-    const string& getLanguage() const override;
     const string& getTarget() const override;
 
     bool isEditable(const ShaderInput& input) const override;

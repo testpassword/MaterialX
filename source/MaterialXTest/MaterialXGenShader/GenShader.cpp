@@ -130,7 +130,7 @@ TEST_CASE("GenShader: Shader Translation", "[translate]")
         mx::writeToXmlFile(doc, mtlxFile.asString() + "_translated.mtlx");
         std::string validationErrors;
         bool valid = doc->validate(&validationErrors);
-        std::cout << "SHader translation of : " << (testPath / mtlxFile).asString() << (valid ?  ": passed"  : ": falied") << std::endl;
+        std::cout << "Shader translation of : " << (testPath / mtlxFile).asString() << (valid ?  ": passed"  : ": falied") << std::endl;
         if (!valid)
         {
             std::cout << "Validation errors: " << validationErrors << std::endl;
