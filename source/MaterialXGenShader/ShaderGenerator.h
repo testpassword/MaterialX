@@ -179,15 +179,6 @@ class ShaderGenerator
     /// export of metadata.
     virtual void registerShaderMetadata(const DocumentPtr& doc, GenContext& context) const;
 
-    /// Register a new implementation target.
-    static void registerTarget(const TargetDefPtr& targetdef);
-
-    /// Determine if an implementation target has been registered.
-    static bool targetRegistered(const string& name);
-
-    /// Clear all registered implementation targets.
-    static void clearTargets();
-
   protected:
     /// Protected constructor
     ShaderGenerator(SyntaxPtr syntax);
@@ -227,8 +218,6 @@ class ShaderGenerator
     ColorManagementSystemPtr _colorManagementSystem;
     UnitSystemPtr _unitSystem;
     mutable StringMap _tokenSubstitutions;
-
-    static std::unordered_map<string, TargetDefPtr> _targets;
 
     friend ShaderGraph;
 };

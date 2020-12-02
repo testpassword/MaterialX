@@ -26,8 +26,6 @@ namespace MaterialX
 
 const string ShaderGenerator::T_FILE_TRANSFORM_UV = "$fileTransformUv";
 
-std::unordered_map<string, TargetDefPtr> ShaderGenerator::_targets;
-
 //
 // ShaderGenerator methods
 //
@@ -483,21 +481,5 @@ void ShaderGenerator::finalizeShaderGraph(ShaderGraph& graph)
         }
     }
 }
-
-void ShaderGenerator::registerTarget(const TargetDefPtr& targetdef)
-{
-    _targets[targetdef->getName()] = targetdef;
-}
-
-bool ShaderGenerator::targetRegistered(const string& name)
-{
-    return _targets.count(name) > 0;
-}
-
-void ShaderGenerator::clearTargets()
-{
-    _targets.clear();
-}
-
 
 } // namespace MaterialX
