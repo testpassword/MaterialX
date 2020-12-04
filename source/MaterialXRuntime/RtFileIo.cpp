@@ -1262,6 +1262,35 @@ namespace
         }
     }
 
+    void writePrimData(DocumentPtr& doc, const RtPrim& prim, const RtWriteOptions* options)
+    {
+        const PvtPrim* p = PvtObject::ptr<PvtPrim>(prim);
+        const RtToken typeName = prim.getTypeInfo()->getShortTypeName();
+        if (typeName == RtNodeDef::typeName())
+        {
+            writeNodeDef(p, doc, options);
+        }
+        else if (typeName == RtNode::typeName())
+        {
+            writeNode(p, doc, options);
+        }
+        else if (typeName == RtNodeGraph::typeName())
+        {
+            writeNodeGraph(p, doc, options);
+        }
+        else if (typeName == RtBackdrop::typeName())
+        {
+            //writeBackdrop(prim, doc)
+        }
+        else if (typeName != RtLook::typeName() &&
+                    typeName != RtLookGroup::typeName() &&
+                    typeName != RtMaterialAssign::typeName() &&
+                    typeName != RtCollection::typeName())
+        {
+            writeGenericPrim(p, doc->asA<Element>(), options);
+        }
+    }
+
     void writeDocument(DocumentPtr& doc, PvtStage* stage, const RtWriteOptions* options)
     {
         writeMetadata(stage->getRootPrim(), doc, RtTokenSet(), options);
@@ -1275,31 +1304,7 @@ namespace
         std::vector<NodePtr> materialElements;
         for (RtPrim child : stage->getRootPrim()->getChildren(options ? options->objectFilter : nullptr))
         {
-            const PvtPrim* prim = PvtObject::ptr<PvtPrim>(child);
-            const RtToken typeName = child.getTypeInfo()->getShortTypeName();
-            if (typeName == RtNodeDef::typeName())
-            {
-                writeNodeDef(prim, doc, options);
-            }
-            else if (typeName == RtNode::typeName())
-            {
-                writeNode(prim, doc, options);
-            }
-            else if (typeName == RtNodeGraph::typeName())
-            {
-                writeNodeGraph(prim, doc, options);
-            }
-            else if (typeName == RtBackdrop::typeName())
-            {
-                //writeBackdrop(prim, doc)
-            }
-            else if (typeName != RtLook::typeName() &&
-                     typeName != RtLookGroup::typeName() &&
-                     typeName != RtMaterialAssign::typeName() &&
-                     typeName != RtCollection::typeName())
-            {
-                writeGenericPrim(prim, doc->asA<Element>(), options);
-            }
+            writePrimData(doc, child, options);
         }
 
         // Write the existing look information
@@ -1584,4 +1589,85 @@ void RtFileIo::writeDefinitions(const FilePath& documentPath, const RtTokenVec& 
     writeDefinitions(ofs, names, options);
 }
 
+RtPrim RtFileIo::readPrim(std::istream& stream, const RtReadOptions* options)
+{
+    try
+    {
+        DocumentPtr document = createDocument();
+        XmlReadOptions xmlReadOptions;
+        if (options)
+        {
+            xmlReadOptions.applyFutureUpdates = options->applyFutureUpdates;
+        }
+        readFromXmlStream(document, stream, &xmlReadOptions);
+
+        PvtStage* stage = PvtStage::ptr(_stage);
+
+        RtReadOptions::ElementFilter filter = options ? options->elementFilter : nullptr;
+
+        // Keep track of renamed nodes:
+        ElementPtr elem = document->getChildren().size() > 0 ? document->getChildren()[0] : nullptr;
+        PvtRenamingMapper mapper;
+        if (elem && (!filter || filter(elem)))
+        {
+            if (elem->isA<NodeDef>())
+            {
+                PvtPrim* p = readNodeDef(elem->asA<NodeDef>(), stage);
+                return p ? p->prim() : RtPrim();
+            }
+            else if (elem->isA<Node>())
+            {
+                PvtPrim* p = readNode(elem->asA<Node>(), stage->getRootPrim(), stage, mapper);
+                return p ? p->prim() : RtPrim();
+            }
+            else if (elem->isA<NodeGraph>())
+            {
+                // Always skip if the nodegraph implements a nodedef
+                PvtPath path(PvtPath::ROOT_NAME.str() + elem->getName());
+                if (stage->getPrimAtPath(path) && elem->asA<NodeGraph>()->getNodeDef())
+                {
+                    throw ExceptionRuntimeError("Cannot read node graphs that implement a nodedef.");
+                }
+                PvtPrim* p = readNodeGraph(elem->asA<NodeGraph>(), stage->getRootPrim(), stage, mapper);
+                return p ? p->prim() : RtPrim();
+            }
+            else if (elem->isA<Backdrop>())
+            {
+                // TODO: Do something here!
+                return RtPrim();
+            }
+            else
+            {
+                const RtToken category(elem->getCategory());
+                if (category != RtLook::typeName() &&
+                    category != RtLookGroup::typeName() &&
+                    category != RtMaterialAssign::typeName() &&
+                    category != RtCollection::typeName() &&
+                    category != RtNodeDef::typeName()) {
+                    PvtPrim* p = readGenericPrim(elem, stage->getRootPrim(), stage, mapper);
+                    return p ? p->prim() : RtPrim();
+                }
+            }
+        }
+    }
+    catch (Exception& e)
+    {
+        throw ExceptionRuntimeError(string("Could not read from stream. Error: ") + e.what());
+    }
+    return RtPrim();
 }
+
+void RtFileIo::writePrim(std::ostream& stream, const RtPath& primPath, const RtWriteOptions* options)
+{
+    RtPrim prim = _stage->getPrimAtPath(primPath);
+    if (!prim)
+    {
+        throw ExceptionRuntimeError("Can't find prim for path: '" + primPath.asString() + "' in stage: '" + _stage->getName().str() + "'");
+    }
+    DocumentPtr document = createDocument();
+    writePrimData(document, prim, options);
+    writeToXmlStream(document, stream);
+}
+
+}
+

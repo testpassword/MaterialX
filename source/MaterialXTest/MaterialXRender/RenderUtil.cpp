@@ -19,8 +19,7 @@ namespace RenderUtil
 {
 
 ShaderRenderTester::ShaderRenderTester(mx::ShaderGeneratorPtr shaderGenerator) :
-    _shaderGenerator(shaderGenerator),
-    _languageTargetString(shaderGenerator->getLanguage() + "_" + shaderGenerator->getTarget())
+    _shaderGenerator(shaderGenerator)
 {
 }
 
@@ -73,7 +72,7 @@ void ShaderRenderTester::loadDependentLibraries(GenShaderUtil::TestSuiteOptions 
 {
     dependLib = mx::createDocument();
 
-    const mx::FilePathVec libraries = { "adsk", "stdlib", "pbrlib", "lights" };
+    const mx::FilePathVec libraries = { "targets", "adsk", "stdlib", "pbrlib", "lights" };
     mx::loadLibraries(libraries, searchPath, dependLib);
     for (size_t i = 0; i < options.externalLibraryPaths.size(); i++)
     {
@@ -96,12 +95,12 @@ void ShaderRenderTester::loadDependentLibraries(GenShaderUtil::TestSuiteOptions 
 bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx::FilePath optionsFilePath)
 {
 #ifdef LOG_TO_FILE
-    std::ofstream logfile(_languageTargetString + "_render_log.txt");
+    std::ofstream logfile(_shaderGenerator->getTarget() + "_render_log.txt");
     std::ostream& log(logfile);
-    std::string docValidLogFilename = _languageTargetString + "_render_doc_validation_log.txt";
+    std::string docValidLogFilename = _shaderGenerator->getTarget() + "_render_doc_validation_log.txt";
     std::ofstream docValidLogFile(docValidLogFilename);
     std::ostream& docValidLog(docValidLogFile);
-    std::ofstream profilingLogfile(_languageTargetString + "__render_profiling_log.txt");
+    std::ofstream profilingLogfile(_shaderGenerator->getTarget() + "__render_profiling_log.txt");
     std::ostream& profilingLog(profilingLogfile);
 #else
     std::ostream& log(std::cout);
@@ -120,7 +119,7 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
     }
     if (!runTest(options))
     {
-        log << "Language / target: " << _languageTargetString << " not set to run. Skip test." << std::endl;
+        log << "Target: " << _shaderGenerator->getTarget() << " not set to run. Skip test." << std::endl;
         return false;
     }
 
@@ -177,12 +176,12 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
 
     createRenderer(log);
 
-    mx::ColorManagementSystemPtr colorManagementSystem = mx::DefaultColorManagementSystem::create(_shaderGenerator->getLanguage());
+    mx::ColorManagementSystemPtr colorManagementSystem = mx::DefaultColorManagementSystem::create(_shaderGenerator->getTarget());
     colorManagementSystem->loadLibrary(dependLib);
     _shaderGenerator->setColorManagementSystem(colorManagementSystem);
 
     // Setup Unit system and working space
-    mx::UnitSystemPtr unitSystem = mx::UnitSystem::create(_shaderGenerator->getLanguage());
+    mx::UnitSystemPtr unitSystem = mx::UnitSystem::create(_shaderGenerator->getTarget());
     _shaderGenerator->setUnitSystem(unitSystem);
     mx::UnitConverterRegistryPtr registry = mx::UnitConverterRegistry::create();
     mx::UnitTypeDefPtr distanceTypeDef = dependLib->getUnitTypeDef("distance");
@@ -215,6 +214,10 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
     RenderUtil::AdditiveScopedTimer renderableSearchTimer(profileTimes.renderableSearchTime, "Global renderable search time");
 
     mx::StringSet usedImpls;
+
+    const mx::StringVec& bakeFiles = options.bakeFiles;
+    const mx::IntVec& bakeResolution = options.bakeResolutions;
+    const mx::BoolVec& bakeHdr = options.bakeHdrs;
 
     const std::string MTLX_EXTENSION("mtlx");
     for (const auto& dir : dirs)
@@ -279,6 +282,29 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
             validateTimer.endTimer();
             CHECK(validDoc);
 
+            mx::FileSearchPath imageSearchPath(dir);
+            imageSearchPath.append(searchPath);
+
+            mx::FilePath outputPath = mx::FilePath(dir) / file;
+            outputPath.removeExtension();
+
+            // Perform bake and use that file for rendering
+            if (canBake() && (bakeFiles.size() == bakeResolution.size()) && 
+                (bakeFiles.size() == bakeHdr.size()))
+            {
+                for (size_t i = 0; i < bakeFiles.size(); i++)
+                {
+                    mx::FilePath outputBakeFile = file;
+                    if (bakeFiles[i] == outputBakeFile.asString())
+                    {
+                        outputBakeFile.removeExtension();
+                        outputBakeFile = outputPath / (outputBakeFile.asString() + "_baked.mtlx");
+                        runBake(doc, imageSearchPath, outputBakeFile, bakeResolution[i], bakeResolution[i], bakeHdr[i], log);
+                        break;
+                    }
+                }
+            }
+
             renderableSearchTimer.startTimer();
             std::vector<mx::TypedElementPtr> elements;
             try
@@ -292,11 +318,6 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
             }
             renderableSearchTimer.endTimer();
 
-            mx::FileSearchPath imageSearchPath(dir);
-            imageSearchPath.append(searchPath);
-
-            mx::FilePath outputPath = mx::FilePath(dir) / file;
-            outputPath.removeExtension();
             for (const auto& element : elements)
             {
                 std::vector<mx::TypedElementPtr> targetElements;
@@ -352,7 +373,7 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
                     const mx::string elementName = mx::createValidName(mx::replaceSubstrings(targetElement->getNamePath(), pathMap));
                     {
                         renderableSearchTimer.startTimer();
-                        mx::InterfaceElementPtr impl = nodeDef->getImplementation(_shaderGenerator->getTarget(), _shaderGenerator->getLanguage());
+                        mx::InterfaceElementPtr impl = nodeDef->getImplementation(_shaderGenerator->getTarget());
                         renderableSearchTimer.endTimer();
                         if (impl)
                         {
@@ -472,7 +493,7 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
                                         if (wedgeImage)
                                         {
                                             std::string wedgeFileName = mx::createValidName(mx::replaceSubstrings(parameterPath, pathMap));
-                                            wedgeFileName += "_" + _languageTargetString + ".bmp";
+                                            wedgeFileName += "_" + _shaderGenerator->getTarget() + ".bmp";
                                             mx::FilePath wedgePath = outputPath / wedgeFileName;
                                             saveImage(wedgePath, wedgeImage, true);
                                         }

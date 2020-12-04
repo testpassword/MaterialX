@@ -242,7 +242,7 @@ namespace
                         const TypeDesc* nodeDefType = TypeDesc::get(nodeDef->getType());
                         if (nodeDefType == Type::BSDF)
                         {
-                            InterfaceElementPtr impl = nodeDef->getImplementation(shadergen.getTarget(), shadergen.getLanguage());
+                            InterfaceElementPtr impl = nodeDef->getImplementation(shadergen.getTarget());
                             if (impl && impl->isA<NodeGraph>())
                             {
                                 NodeGraphPtr graph = impl->asA<NodeGraph>();
@@ -332,6 +332,24 @@ bool isTransparentSurface(ElementPtr element, const ShaderGenerator& shadergen)
             }
         }
 
+        // Check existence
+        InputPtr existence = shaderNode->getActiveInput("existence");
+        if (existence)
+        {
+            if (existence->getConnectedOutput())
+            {
+                return true;
+            }
+            else
+            {
+                ValuePtr value = existence->getValue();
+                if (value && !isOne(value))
+                {
+                    return true;
+                }
+            }
+        }
+
         // Check transmission
         InputPtr transmission = shaderNode->getActiveInput("transmission");
         if (transmission)
@@ -369,11 +387,11 @@ bool isTransparentSurface(ElementPtr element, const ShaderGenerator& shadergen)
         }
 
         // Check for a transparent graph.
-        InterfaceElementPtr impl = nodeDef->getImplementation(shadergen.getTarget(), shadergen.getLanguage());
+        InterfaceElementPtr impl = nodeDef->getImplementation(shadergen.getTarget());
         if (!impl)
         {
             throw ExceptionShaderGenError("Could not find a matching implementation for node '" + nodeDef->getNodeString() +
-                "' matching language '" + shadergen.getLanguage() + "' and target '" + shadergen.getTarget() + "'");
+                "' matching target '" + shadergen.getTarget() + "'");
         }
         if (impl->isA<NodeGraph>())
         {
@@ -469,6 +487,24 @@ bool isTransparentSurface(ElementPtr element, const ShaderGenerator& shadergen)
             }
         }
 
+        // Check existence
+        BindInputPtr existence = shaderRef->getBindInput("existence");
+        if (existence)
+        {
+            if (existence->getConnectedOutput())
+            {
+                return true;
+            }
+            else
+            {
+                ValuePtr value = existence->getValue();
+                if (value && !isOne(value))
+                {
+                    return true;
+                }
+            }
+        }
+
         // Check transmission
         BindInputPtr transmission = shaderRef->getBindInput("transmission");
         if (transmission)
@@ -506,11 +542,11 @@ bool isTransparentSurface(ElementPtr element, const ShaderGenerator& shadergen)
         }
 
         // Check for a transparent graph.
-        InterfaceElementPtr impl = nodeDef->getImplementation(shadergen.getTarget(), shadergen.getLanguage());
+        InterfaceElementPtr impl = nodeDef->getImplementation(shadergen.getTarget());
         if (!impl)
         {
             throw ExceptionShaderGenError("Could not find a matching implementation for node '" + nodeDef->getNodeString() +
-                "' matching language '" + shadergen.getLanguage() + "' and target '" + shadergen.getTarget() + "'");
+                "' matching target '" + shadergen.getTarget() + "'");
         }
         if (impl->isA<NodeGraph>())
         {
@@ -951,10 +987,79 @@ void getUdimScaleAndOffset(const vector<Vector2>& udimCoordinates, Vector2& scal
     offsetUV[1] = -minUV[1];
 }
 
-bool connectsToNormalMapNode(OutputPtr output)
+NodePtr connectsToNodeOfCategory(OutputPtr output, const StringSet& categories)
 {
-    ElementPtr connectedNode = output ? output->getConnectedNode() : nullptr;
-    return connectedNode && connectedNode->getCategory() == "normalmap";
+    ElementPtr connectedElement = output ? output->getConnectedNode() : nullptr;
+    NodePtr connectedNode = connectedElement ? connectedElement->asA<Node>() : nullptr;
+    if (!connectedNode)
+    {
+        return nullptr;
+    }
+    
+    // Check the direct node type
+    if (categories.count(connectedNode->getCategory()))
+    {
+        return connectedNode;
+    }
+
+    // Check if it's a definition which has a root which of the node type
+    NodeDefPtr nodedef = connectedNode->getNodeDef();
+    if (nodedef)
+    {
+        InterfaceElementPtr inter = nodedef->getImplementation();
+        if (inter)
+        {
+            NodeGraphPtr graph = inter->asA<NodeGraph>();
+            if (graph)
+            {
+                for (OutputPtr outputPtr : graph->getOutputs())
+                {
+                    NodePtr outputNode = outputPtr->getConnectedNode();
+                    if (outputNode && categories.count(outputNode->getCategory()))
+                    {
+                        return outputNode;
+                    }
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
+bool hasElementAttributes(OutputPtr output, const StringVec& attributes)
+{
+    if (!output || attributes.empty())
+    {
+        return false;
+    }
+
+    for (GraphIterator it = output->traverseGraph().begin(); it != GraphIterator::end(); ++it)
+    {
+        ElementPtr upstreamElem = it.getUpstreamElement();
+        NodePtr upstreamNode = upstreamElem ? upstreamElem->asA<Node>() : nullptr;
+        if (!upstreamNode)
+        {
+            it.setPruneSubgraph(true);
+            continue;
+        }
+        NodeDefPtr nodeDef = upstreamNode->getNodeDef();
+        for (ValueElementPtr nodeDefElement : nodeDef->getActiveValueElements())
+        {
+            ValueElementPtr testElement = upstreamNode->getActiveValueElement(nodeDefElement->getName());
+            if (!testElement)
+            {
+                testElement = nodeDefElement;
+            }
+            for (auto attr : attributes)
+            {
+                if (testElement->hasAttribute(attr))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 } // namespace MaterialX

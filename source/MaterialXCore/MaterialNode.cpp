@@ -159,8 +159,8 @@ std::unordered_set<NodePtr> getShaderNodes(const NodePtr& materialNode, const st
         NodeDefPtr materialNodeDef = materialNode->getNodeDef(target);
         if (materialNodeDef)
         {
-            InterfaceElementPtr impl = materialNodeDef->getImplementation();
-            if (impl->isA<NodeGraph>())
+            InterfaceElementPtr impl = materialNodeDef->getImplementation(target);
+            if (impl && impl->isA<NodeGraph>())
             {
                 NodeGraphPtr implGraph = impl->asA<NodeGraph>();
                 for (auto defOutput : materialNodeDef->getOutputs())
@@ -287,6 +287,22 @@ vector<MaterialAssignPtr> getGeometryBindings(const NodePtr& materialNode, const
         }
     }
     return matAssigns;
+}
+
+vector<OutputPtr> getConnectedOutputs(const NodePtr& node)
+{
+    vector<OutputPtr> outputVec;
+    std::set<OutputPtr> outputSet;
+    for (InputPtr input : node->getInputs())
+    {
+        OutputPtr output = input->getConnectedOutput();
+        if (output && !outputSet.count(output))
+        {
+            outputVec.push_back(output);
+            outputSet.insert(output);
+        }
+    }
+    return outputVec;
 }
 
 } // namespace MaterialX

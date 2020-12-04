@@ -26,7 +26,7 @@
 #endif
 
 #include <MaterialXRenderGlsl/GlslRenderer.h>
-#include <MaterialXRenderGlsl/GLTextureHandler.h>
+#include <MaterialXRenderGlsl/TextureBaker.h>
 
 namespace mx = MaterialX;
 
@@ -64,6 +64,15 @@ class GlslShaderRenderTester : public RenderUtil::ShaderRenderTester
                      mx::ImageVec* imageVec = nullptr) override;
 
     bool saveImage(const mx::FilePath& filePath, mx::ConstImagePtr image, bool verticalFlip) const override;
+
+
+    bool canBake() const override
+    {
+        return true;
+    }
+
+    void runBake(mx::DocumentPtr doc, const mx::FileSearchPath& imageSearchPath, const mx::FilePath& outputFilename,
+                 unsigned int bakeWidth, unsigned int bakeHeight, bool bakeHdr, std::ostream& log) override;
 
     mx::GlslRendererPtr _renderer;
     mx::LightHandlerPtr _lightHandler;
@@ -549,6 +558,49 @@ bool GlslShaderRenderTester::runRenderer(const std::string& shaderName,
         }
     }
     return true;
+}
+
+void  GlslShaderRenderTester::runBake(mx::DocumentPtr doc, const mx::FileSearchPath& imageSearchPath, const mx::FilePath& outputFileName,
+                                           unsigned int bakeWidth, unsigned int bakeHeight, bool bakeHdr, std::ostream& log)
+{
+    if (bakeWidth < 2)
+    {
+        bakeWidth = 2;
+    }
+    if (bakeHeight < 2)
+    {
+        bakeHeight = 2;
+    }
+    mx::Image::BaseType baseType = bakeHdr ? mx::Image::BaseType::FLOAT : mx::Image::BaseType::UINT8;
+    mx::TextureBakerPtr baker = mx::TextureBaker::create(bakeWidth, bakeHeight, baseType);
+    baker->setupUnitSystem(doc);
+    baker->setTargetUnitSpace("meter");
+    baker->setImageHandler(_renderer->getImageHandler());
+    baker->setOutputResourcePath(outputFileName.getParentPath());
+    
+    try
+    {
+        mx::ListofBakedDocuments bakedDocuments = baker->bakeAllMaterials(doc, imageSearchPath);
+        for (size_t i =0; i < bakedDocuments.size(); i++)
+        {
+            if (bakedDocuments[i].second)
+            {
+                mx::FilePath writeFilename = outputFileName;
+                std::string extension = writeFilename.getExtension();
+                writeFilename.removeExtension();
+                writeFilename = mx::FilePath(writeFilename.asString() + "_baked_" + bakedDocuments[i].first + "." + extension);
+                mx::writeToXmlFile(bakedDocuments[i].second, writeFilename);
+                log << "Write baked document: " << writeFilename.asString() << std::endl;
+            }
+            else
+               log << doc->getSourceUri() + " failed baking process: " << std::endl;
+        }
+    }
+    catch (mx::Exception& e)
+    {
+        const mx::FilePath& sourceUri = doc->getSourceUri();
+        log << sourceUri.asString() + " failed baking process: " + e.what() << std::endl;
+    }
 }
 
 TEST_CASE("Render: GLSL TestSuite", "[renderglsl]")

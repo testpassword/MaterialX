@@ -9,6 +9,8 @@
 /// @file
 /// Texture baking functionality
 
+#include <MaterialXCore/Unit.h>
+
 #include <MaterialXRenderGlsl/GlslRenderer.h>
 #include <MaterialXRenderGlsl/GLTextureHandler.h>
 
@@ -19,6 +21,10 @@ namespace MaterialX
 
 /// A shared pointer to a TextureBaker
 using TextureBakerPtr = shared_ptr<class TextureBaker>;
+
+/// Baked document list of shader node and it's corresponding baked Document
+using ListofBakedDocuments = std::vector<std::pair<std::string, DocumentPtr>>;
+
 
 /// @class TextureBaker
 /// A helper class for baking procedural material content to textures.
@@ -39,7 +45,7 @@ class TextureBaker : public GlslRenderer
     }
 
     /// Return the file extension for baked textures.
-    const string& getExtension()
+    const string& getExtension() const
     {
         return _extension;
     }
@@ -56,9 +62,60 @@ class TextureBaker : public GlslRenderer
     }
 
     /// Return the color space in which color textures are encoded.
-    const string& getColorSpace()
+    const string& getColorSpace() const
     {
         return _colorSpace;
+    }
+
+    /// Set the real unit conversion system used during baking
+    void setupUnitSystem(DocumentPtr unitDefinitions);
+
+    /// Set the target unit space. The default unit space is "meter" for distance.
+    void setTargetUnitSpace(const string& unitSpace)
+    {
+        _targetUnitSpace = unitSpace;
+    }
+
+    /// Return the target unit space 
+    const string& getTargetUnitSpace() const
+    {
+        return _targetUnitSpace;
+    }
+
+    /// Set baked graph name. The default name is "NG_baked"
+    void setBakedGraphName(const string& name)
+    {
+        _bakedGraphName= name;
+    }
+
+    /// Return the baked graph name.
+    const string& getBakedGraphName() const
+    {
+        return _bakedGraphName;
+    }
+
+    /// Set baked geom info name. The default name is "GI_baked"
+    void setBakedGeomInfoName(const string& name)
+    {
+        _bakedGeomInfoName = name;
+    }
+
+    /// Return the baked geom info name.
+    const string& getBakedGeomInfoName() const
+    {
+        return _bakedGeomInfoName;
+    }
+
+    /// Set whether images should be averaged to generate constants.   void setAverageImages(bool enable)
+    void setAverageImages(bool enable)
+    {
+        _averageImages = enable;
+    }
+
+    /// Return whether images should be averaged to generate constants.
+    bool getAverageImages()
+    {
+        return _averageImages;
     }
 
     /// Set whether uniform textures should be stored as constants.  Defaults to true.
@@ -73,20 +130,38 @@ class TextureBaker : public GlslRenderer
         return _optimizeConstants;
     }
 
-    /// Bake textures for all graph inputs of the given shader reference.
-    void bakeShaderInputs(ConstShaderRefPtr shaderRef, GenContext& context, const FilePath& outputFolder, const string& udim = EMPTY_STRING);
+    /// Set the output location for baked texture images
+    void setOutputResourcePath(const FilePath& outputImagePath)
+    {
+        _outputImagePath = outputImagePath;
+    }
+
+    /// Get the current output location for baked texture images
+    const FilePath& getOutputResourcePath()
+    {
+        return _outputImagePath;
+    }
+
+    string getBakingReport() const
+    {
+         return (_bakingReport.str());
+    }
+
+    /// Bake textures for all graph inputs of the given shader.
+    void bakeShaderInputs(NodePtr material, NodePtr shader, GenContext& context, const string& udim = EMPTY_STRING);
 
     /// Bake a texture for the given graph output.
     void bakeGraphOutput(OutputPtr output, GenContext& context, const FilePath& filename);
 
     /// Optimize baked textures before writing.
-    void optimizeBakedTextures();
+    void optimizeBakedTextures(NodePtr shader);
 
-    /// Write out the baked material and textures.
-    void writeBakedMaterial(const FilePath& filename, const StringVec& udimSet);
+    /// Write the baked material with textures to a document
+    DocumentPtr getBakedMaterial(NodePtr shader, const StringVec& udimSet);
 
-    /// Generate a baked version of each material in the input document.
-    void bakeAllMaterials(DocumentPtr doc, const FileSearchPath& imageSearchPath, const FilePath& outputFilename);
+    /// Returns a list of baked documents for each material in the input document.
+    ListofBakedDocuments bakeAllMaterials(DocumentPtr doc, const FileSearchPath& imageSearchPath);
+
 
   protected:
     TextureBaker(unsigned int width, unsigned int height, Image::BaseType baseType);
@@ -103,19 +178,35 @@ class TextureBaker : public GlslRenderer
         Color4 uniformColor;
         FilePath filename;
     };
+    class BakedConstant
+    {
+      public:
+        Color4 color;
+        bool isDefault = false;
+    };
     using BakedImageVec = vector<BakedImage>;
     using BakedImageMap = std::unordered_map<OutputPtr, BakedImageVec>;
+    using BakedConstantMap = std::unordered_map<OutputPtr, BakedConstant>;
+
+    using WorldSpaceInputs = std::unordered_map<string, NodePtr>;
 
   protected:
     string _extension;
     string _colorSpace;
+    string _targetUnitSpace;
+    string _targetColorSpace;
+    string _bakedGraphName;
+    string _bakedGeomInfoName;
+    bool _averageImages;
     bool _optimizeConstants;
+    FilePath _outputImagePath;
+    std::stringstream _bakingReport;
 
     ShaderGeneratorPtr _generator;
-    ConstShaderRefPtr _shaderRef;
-    StringSet _worldSpaceShaderInputs;
-    std::set<OutputPtr> _constantOutputs;
+    ConstNodePtr _material;
+    WorldSpaceInputs _worldSpaceShaderInputs;
     BakedImageMap _bakedImageMap;
+    BakedConstantMap _bakedConstantMap;
 };
 
 } // namespace MaterialX
