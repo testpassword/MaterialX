@@ -82,6 +82,7 @@ public:
 private:
     void* _ptr;
     friend class RtStage;
+    friend class PvtPath;
 };
 
 }

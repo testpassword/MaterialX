@@ -8,6 +8,7 @@
 
 #include <MaterialXRuntime/Library.h>
 #include <MaterialXRuntime/RtToken.h>
+#include <MaterialXRuntime/RtPath.h>
 
 #include <MaterialXCore/Util.h>
 
@@ -118,6 +119,16 @@ public:
     bool isRoot() const
     {
         return getName() == ROOT_NAME;
+    }
+
+    static PvtPath& get(RtPath& path)
+    {
+        return *static_cast<PvtPath*>(path._ptr);
+    }
+
+    static const PvtPath& get(const RtPath& path)
+    {
+        return *static_cast<const PvtPath*>(path._ptr);
     }
 
     static const string SEPARATOR;
