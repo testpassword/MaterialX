@@ -43,7 +43,7 @@ namespace
     static const RtTokenSet inputMetadata       = { RtToken("name"), RtToken("type"), RtToken("value"), RtToken("nodename"), RtToken("output"), RtToken("channels"), 
                                                     RtToken("nodegraph"), RtToken("interfacename") };
     static const RtTokenSet nodeMetadata        = { RtToken("name"), RtToken("type"), RtToken("node") };
-    static const RtTokenSet nodegraphMetadata   = { RtToken("name") };
+    static const RtTokenSet nodegraphMetadata   = { RtToken("name"), RtToken("nodedef") };
     static const RtTokenSet targetdefMetadata   = { RtToken("name"), RtToken("inherit") };
     static const RtTokenSet nodeimplMetadata    = { RtToken("name"), RtToken("target"), RtToken("file"), RtToken("sourcecode"), RtToken("function"), RtToken("format") };
     static const RtTokenSet lookMetadata        = { RtToken("name"), RtToken("inherit") };
@@ -385,6 +385,7 @@ namespace
         if (srcNodeDef)
         {
             createInterface(srcNodeDef, schema);
+            schema.setDefinition(RtToken(srcNodeDef->getName()));
         }
         else
         {
@@ -1021,6 +1022,12 @@ namespace
 
         RtNodeGraph nodegraph(src->hnd());
 
+        const RtToken& nodedef = nodegraph.getDefinition();
+        if (nodedef != EMPTY_TOKEN)
+        {
+            destNodeGraph->setNodeDefString(nodedef.str());
+        }
+
         if (!options || options->writeNodeGraphInputs)
         {
             bool writeUniformsAsParameters = options ? options->writeUniformsAsParameters : false;
@@ -1575,10 +1582,11 @@ void RtFileIo::writeDefinitions(const FilePath& documentPath, const RtTokenVec& 
     writeDefinitions(ofs, names, options);
 }
 
-RtPrim RtFileIo::readPrim(std::istream& stream, const RtReadOptions* options)
+RtPrim RtFileIo::readPrim(std::istream& stream, const RtPath& parentPrimPath, std::string& outOriginalPrimName, const RtReadOptions* options)
 {
     try
     {
+        PvtPath parentPath(parentPrimPath.asString());
         DocumentPtr document = createDocument();
         XmlReadOptions xmlReadOptions;
         if (options)
@@ -1593,6 +1601,7 @@ RtPrim RtFileIo::readPrim(std::istream& stream, const RtReadOptions* options)
 
         // Keep track of renamed nodes:
         ElementPtr elem = document->getChildren().size() > 0 ? document->getChildren()[0] : nullptr;
+        outOriginalPrimName = elem->getName();
         PvtRenamingMapper mapper;
         if (elem && (!filter || filter(elem)))
         {
@@ -1603,18 +1612,22 @@ RtPrim RtFileIo::readPrim(std::istream& stream, const RtReadOptions* options)
             }
             else if (elem->isA<Node>())
             {
-                PvtPrim* p = readNode(elem->asA<Node>(), stage->getRootPrim(), stage, mapper);
+                PvtPrim* p = readNode(elem->asA<Node>(), stage->getPrimAtPath(parentPath), stage, mapper);
                 return p ? p->prim() : RtPrim();
             }
             else if (elem->isA<NodeGraph>())
             {
+                if (parentPrimPath.asString() != "/")
+                {
+                    throw ExceptionRuntimeError("Cannot create nested graphs.");
+                }
                 // Always skip if the nodegraph implements a nodedef
                 PvtPath path(PvtPath::ROOT_NAME.str() + elem->getName());
                 if (stage->getPrimAtPath(path) && elem->asA<NodeGraph>()->getNodeDef())
                 {
                     throw ExceptionRuntimeError("Cannot read node graphs that implement a nodedef.");
                 }
-                PvtPrim* p = readNodeGraph(elem->asA<NodeGraph>(), stage->getRootPrim(), stage, mapper);
+                PvtPrim* p = readNodeGraph(elem->asA<NodeGraph>(), stage->getPrimAtPath(parentPath), stage, mapper);
                 return p ? p->prim() : RtPrim();
             }
             else if (elem->isA<Backdrop>())
