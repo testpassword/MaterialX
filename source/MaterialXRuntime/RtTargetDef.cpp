@@ -51,7 +51,7 @@ RtPrim RtTargetDef::createPrim(const RtToken& typeName, const RtToken& name, RtP
 
 void RtTargetDef::setInherit(const RtToken& target)
 {
-    RtTypedValue* data = getMetadata(Tokens::INHERIT, RtType::TOKEN);
+    RtTypedValue* data = addMetadata(Tokens::INHERIT, RtType::TOKEN);
     data->getValue().asToken() = target;
 
     prim()->asA<PvtTargetDefPrim>()->matchingTargets.insert(target);

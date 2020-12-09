@@ -31,7 +31,6 @@ namespace Tokens
     const RtToken IMPLNAME("implname");
     const RtToken IS_DEFAULT_VERSION("isdefaultversion");
     const RtToken KIND("kind");
-    const RtToken LANGUAGE("language");
     const RtToken NAMESPACE("namespace");
     const RtToken NODE("node");
     const RtToken NODEDEF("nodedef");

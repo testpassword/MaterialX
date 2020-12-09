@@ -9,7 +9,7 @@
 /// @file RtCompoundNode.h
 /// TODO: Docs
 
-#include <MaterialXGenShader/Impl/RtCodegenImpl.h>
+#include <MaterialXRuntime/Codegen/RtCodegenImpl.h>
 
 namespace MaterialX
 {

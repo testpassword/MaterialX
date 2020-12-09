@@ -3,9 +3,9 @@
 // All rights reserved.  See LICENSE.txt for license.
 //
 
-#include <MaterialXGenShader/Impl/RtSubGraphImpl.h>
-
+#include <MaterialXRuntime/Codegen/RtSubGraphImpl.h>
 #include <MaterialXRuntime/Tokens.h>
+
 #include <MaterialXRuntime/Private/PvtPath.h>
 #include <MaterialXRuntime/Private/PvtPrim.h>
 

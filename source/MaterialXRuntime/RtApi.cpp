@@ -15,12 +15,11 @@
 #include <MaterialXRuntime/RtLook.h>
 #include <MaterialXRuntime/RtCollection.h>
 #include <MaterialXRuntime/RtConnectableApi.h>
+#include <MaterialXRuntime/Codegen/RtSourceCodeImpl.h>
+#include <MaterialXRuntime/Codegen/RtSubGraphImpl.h>
 
 #include <MaterialXRuntime/Private/PvtApi.h>
 #include <MaterialXRuntime/Private/PvtPrim.h>
-
-#include <MaterialXGenShader/Impl/RtSourceCodeImpl.h>
-#include <MaterialXGenShader/Impl/RtSubGraphImpl.h>
 
 namespace MaterialX
 {

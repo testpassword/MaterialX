@@ -19,9 +19,8 @@
 #include <MaterialXRuntime/Tokens.h>
 #include <MaterialXRuntime/RtNodeImpl.h>
 #include <MaterialXRuntime/RtTargetDef.h>
-
-#include <MaterialXGenShader/Impl/RtSourceCodeImpl.h>
-#include <MaterialXGenShader/Impl/RtSubGraphImpl.h>
+#include <MaterialXRuntime/Codegen/RtSourceCodeImpl.h>
+#include <MaterialXRuntime/Codegen/RtSubGraphImpl.h>
 
 #include <MaterialXRuntime/Private/PvtStage.h>
 
@@ -509,24 +508,11 @@ namespace
 
     PvtPrim* readImplementation(const ImplementationPtr& src, PvtPrim* parent, PvtStage* stage)
     {
-        const string& target = src->getAttribute(Tokens::TARGET.str());
-        const string& language = src->getAttribute(Tokens::LANGUAGE.str());
-
-        string targetStr = language;
-        if (!target.empty())
-        {
-            if (!targetStr.empty())
-            {
-                targetStr += "_";
-            }
-            targetStr += target;
-        }
-
-        RtToken targetTok(targetStr);
+        const RtToken target(src->getAttribute(Tokens::TARGET.str()));
 
         // We are only interested in implementations for registered targets,
-        // so make sure this target has been registered.
-        if (targetTok != EMPTY_TOKEN && !RtApi::get().hasTargetDef(targetTok))
+        // so if target is set make sure this target has been registered.
+        if (target != EMPTY_TOKEN && !RtApi::get().hasTargetDef(target))
         {
             return nullptr;
         }
@@ -573,7 +559,7 @@ namespace
 
         RtNodeImpl impl(prim->hnd());
         impl.setNodeDef(nodedef);
-        impl.setTarget(targetTok);
+        impl.setTarget(target);
 
         readMetadata(src, prim, nodeimplMetadata);
 
@@ -778,6 +764,20 @@ namespace
 
         RtReadOptions::ElementFilter filter = options ? options->elementFilter : nullptr;
 
+        // Load and register all targetdefs.
+        // Having these available is needed when implementations are loaded later.
+        for (const TargetDefPtr& targetdef : doc->getTargetDefs())
+        {
+            if (!filter || filter(targetdef))
+            {
+                if (!api.hasTargetDef(RtToken(targetdef->getName())))
+                {
+                    PvtPrim* prim = readTargetDef(targetdef, stage->getRootPrim(), stage);
+                    api.registerTargetDef(prim->hnd());
+                }
+            }
+        }
+
         // Load and register all nodedefs.
         // Having these available is needed when node instances are loaded later.
         for (const NodeDefPtr& nodedef : doc->getNodeDefs())
@@ -793,20 +793,6 @@ namespace
         }
 
         validateNodesHaveNodedefs(doc);
-
-        // Load and register all targetdefs.
-        // Having these available is needed when implementations are loaded later.
-        for (const TargetDefPtr& targetdef : doc->getTargetDefs())
-        {
-            if (!filter || filter(targetdef))
-            {
-                if (!api.hasTargetDef(RtToken(targetdef->getName())))
-                {
-                    PvtPrim* prim = readTargetDef(targetdef, stage->getRootPrim(), stage);
-                    api.registerTargetDef(prim->hnd());
-                }
-            }
-        }
 
         // Keep track of renamed nodes:
         PvtRenamingMapper mapper;
@@ -1464,6 +1450,17 @@ void RtFileIo::readLibraries(const FilePathVec& libraryPaths, const FileSearchPa
         stage->addSourceUri(RtToken(uri));
     }
 
+    // Load and register all targetdefs. Having these available is needed
+    // when implementations are loaded later.
+    for (const TargetDefPtr& targetdef : doc->getTargetDefs())
+    {
+        if (!api.hasTargetDef(RtToken(targetdef->getName())))
+        {
+            PvtPrim* prim = readTargetDef(targetdef, stage->getRootPrim(), stage);
+            api.registerTargetDef(prim->hnd());
+        }
+    }
+
     // Update any units found
     readUnitDefinitions(doc);
 
@@ -1479,17 +1476,6 @@ void RtFileIo::readLibraries(const FilePathVec& libraryPaths, const FileSearchPa
     }
 
     validateNodesHaveNodedefs(doc);
-
-    // Load and register all targetdefs. Having these available is needed
-    // when implementations are loaded later.
-    for (const TargetDefPtr& targetdef : doc->getTargetDefs())
-    {
-        if (!api.hasTargetDef(RtToken(targetdef->getName())))
-        {
-            PvtPrim* prim = readTargetDef(targetdef, stage->getRootPrim(), stage);
-            api.registerTargetDef(prim->hnd());
-        }
-    }
 
     // We were already renaming on conflict here. Keep track of the new names.
     PvtRenamingMapper mapper;

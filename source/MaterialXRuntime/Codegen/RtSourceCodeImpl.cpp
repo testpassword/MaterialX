@@ -3,10 +3,10 @@
 // All rights reserved.  See LICENSE.txt for license.
 //
 
-#include <MaterialXGenShader/Impl/RtSourceCodeImpl.h>
-
+#include <MaterialXRuntime/Codegen/RtSourceCodeImpl.h>
 #include <MaterialXRuntime/RtApi.h>
 #include <MaterialXRuntime/Tokens.h>
+
 #include <MaterialXRuntime/Private/PvtPath.h>
 #include <MaterialXRuntime/Private/PvtPrim.h>
 
