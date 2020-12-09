@@ -24,11 +24,6 @@
 namespace MaterialX
 {
 
-struct PrimStorage
-{
-
-};
-
 class PvtApi
 {
 public:

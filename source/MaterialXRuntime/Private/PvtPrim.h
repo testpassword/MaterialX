@@ -69,7 +69,6 @@ class PvtPrim : public PvtObject
     RT_DECLARE_RUNTIME_OBJECT(PvtPrim)
 
 public:
-//    static PvtDataHandle createNew(const RtTypeInfo* typeInfo, const RtToken& name, PvtPrim* parent);
     template<class T = PvtPrim>
     static PvtDataHandle createNew(const RtTypeInfo* type, const RtToken& name, PvtPrim* parent)
     {

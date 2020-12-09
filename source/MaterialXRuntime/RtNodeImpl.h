@@ -15,8 +15,7 @@ namespace MaterialX
 {
 
 /// @class RtNodeImpl
-/// Base class for schemas handling node implementation prims,
-/// generating shader code for a node's implementation.
+/// Base class for schemas handling node implementation prims.
 class RtNodeImpl : public RtTypedSchema
 {
     DECLARE_TYPED_SCHEMA(RtNodeImpl)
