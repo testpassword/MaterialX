@@ -70,6 +70,36 @@ public:
     /// Return the prim attached to this API.
     RtPrim getPrim() const;
 
+protected:
+    /// Constructor attaching a prim to the API.
+    explicit RtSchemaBase(const RtPrim& prim);
+
+    /// Copy constructor.
+    explicit RtSchemaBase(const RtSchemaBase& other);
+
+    /// Return the handle set for this API.
+    PvtDataHandle& hnd() { return _hnd; }
+
+    /// Return the handle set for this API.
+    const PvtDataHandle& hnd() const { return _hnd; }
+
+protected:
+    // Handle for the prim attached to the API.
+    PvtDataHandle _hnd;
+};
+
+
+/// @class RtTypedSchema
+/// Base class for all typed prim schemas.
+class RtTypedSchema : public RtSchemaBase
+{
+public:
+    /// Return the type info for the prim defined by this schema.
+    virtual const RtTypeInfo& getTypeInfo() const = 0;
+
+    /// Return true if the given prim is compatible with this schema.
+    bool isCompatible(const RtPrim& prim) const override;
+
     /// Return the name of the prim.
     /// Shorthand for calling getPrim().getName().
     const RtToken& getName() const
@@ -130,36 +160,6 @@ public:
     PvtPrim* prim() const;
     PvtAttribute* attr(const RtToken& name) const;
     PvtRelationship* rel(const RtToken& name) const;
-
-protected:
-    /// Constructor attaching a prim to the API.
-    explicit RtSchemaBase(const RtPrim& prim);
-
-    /// Copy constructor.
-    explicit RtSchemaBase(const RtSchemaBase& other);
-
-    /// Return the handle set for this API.
-    PvtDataHandle& hnd() { return _hnd; }
-
-    /// Return the handle set for this API.
-    const PvtDataHandle& hnd() const { return _hnd; }
-
-protected:
-    // Handle for the prim attached to the API.
-    PvtDataHandle _hnd;
-};
-
-
-/// @class RtTypedSchema
-/// Base class for all typed prim schemas.
-class RtTypedSchema : public RtSchemaBase
-{
-public:
-    /// Return the type info for the prim defined by this schema.
-    virtual const RtTypeInfo& getTypeInfo() const = 0;
-
-    /// Return true if the given prim is compatible with this schema.
-    bool isCompatible(const RtPrim& prim) const override;
 
 protected:
     /// Constructor attaching a prim to the API.

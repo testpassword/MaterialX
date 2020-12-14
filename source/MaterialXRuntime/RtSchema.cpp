@@ -25,21 +25,21 @@ RtPrim RtSchemaBase::getPrim() const
     return RtPrim(_hnd);
 }
 
-PvtPrim* RtSchemaBase::prim() const
+
+PvtPrim* RtTypedSchema::prim() const
 {
     return hnd()->asA<PvtPrim>();
 }
 
-PvtAttribute* RtSchemaBase::attr(const RtToken& name) const
+PvtAttribute* RtTypedSchema::attr(const RtToken& name) const
 {
     return prim()->getAttribute(name);
 }
 
-PvtRelationship* RtSchemaBase::rel(const RtToken& name) const
+PvtRelationship* RtTypedSchema::rel(const RtToken& name) const
 {
     return prim()->getRelationship(name);
 }
-
 
 bool RtTypedSchema::isCompatible(const RtPrim& prim) const
 {
