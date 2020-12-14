@@ -43,6 +43,7 @@ target_link_libraries(
     MaterialXRuntime
     MaterialXCore
     MaterialXFormat
+    MaterialXGenShader
     ${CMAKE_DL_LIBS})
 
 target_include_directories(MaterialXRuntime
