@@ -18,10 +18,7 @@ DEFINE_TYPED_SCHEMA(RtNodeDef, "nodedef");
 
 RtPrim RtNodeDef::createPrim(const RtToken& typeName, const RtToken& name, RtPrim parent)
 {
-    if (typeName != _typeInfo.getShortTypeName())
-    {
-        throw ExceptionRuntimeError("Type names mismatch when creating prim '" + name.str() + "'");
-    }
+    PvtPrim::validateCreation(_typeInfo, typeName, name, parent.getPath());
 
     PvtDataHandle primH = PvtPrim::createNew(&_typeInfo, name, PvtObject::ptr<PvtPrim>(parent));
 
@@ -58,7 +55,7 @@ void RtNodeDef::setNode(const RtToken& node)
 
 const RtToken& RtNodeDef::getNodeGroup() const
 {
-    RtTypedValue* v = prim()->getMetadata(Tokens::NODEGROUP);
+    RtTypedValue* v = prim()->getMetadata(Tokens::NODEGROUP, RtType::TOKEN);
     return v ? v->getValue().asToken() : EMPTY_TOKEN;
 }
 
@@ -70,7 +67,7 @@ void RtNodeDef::setNodeGroup(const RtToken& nodegroup)
 
 const RtToken& RtNodeDef::getTarget() const
 {
-    RtTypedValue* v = prim()->getMetadata(Tokens::TARGET);
+    RtTypedValue* v = prim()->getMetadata(Tokens::TARGET, RtType::TOKEN);
     return v ? v->getValue().asToken() : EMPTY_TOKEN;
 }
 
@@ -82,7 +79,7 @@ void RtNodeDef::setTarget(const RtToken& nodegroup)
 
 const RtToken& RtNodeDef::getIneritance() const
 {
-    RtTypedValue* v = prim()->getMetadata(Tokens::INHERIT);
+    RtTypedValue* v = prim()->getMetadata(Tokens::INHERIT, RtType::TOKEN);
     return v ? v->getValue().asToken() : EMPTY_TOKEN;
 }
 
@@ -94,7 +91,7 @@ void RtNodeDef::setIneritance(const RtToken& inherit)
 
 const RtToken& RtNodeDef::getVersion() const
 {
-    RtTypedValue* v = prim()->getMetadata(Tokens::VERSION);
+    RtTypedValue* v = prim()->getMetadata(Tokens::VERSION, RtType::TOKEN);
     return v ? v->getValue().asToken() : EMPTY_TOKEN;
 }
 
@@ -106,7 +103,7 @@ void RtNodeDef::setVersion(const RtToken& version)
 
 bool RtNodeDef::getIsDefaultVersion() const
 {
-    RtTypedValue* v = prim()->addMetadata(Tokens::IS_DEFAULT_VERSION, RtType::BOOLEAN);
+    RtTypedValue* v = prim()->getMetadata(Tokens::IS_DEFAULT_VERSION, RtType::BOOLEAN);
     return v ? v->getValue().asBool() : false;
 }
 
@@ -116,16 +113,16 @@ void RtNodeDef::setIsDefaultVersion(bool isDefault)
     v->getValue().asBool() = isDefault;
 }
 
-const RtToken& RtNodeDef::getNamespace() const
+const string& RtNodeDef::getNamespace() const
 {
-    RtTypedValue* v = prim()->getMetadata(Tokens::NAMESPACE);
-    return v ? v->getValue().asToken() : EMPTY_TOKEN;
+    RtTypedValue* v = prim()->getMetadata(Tokens::NAMESPACE, RtType::STRING);
+    return v ? v->getValue().asString() : EMPTY_TOKEN;
 }
 
-void RtNodeDef::setNamespace(const RtToken& space)
+void RtNodeDef::setNamespace(const string& space)
 {
-    RtTypedValue* v = prim()->addMetadata(Tokens::NAMESPACE, RtType::TOKEN);
-    v->getValue().asToken() = space;
+    RtTypedValue* v = prim()->addMetadata(Tokens::NAMESPACE, RtType::STRING);
+    v->getValue().asString() = space;
 }
 
 bool RtNodeDef::isVersionCompatible(const RtToken& version) const
@@ -134,7 +131,6 @@ bool RtNodeDef::isVersionCompatible(const RtToken& version) const
     return ((version == getVersion()) ||
             (version.str().empty() && getIsDefaultVersion()));
 }
-
 
 RtInput RtNodeDef::createInput(const RtToken& name, const RtToken& type, uint32_t flags)
 {

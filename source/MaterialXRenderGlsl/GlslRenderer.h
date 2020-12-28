@@ -17,7 +17,7 @@
 namespace MaterialX
 {
 
-using GLUtilityContextPtr = std::shared_ptr<class GLUtilityContext>;
+using GLContextPtr = std::shared_ptr<class GLContext>;
 using SimpleWindowPtr = std::shared_ptr<class SimpleWindow>;
 
 /// Shared pointer to a GlslRenderer
@@ -102,8 +102,8 @@ class GlslRenderer : public ShaderRenderer
         return _program;
     }
 
-    /// Submit geometry for a screen-space quad.
-    static void drawScreenSpaceQuad();
+    /// Submit geometry for a screen-space quad
+    void drawScreenSpaceQuad();
 
     /// Sets the clear color
     void setClearColor(const Color4& clearColor);
@@ -115,9 +115,6 @@ class GlslRenderer : public ShaderRenderer
 
     virtual void updateViewInformation();
     virtual void updateWorldInformation();
-
-  private:
-    void checkErrors();
 
   private:
     GlslProgramPtr _program;
@@ -132,7 +129,7 @@ class GlslRenderer : public ShaderRenderer
     float _objectScale;
 
     SimpleWindowPtr _window;
-    GLUtilityContextPtr _context;
+    GLContextPtr _context;
 
     Color4 _clearColor;
 };

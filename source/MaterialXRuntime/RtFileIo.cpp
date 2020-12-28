@@ -38,14 +38,14 @@ namespace MaterialX
 namespace
 {
     // Lists of known metadata which are handled explicitly by import/export.
-    static const RtTokenSet nodedefMetadata     = { RtToken("name"), RtToken("type"), RtToken("node") };
+    static const RtTokenSet nodedefMetadata     = { RtToken("name"), RtToken("type"), RtToken("node"), RtToken("version"), RtToken("isdefaultversion") };
     static const RtTokenSet attrMetadata        = { RtToken("name"), RtToken("type"), RtToken("value"), RtToken("nodename"), RtToken("output"), RtToken("channels") };
     static const RtTokenSet inputMetadata       = { RtToken("name"), RtToken("type"), RtToken("value"), RtToken("nodename"), RtToken("output"), RtToken("channels"), 
                                                     RtToken("nodegraph"), RtToken("interfacename") };
-    static const RtTokenSet nodeMetadata        = { RtToken("name"), RtToken("type"), RtToken("node") };
+    static const RtTokenSet nodeMetadata        = { RtToken("name"), RtToken("type"), RtToken("node"), RtToken("version") };
     static const RtTokenSet nodegraphMetadata   = { RtToken("name"), RtToken("nodedef") };
     static const RtTokenSet targetdefMetadata   = { RtToken("name"), RtToken("inherit") };
-    static const RtTokenSet nodeimplMetadata    = { RtToken("name"), RtToken("target"), RtToken("file"), RtToken("sourcecode"), RtToken("function"), RtToken("format") };
+    static const RtTokenSet nodeimplMetadata    = { RtToken("name"), RtToken("nodedef"), RtToken("target"), RtToken("file"), RtToken("sourcecode"), RtToken("function"), RtToken("format") };
     static const RtTokenSet lookMetadata        = { RtToken("name"), RtToken("inherit") };
     static const RtTokenSet lookGroupMetadata   = { RtToken("name"), RtToken("looks"), RtToken("default") };
     static const RtTokenSet mtrlAssignMetadata  = { RtToken("name"), RtToken("geom"), RtToken("collection"), RtToken("material"), RtToken("exclusive") };
@@ -218,37 +218,50 @@ namespace
         output->connect(input);
     }
 
+    void createNodeConnection(InterfaceElementPtr nodeElem, PvtPrim* parent, PvtStage* stage, const PvtRenamingMapper& mapper)
+    {
+        PvtPrim* node = findPrimOrThrow(RtToken(nodeElem->getName()), parent, mapper);
+        for (InputPtr elemInput : nodeElem->getInputs())
+        {
+            PvtInput* input = findInputOrThrow(RtToken(elemInput->getName()), node);
+            string connectedNodeName = elemInput->getNodeName();
+            if (connectedNodeName.empty())
+            {
+                connectedNodeName = elemInput->getNodeGraphString();
+            }
+            if (!connectedNodeName.empty())
+            {
+                PvtPrim* connectedNode = findPrimOrThrow(RtToken(connectedNodeName), parent, mapper);
+                RtToken outputName(elemInput->getOutputString());
+                if (outputName == EMPTY_TOKEN && connectedNode)
+                {
+                    RtNode rtConnectedNode(connectedNode->hnd());
+                    auto output = rtConnectedNode.getOutput();
+                    if (output)
+                    {
+                        outputName = output.getName();
+                    }
+                }
+                PvtOutput* output = findOutputOrThrow(outputName, connectedNode);
+
+                createConnection(output, input, elemInput->getChannels(), stage);
+            }
+        }
+    }
+
     void createNodeConnections(const vector<NodePtr>& nodeElements, PvtPrim* parent, PvtStage* stage, const PvtRenamingMapper& mapper)
     {
-        for (const NodePtr& nodeElem : nodeElements)
+        for (auto nodeElem : nodeElements)
         {
-            PvtPrim* node = findPrimOrThrow(RtToken(nodeElem->getName()), parent, mapper);
-            for (const InputPtr& elemInput : nodeElem->getInputs())
-            {
-                PvtInput* input = findInputOrThrow(RtToken(elemInput->getName()), node);
-                string connectedNodeName = elemInput->getNodeName();
-                if (connectedNodeName.empty())
-                {
-                    connectedNodeName = elemInput->getNodeGraphString();
-                }
-                if (!connectedNodeName.empty())
-                {
-                    PvtPrim* connectedNode = findPrimOrThrow(RtToken(connectedNodeName), parent, mapper);
-                    RtToken outputName(elemInput->getOutputString());
-                    if (outputName == EMPTY_TOKEN && connectedNode)
-                    {
-                        RtNode rtConnectedNode(connectedNode->hnd());
-                        auto output = rtConnectedNode.getOutput();
-                        if (output)
-                        {
-                            outputName = output.getName();
-                        }
-                    }
-                    PvtOutput* output = findOutputOrThrow(outputName, connectedNode);
+            createNodeConnection(nodeElem->asA<InterfaceElement>(), parent, stage, mapper);
+        }
+    }
 
-                    createConnection(output, input, elemInput->getChannels(), stage);
-                }
-            }
+    void createNodeGraphConnections(const vector<NodeGraphPtr>& nodeElements, PvtPrim* parent, PvtStage* stage, const PvtRenamingMapper& mapper)
+    {
+        for (auto nodeElem : nodeElements)
+        {
+            createNodeConnection(nodeElem->asA<InterfaceElement>(), parent, stage, mapper);
         }
     }
 
@@ -260,6 +273,16 @@ namespace
         const RtToken nodeName(src->getNodeString());
         RtNodeDef nodedef(prim->hnd());
         nodedef.setNode(nodeName);
+
+        const string& version = src->getVersionString();
+        if (!version.empty())
+        {
+            nodedef.setVersion(RtToken(version));
+            if (src->getDefaultVersion())
+            {
+                nodedef.setIsDefaultVersion(true);
+            }
+        }
 
         readMetadata(src, prim, nodedefMetadata);
 
@@ -342,7 +365,14 @@ namespace
         PvtPrim* node = stage->createPrim(parent->getPath(), nodeName, nodedefName);
         mapper.addMapping(parent, nodeName, node->getName());
 
-        readMetadata(src, node, attrMetadata);
+        const string& version = src->getVersionString();
+        if (!version.empty())
+        {
+            RtNode schema(node->hnd());
+            schema.setVersion(RtToken(version));
+        }
+
+        readMetadata(src, node, nodeMetadata);
 
         // Copy input values.
         for (auto elem : src->getChildrenOfType<ValueElement>())
@@ -843,6 +873,9 @@ namespace
         // Create connections between all root level nodes.
         createNodeConnections(doc->getNodes(), stage->getRootPrim(), stage, mapper);
 
+        // Create connections between all nodegraphs
+        createNodeGraphConnections(doc->getNodeGraphs(), stage->getRootPrim(), stage, mapper);
+
         // Read look information
         if (!options || options->readLookInformation)
         {
@@ -853,11 +886,19 @@ namespace
     void writeNodeDef(const PvtPrim* src, DocumentPtr dest, const RtWriteOptions* options)
     {
         RtNodeDef nodedef(src->hnd());
-
         NodeDefPtr destNodeDef = dest->addNodeDef(nodedef.getName(), EMPTY_STRING, nodedef.getNode());
+
+        if (nodedef.getVersion() != EMPTY_TOKEN)
+        {
+            destNodeDef->setVersionString(nodedef.getVersion().str());
+            if (nodedef.getIsDefaultVersion())
+            {
+                destNodeDef->setDefaultVersion(true);
+            }
+        }
+
         writeMetadata(src, destNodeDef, nodedefMetadata, options);
 
-        bool writeUniformsAsParameters = options ? options->writeUniformsAsParameters : false;
         for (const PvtDataHandle attrH : src->getAllAttributes())
         {
             const PvtAttribute* attr = attrH->asA<PvtAttribute>();
@@ -866,21 +907,10 @@ namespace
             if (attr->isA<PvtInput>())
             {
                 const PvtInput* input = attr->asA<PvtInput>();
+                destPort = destNodeDef->addInput(attr->getName(), attr->getType().str());
                 if (input->isUniform())
                 {
-                    if (writeUniformsAsParameters)
-                    {
-                        destPort = destNodeDef->addParameter(attr->getName(), attr->getType().str());
-                    }
-                    else
-                    {
-                        destPort = destNodeDef->addInput(attr->getName(), attr->getType().str());
-                        destPort->setIsUniform(true);
-                    }
-                }
-                else
-                {
-                    destPort = destNodeDef->addInput(attr->getName(), attr->getType().str());
+                    destPort->setIsUniform(true);
                 }
             }
             else
@@ -912,10 +942,13 @@ namespace
             outputType = attr.getType();
         }
 
-        bool writeDefaultValues = options ? options->writeDefaultValues : false;
-        bool writeUniformsAsParameters = options ? options->writeUniformsAsParameters : false;
-
         NodePtr destNode = dest->addNode(nodedef.getNamespacedNode(), node.getName(), numOutputs > 1 ? "multioutput" : outputType);
+        if (node.getVersion() != EMPTY_TOKEN)
+        {
+            destNode->setVersionString(node.getVersion().str());
+        }
+
+        bool writeDefaultValues = options ? options->writeDefaultValues : false;
 
         for (RtAttribute attrDef : nodedef.getPrim().getAttributes())
         {
@@ -937,15 +970,8 @@ namespace
                     ValueElementPtr valueElem;
                     if (input.isUniform())
                     {
-                        if (writeUniformsAsParameters)
-                        {
-                            valueElem = destNode->addParameter(input.getName(), input.getType());
-                        }
-                        else
-                        {
-                            valueElem = destNode->addInput(input.getName(), input.getType());
-                            valueElem->setIsUniform(true);
-                        }
+                        valueElem = destNode->addInput(input.getName(), input.getType());
+                        valueElem->setIsUniform(true);
                         if (input.isConnected())
                         {
                             RtOutput source = input.getConnection();
@@ -1030,8 +1056,6 @@ namespace
 
         if (!options || options->writeNodeGraphInputs)
         {
-            bool writeUniformsAsParameters = options ? options->writeUniformsAsParameters : false;
-
             // Write inputs/parameters.
             RtObjTypePredicate<RtInput> inputsFilter;
             for (RtAttribute attr : src->getAttributes(inputsFilter))
@@ -1040,15 +1064,8 @@ namespace
                 ValueElementPtr v = nullptr;
                 if (nodegraphInput.isUniform())
                 {
-                    if (writeUniformsAsParameters)
-                    {
-                        v = destNodeGraph->addParameter(nodegraphInput.getName(), nodegraphInput.getType());
-                    }
-                    else
-                    {
-                        v = destNodeGraph->addInput(nodegraphInput.getName(), nodegraphInput.getType());
-                        v->setIsUniform(true);
-                    }
+                    v = destNodeGraph->addInput(nodegraphInput.getName(), nodegraphInput.getType());
+                    v->setIsUniform(true);
                 }
                 else
                 {
@@ -1059,9 +1076,16 @@ namespace
                     {
                         // Write connections to upstream nodes.
                         RtOutput source = nodegraphInput.getConnection();
-                        RtNode sourceNode = source.getParent();
-                        input->setNodeName(sourceNode.getName());
-                        if (sourceNode.numOutputs() > 1)
+                        RtPrim sourcePrim = source.getParent();
+                        if (sourcePrim.hasApi<RtNodeGraph>())
+                        {
+                            input->setNodeGraphString(sourcePrim.getName());
+                        }
+                        else
+                        {
+                            input->setNodeName(sourcePrim.getName());
+                        }
+                        if (sourcePrim.numOutputs() > 1)
                         {
                             input->setOutputString(source.getName());
                         }
@@ -1393,8 +1417,7 @@ RtWriteOptions::RtWriteOptions() :
     objectFilter(nullptr),
     metadataFilter(nullptr),
     desiredMajorVersion(MATERIALX_MAJOR_VERSION),
-    desiredMinorVersion(MATERIALX_MINOR_VERSION),
-    writeUniformsAsParameters(false)
+    desiredMinorVersion(MATERIALX_MINOR_VERSION)
 {
 }
 
@@ -1601,9 +1624,13 @@ RtPrim RtFileIo::readPrim(std::istream& stream, const RtPath& parentPrimPath, st
 
         // Keep track of renamed nodes:
         ElementPtr elem = document->getChildren().size() > 0 ? document->getChildren()[0] : nullptr;
+        if (!elem)
+        {
+            return RtPrim();
+        }
         outOriginalPrimName = elem->getName();
         PvtRenamingMapper mapper;
-        if (elem && (!filter || filter(elem)))
+        if (!filter || filter(elem))
         {
             if (elem->isA<NodeDef>())
             {

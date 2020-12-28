@@ -7,7 +7,6 @@
 #include <MaterialXTest/MaterialXRender/RenderUtil.h>
 
 #include <MaterialXCore/Unit.h>
-#include <MaterialXCore/MaterialNode.h>
 
 #include <MaterialXFormat/Util.h>
 
@@ -268,7 +267,7 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
             ioTimer.endTimer();
 
             validateTimer.startTimer();
-            std::cout << "- Validating MTLX file: " << filename.asString() << std::endl;
+            std::cout << "- Validating rendering for: " << filename.asString() << std::endl;
             log << "MTLX Filename: " << filename.asString() << std::endl;
 
             // Validate the test document
@@ -314,7 +313,7 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
             catch (mx::Exception& e)
             {
                 docValidLog << e.what() << std::endl;
-                WARN("Find renderable elements failed, see: " + docValidLogFilename + " for details.");
+                WARN("Shader generation error in " + filename.asString() + ": " + e.what());
             }
             renderableSearchTimer.endTimer();
 
@@ -324,7 +323,6 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
                 std::vector<mx::NodeDefPtr> nodeDefs;
 
                 mx::OutputPtr output = element->asA<mx::Output>();
-                mx::ShaderRefPtr shaderRef = element->asA<mx::ShaderRef>();
                 mx::NodePtr outputNode = element->asA<mx::Node>();
 
                 if (output)
@@ -339,15 +337,6 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
                             nodeDefs.push_back(nodeDef);
                             targetElements.push_back(output);
                         }
-                    }
-                }
-                else if (shaderRef)
-                {
-                    mx::NodeDefPtr nodeDef = shaderRef->getNodeDef();
-                    if (nodeDef)
-                    {
-                        nodeDefs.push_back(nodeDef);
-                        targetElements.push_back(shaderRef);
                     }
                 }
 

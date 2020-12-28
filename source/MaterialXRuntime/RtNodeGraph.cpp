@@ -25,10 +25,7 @@ const RtTypeInfo RtNodeGraph::SOCKETS_TYPE_INFO("_nodegraph_internal_sockets");
 
 RtPrim RtNodeGraph::createPrim(const RtToken& typeName, const RtToken& name, RtPrim parent)
 {
-    if (typeName != _typeInfo.getShortTypeName())
-    {
-        throw ExceptionRuntimeError("Type names mismatch when creating prim '" + name.str() + "'");
-    }
+    PvtPrim::validateCreation(_typeInfo, typeName, name);
 
     static const RtToken DEFAULT_NAME("nodegraph1");
     const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_NAME : name;
@@ -214,18 +211,6 @@ RtPrimIterator RtNodeGraph::getNodes() const
 {
     RtSchemaPredicate<RtNode> predicate;
     return RtPrimIterator(hnd(), predicate);
-}
-
-const RtToken& RtNodeGraph::getVersion() const
-{
-    RtTypedValue* v = prim()->getMetadata(Tokens::VERSION);
-    return v ? v->getValue().asToken() : EMPTY_TOKEN;
-}
-
-void RtNodeGraph::setVersion(const RtToken& value)
-{
-    RtTypedValue* v = prim()->addMetadata(Tokens::VERSION, RtType::TOKEN);
-    v->getValue().asToken() = value;
 }
 
 const RtToken& RtNodeGraph::getDefinition() const

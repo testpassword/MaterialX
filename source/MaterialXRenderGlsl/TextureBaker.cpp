@@ -4,7 +4,6 @@
 //
 
 #include <MaterialXRenderGlsl/TextureBaker.h>
-#include <MaterialXCore/MaterialNode.h>
 
 #include <MaterialXRender/OiioImageLoader.h>
 #include <MaterialXRender/StbImageLoader.h>
@@ -45,7 +44,7 @@ string getValueStringFromColor(const Color4& color, const string& type)
     {
         return toValueString(Vector3(color[0], color[1], color[2]));
     }
-    if (type == "color2" || type == "vector2")
+    if (type == "vector2")
     {
         return toValueString(Vector2(color[0], color[1]));
     }
@@ -173,30 +172,18 @@ void TextureBaker::optimizeBakedTextures(NodePtr shader)
         return;
     }
 
-    // If the graph used to create the texture has any of the following attributes
-    // then it's value has changed from the original, and even if the image is a constant
-    // it must not be optmized away.
-    StringVec transformationAttributes;
-    transformationAttributes.push_back(Element::COLOR_SPACE_ATTRIBUTE);
-    transformationAttributes.push_back(ValueElement::UNIT_ATTRIBUTE);
-    transformationAttributes.push_back(ValueElement::UNITTYPE_ATTRIBUTE);
-
     // Check for uniform images.
     for (auto& pair : _bakedImageMap)
     {
         bool outputIsUniform = true;
-        OutputPtr outputPtr = pair.first;
         for (BakedImage& baked : pair.second)
         {
-            if (hasElementAttributes(outputPtr, transformationAttributes))
-            {
-                outputIsUniform = false;
-            }
-            else if (_averageImages)
+            if (_averageImages)
             {
                 baked.uniformColor = baked.image->getAverageColor();
                 baked.isUniform = true;
             }
+            // Extract uniform color from Image.
             else if (baked.image->isUniformColor(&baked.uniformColor))
             {
                 baked.image = createUniformImage(4, 4, baked.image->getChannelCount(), baked.image->getBaseType(), baked.uniformColor);
@@ -253,12 +240,21 @@ DocumentPtr TextureBaker::getBakedMaterial(NodePtr shader, const StringVec& udim
 
     // Create document.
     DocumentPtr bakedTextureDoc = createDocument();
-    bakedTextureDoc->setColorSpace(_colorSpace);
+    if (shader->getDocument()->hasColorSpace())
+    {
+        bakedTextureDoc->setColorSpace(shader->getDocument()->getColorSpace());
+    }
 
     // Create top-level elements. Note that the child names may not be what
     // was requested so member names must be updated here to reflect that.
-    _bakedGraphName = bakedTextureDoc->createValidChildName(_bakedGraphName);
-    NodeGraphPtr bakedNodeGraph = bakedTextureDoc->addNodeGraph(_bakedGraphName);
+    NodeGraphPtr bakedNodeGraph;
+    if (!_bakedImageMap.empty())
+    {
+        _bakedGraphName = bakedTextureDoc->createValidChildName(_bakedGraphName);
+        bakedNodeGraph = bakedTextureDoc->addNodeGraph(_bakedGraphName);
+        bakedNodeGraph->setColorSpace(_colorSpace);
+    }
+
     _bakedGeomInfoName = bakedTextureDoc->createValidChildName(_bakedGeomInfoName);
     GeomInfoPtr bakedGeom = !udimSet.empty() ? bakedTextureDoc->addGeomInfo(_bakedGeomInfoName) : nullptr;
     if (bakedGeom)
@@ -266,7 +262,6 @@ DocumentPtr TextureBaker::getBakedMaterial(NodePtr shader, const StringVec& udim
         bakedGeom->setGeomPropValue("udimset", udimSet, "stringarray");
     }
     NodePtr bakedShader = bakedTextureDoc->addNode(shader->getCategory(), shader->getName() + BAKED_POSTFIX, shader->getType());
-    bakedNodeGraph->setColorSpace(_colorSpace);
 
     // Add a material node if any specified and connect it to the new shader node
     if (_material)
@@ -328,8 +323,10 @@ DocumentPtr TextureBaker::getBakedMaterial(NodePtr shader, const StringVec& udim
                 {
                     bakedInput->setColorSpace(_targetColorSpace);
                 }
+                continue;
             }
-            else
+
+            if (bakedNodeGraph)
             {
                 // Add the image node.
                 NodePtr bakedImage = bakedNodeGraph->addNode("image", sourceName + BAKED_POSTFIX, sourceType);
@@ -437,17 +434,14 @@ ListofBakedDocuments TextureBaker::bakeAllMaterials(DocumentPtr doc, const FileS
     for (const string& renderablePath : renderablePaths)
     {
         ElementPtr elem = doc->getDescendant(renderablePath);
-        if (!elem)
+        if (!elem || !elem->isA<Node>())
         {
             continue;
         }
-        NodePtr materialPtr = elem->asA<Node>();
-        NodePtr shaderNode = nullptr;
-        if (materialPtr)
-        {
-            std::unordered_set<NodePtr> shaderNodes = getShaderNodes(materialPtr);
-            shaderNode = shaderNodes.empty() ? nullptr : *shaderNodes.begin();
-        }
+        NodePtr materialNode = elem->asA<Node>();
+
+        std::unordered_set<NodePtr> shaderNodes = getShaderNodes(materialNode);
+        NodePtr shaderNode = shaderNodes.empty() ? nullptr : *shaderNodes.begin();
         if (!shaderNode)
         {
             continue;
@@ -483,7 +477,7 @@ ListofBakedDocuments TextureBaker::bakeAllMaterials(DocumentPtr doc, const FileS
             resolver->setUdimString(tag);
             imageHandler->setFilenameResolver(resolver);
             setImageHandler(imageHandler);
-            bakeShaderInputs(materialPtr, shaderNode, genContext, tag);
+            bakeShaderInputs(materialNode, shaderNode, genContext, tag);
 
             // Optimize baked textures.
             optimizeBakedTextures(shaderNode);
