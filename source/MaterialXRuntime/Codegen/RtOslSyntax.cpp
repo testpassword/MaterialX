@@ -324,18 +324,6 @@ RtOslSyntax::RtOslSyntax()
 
     registerTypeSyntax
     (
-        Type::COLOR2,
-        std::make_shared<OslStructTypeSyntax>(
-            "color2",
-            "color2(0.0, 0.0)",
-            "{0.0, 0.0}",
-            EMPTY_STRING,
-            EMPTY_STRING,
-            COLOR2_MEMBERS)
-    );
-
-    registerTypeSyntax
-    (
         // Note: the color type in OSL is a built in type and
         // should not use the custom OslStructTypeSyntax.
         Type::COLOR3,
