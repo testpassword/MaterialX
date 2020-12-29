@@ -4,7 +4,6 @@
 //
 
 #include <MaterialXRuntime/Codegen/RtGraphImpl.h>
-#include <MaterialXRuntime/Tokens.h>
 
 #include <MaterialXRuntime/Private/Codegen/PvtGraphImpl.h>
 

@@ -22,19 +22,21 @@ public:
 
     ~PvtGraphImpl();
 
-    void initialize(const RtNodeGraph& nodegraph);
     void initialize(const RtNode& node);
+    void initialize(const RtNodeGraph& nodegraph, const RtToken& output);
 
     const vector<PvtPrim*>& getNodes() const
     {
         return _nodeOrder;
     }
 
-    static PvtDataHandle createNew(const RtNodeGraph& nodegraph);
     static PvtDataHandle createNew(const RtNode& node);
+    static PvtDataHandle createNew(const RtNodeGraph& nodegraph, const RtToken& output = EMPTY_TOKEN);
 
 private:
-    void createNodeOrder();
+    void clear();
+    void traverse(const RtOutput& output);
+    void sort();
 
     RtTokenMap<PvtPrim*> _nodes;
     vector<PvtPrim*> _nodeOrder;

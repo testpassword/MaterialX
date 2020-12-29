@@ -24,46 +24,42 @@ PvtGraphImpl::~PvtGraphImpl()
 {
 }
 
-void PvtGraphImpl::initialize(const RtNodeGraph& nodegraph)
+void PvtGraphImpl::initialize(const RtNode& node)
 {
-    _nodes.clear();
-    _nodeOrder.clear();
+    clear();
+    traverse(node.getOutput());
+    sort();
+}
 
-    for (RtAttribute attr : nodegraph.getOutputs())
+void PvtGraphImpl::initialize(const RtNodeGraph& nodegraph, const RtToken& output)
+{
+    clear();
+    if (output != EMPTY_TOKEN)
     {
-        RtInput socket = nodegraph.getOutputSocket(attr.getName());
+        // Traverse the given output.
+        RtInput socket = nodegraph.getOutputSocket(output);
+        if (!socket)
+        {
+            throw ExceptionRuntimeError("Nodegraph '" + nodegraph.getName().str() + "' has not output named '" + output.str() + "'");
+        }
         if (socket.isConnected())
         {
-            RtGraphIterator graphIterator(socket.getConnection());
-            for (RtEdge edge : graphIterator)
+            traverse(socket.getConnection());
+        }
+    }
+    else
+    {
+        // Traverse all outputs.
+        for (RtAttribute attr : nodegraph.getOutputs())
+        {
+            RtInput socket = nodegraph.getOutputSocket(attr.getName());
+            if (socket.isConnected())
             {
-                RtPrim prim(edge.upstream.getParent());
-                _nodes[prim.getName()] = PvtObject::ptr<PvtPrim>(prim);
+                traverse(socket.getConnection());
             }
         }
     }
-    createNodeOrder();
-}
-
-void PvtGraphImpl::initialize(const RtNode& node)
-{
-    _nodes.clear();
-    _nodeOrder.clear();
-
-    RtGraphIterator graphIterator(node.getOutput());
-    for (RtEdge edge : graphIterator)
-    {
-        RtPrim prim(edge.upstream.getParent());
-        _nodes[prim.getName()] = PvtObject::ptr<PvtPrim>(prim);
-    }
-    createNodeOrder();
-}
-
-PvtDataHandle PvtGraphImpl::createNew(const RtNodeGraph& nodegraph)
-{
-    PvtGraphImpl* impl = new PvtGraphImpl(nodegraph.getName());
-    impl->initialize(nodegraph);
-    return PvtDataHandle(impl);
+    sort();
 }
 
 PvtDataHandle PvtGraphImpl::createNew(const RtNode& node)
@@ -73,9 +69,32 @@ PvtDataHandle PvtGraphImpl::createNew(const RtNode& node)
     return PvtDataHandle(impl);
 }
 
-void PvtGraphImpl::createNodeOrder()
+PvtDataHandle PvtGraphImpl::createNew(const RtNodeGraph& nodegraph, const RtToken& output)
 {
-    // Calculate a topological order of the children, using Kahn's algorithm
+    PvtGraphImpl* impl = new PvtGraphImpl(nodegraph.getName());
+    impl->initialize(nodegraph, output);
+    return PvtDataHandle(impl);
+}
+
+void PvtGraphImpl::clear()
+{
+    _nodes.clear();
+    _nodeOrder.clear();
+}
+
+void PvtGraphImpl::traverse(const RtOutput& output)
+{
+    RtGraphIterator graphIterator(output);
+    for (RtEdge edge : graphIterator)
+    {
+        RtPrim prim(edge.upstream.getParent());
+        _nodes[prim.getName()] = PvtObject::ptr<PvtPrim>(prim);
+    }
+}
+
+void PvtGraphImpl::sort()
+{
+    // Sort the nodes in topological order, using Kahn's algorithm
     // to avoid recursion.
     //
     // Running time: O(numNodes + numEdges).

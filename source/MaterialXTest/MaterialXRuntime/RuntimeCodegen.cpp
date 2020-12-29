@@ -51,7 +51,6 @@ namespace
     const mx::RtToken BXDFLIB("bxdf");
     const mx::RtToken ADSKLIB("adsk");
     const mx::RtToken MAIN("main");
-    const mx::RtToken MULTIPLY("multiply");
 }
 
 TEST_CASE("Runtime: Codegen", "[runtime]")
@@ -66,19 +65,19 @@ TEST_CASE("Runtime: Codegen", "[runtime]")
     readOptions.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, readOptions);
     api->loadLibrary(STDLIB, readOptions);
+    api->loadLibrary(PBRLIB, readOptions);
+    api->loadLibrary(BXDFLIB, readOptions);
 
     // Create a stage.
     mx::RtStagePtr stage = api->createStage(MAIN);
 
-    const mx::RtToken multiplyColor3("ND_multiply_color3");
-    mx::RtNode mult1 = stage->createPrim("/", MULTIPLY, multiplyColor3);
-    REQUIRE(mult1);
+    mx::RtPrim graph = api->getLibrary()->getPrimAtPath("/IMPL_standard_surface_surfaceshader");
+    REQUIRE(graph);
 
-    mx::RtOslGenerator gen(mult1.getPrim());
+    mx::RtOslGenerator gen(graph);
 
     mx::RtCodegenContextPtr context = gen.createContext();
     mx::RtCodegenResultPtr result = gen.generate("/", *context);
 
     std::cout << result->getFragment(0)->getSourceCode() << std::endl;
-
 }

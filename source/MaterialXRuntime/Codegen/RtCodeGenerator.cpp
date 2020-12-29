@@ -264,19 +264,26 @@ RtCodegenResultPtr RtOslGenerator::generate(const RtPath& /*path*/, RtCodegenCon
     RtPrim prim = getPrim();
     if (!prim)
     {
-        throw ExceptionShaderGenError("Prim attached to RtOslGenerator API is not valid");
+        throw ExceptionRuntimeError("Prim attached to RtOslGenerator API is not valid");
     }
 
-    if (!prim.hasApi<RtNode>())
+    PvtDataHandle implH;
+    if (prim.hasApi<RtNodeGraph>())
     {
-        throw ExceptionShaderGenError("Only nodes are supported right now");
+        implH = PvtGraphImpl::createNew(RtNodeGraph(prim));
+    }
+    else if (prim.hasApi<RtNode>())
+    {
+        implH = PvtGraphImpl::createNew(RtNode(prim));
+    }
+    else
+    {
+        throw ExceptionRuntimeError("Unsupported prim attached to RtOslGenerator API");
     }
 
     RtFragmentPtr frag = RtFragment::create(prim.getName(), _syntax);
 
-    PvtDataHandle implH = PvtGraphImpl::createNew(RtNode(prim));
     PvtGraphImpl* impl = implH->asA<PvtGraphImpl>();
-
     for (const PvtPrim* node : impl->getNodes())
     {
         frag->addLine(node->getName().str());
