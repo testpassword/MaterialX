@@ -47,12 +47,6 @@ public:
 
     /// Return the function name to use for this implementation.
     const string& getFunction() const;
-
-    /// Emit function definition for the given node instance in the given context.
-    void emitFunctionDefinition(const RtNode& node, GenContext& context, ShaderStage& stage) const override;
-
-    /// Emit the function call or inline source code for given node instance in the given context.
-    void emitFunctionCall(const RtNode& node, GenContext& context, ShaderStage& stage) const override;
 };
 
 }

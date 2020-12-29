@@ -11,12 +11,12 @@ namespace MaterialX
 {
 
 PvtGraphImpl::PvtGraphImpl(const RtTypeInfo* typeInfo, const RtToken& name, PvtPrim* parent)
-    : PvtPrim(typeInfo, name, parent)
+    : PvtCodegenImpl(typeInfo, name, parent)
 {
 }
 
 PvtGraphImpl::PvtGraphImpl(const RtToken& name)
-    : PvtPrim(&RtGraphImpl::_typeInfo, name, nullptr)
+    : PvtCodegenImpl(&RtGraphImpl::_typeInfo, name, nullptr)
 {
 }
 
@@ -159,6 +159,17 @@ void PvtGraphImpl::sort()
     {
         throw ExceptionRuntimeError("Encountered a cycle in graph for graphimpl: " + getName().str());
     }
+}
+
+void PvtGraphImpl::emitFunctionDefinition(const RtNode& /*node*/, RtCodegenContext& /*context*/, RtFragment& /*frag*/) const
+{
+
+
+}
+
+void PvtGraphImpl::emitFunctionCall(const RtNode& /*node*/, RtCodegenContext& /*context*/, RtFragment& /*frag*/) const
+{
+
 }
 
 }

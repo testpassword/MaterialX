@@ -26,8 +26,14 @@ using RtCodegenContextPtr = shared_ptr<RtCodegenContext>;
 
 /// @class RtCodegenOptions
 /// Base class for options used by a code generator.
-struct RtCodegenOptions
+class RtCodegenOptions
 {
+public:
+    /// If true the y-component of texture coordinates used for sampling
+    /// file textures will be flipped before sampling. This can be used if
+    /// file textures need to be flipped vertically to match the target's
+    /// texture space convention. By default this option is false.
+    bool fileTextureVerticalFlip = false;
 };
 
 using RtCodegenOptionsPtr = shared_ptr<RtCodegenOptions>;
@@ -73,12 +79,21 @@ class RtCodegenContext
         return _reservedWords;
     }
 
+    /// Return the map of string substitutions used in codegen.
+    const StringMap& getSubstitutions() const
+    {
+        return _substitutions;
+    }
+
   protected:
     // Options.
     RtCodegenOptionsPtr _options;
 
     // Set of globally reserved words.
     StringSet _reservedWords;
+
+    // Map of string substitutions used by codegen.
+    StringMap _substitutions;
 };
 
 
@@ -88,10 +103,10 @@ class RtFragment
 {
 public:
     /// Contructor.
-    RtFragment(const RtToken& name, ConstSyntaxPtr syntax);
+    RtFragment(const RtToken& name, ConstSyntaxPtr syntax, RtCodegenContextPtr context);
 
     /// Create a new fragment.
-    static RtFragmentPtr create(const RtToken& name, ConstSyntaxPtr syntax);
+    static RtFragmentPtr create(const RtToken& name, ConstSyntaxPtr syntax, RtCodegenContextPtr context);
 
     /// Return the fragment name.
     const RtToken& getName() const;
@@ -130,12 +145,18 @@ public:
     /// only included once for this fragment.
     void addIncludeFile(const string& file);
 
+    /// Replace tokens with identifiers according to the given substitutions map.
+    void replaceTokens(const StringMap& substitutions);
+
 protected:
     /// Name of the fragment
     const RtToken _name;
 
-    /// Syntax for the type of shader to generate.
+    /// Syntax for the language used.
     ConstSyntaxPtr _syntax;
+
+    /// Codegen context data.
+    RtCodegenContextPtr _context;
 
     /// Current indentation level.
     int _indentations;
@@ -204,11 +225,11 @@ public:
     virtual RtCodegenOptionsPtr createOptions() const;
 
     /// Create a new context instance for this generator.
-    virtual RtCodegenContextPtr createContext() const;
+    virtual RtCodegenContextPtr createContext(RtCodegenOptionsPtr options) const;
 
     /// Generate code for the object pointed to by the given path
     /// on the prim attached to the schema.
-    virtual RtCodegenResultPtr generate(const RtPath& path, RtCodegenContext& context) const = 0;
+    virtual RtCodegenResultPtr generate(const RtPath& path, RtCodegenContextPtr context) const = 0;
 
 protected:
       /// Constructor attaching this API to a prim.
@@ -217,6 +238,17 @@ protected:
     {}
 };
 
+
+
+
+/// @class RtOslContext
+/// Class for context data needed by OSL code generators.
+class RtOslContext : public RtCodegenContext
+{
+public:
+    /// Constructor.
+    RtOslContext(RtCodegenOptionsPtr options);
+};
 
 /// @class RtOslGenerator
 /// Code generator for vanilla OSL.
@@ -229,9 +261,15 @@ public:
     /// Return the target identifier for this generator.
     const RtToken& getTarget() const override;
 
+    /// Create a new context instance for this generator.
+    RtCodegenContextPtr createContext(RtCodegenOptionsPtr options) const override;
+
     /// Generate code for the object pointed to by the given path
     /// on the prim attached to the schema.
-    RtCodegenResultPtr generate(const RtPath& path, RtCodegenContext& context) const override;
+    RtCodegenResultPtr generate(const RtPath& path, RtCodegenContextPtr context) const override;
+
+    /// Target identifier constant for this generator.
+    static const RtToken TARGET;
 
 protected:
     SyntaxPtr _syntax;

@@ -166,6 +166,20 @@ public:
         return _nodeimpls.get(index);
     }
 
+    void setupNodeImplRelationships()
+    {
+        for (PvtDataHandle implH : _nodeimpls.vec)
+        {
+            RtNodeImpl impl(implH);
+            PvtDataHandle defH =  _nodedefs.get(impl.getNodeDef());
+            RtNodeDef def(defH);
+            if (def)
+            {
+                def.getNodeImpls().addTarget(impl.getPrim());
+            }
+        }
+    }
+    
     void registerTargetDef(const RtPrim& prim)
     {
         if (!prim.hasApi<RtTargetDef>())

@@ -28,12 +28,6 @@ public:
     /// Initialize with the nodegraph to use as implementation.
     void initialize(const RtNodeGraph& nodegraph);
 
-    /// Emit function definition for the given node instance in the given context.
-    void emitFunctionDefinition(const RtNode& node, GenContext& context, ShaderStage& stage) const override;
-
-    /// Emit the function call for the given node instance in the given context.
-    void emitFunctionCall(const RtNode& node, GenContext& context, ShaderStage& stage) const override;
-
 private:
     friend class PvtGraphImpl;
 };

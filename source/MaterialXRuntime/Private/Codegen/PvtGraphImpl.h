@@ -6,7 +6,7 @@
 #ifndef MATERIALX_PVTGRAPHIMPL_H
 #define MATERIALX_PVTGRAPHIMPL_H
 
-#include <MaterialXRuntime/Private/PvtPrim.h>
+#include <MaterialXRuntime/Private/Codegen/PvtCodegenImpl.h>
 #include <MaterialXRuntime/RtNodeGraph.h>
 #include <MaterialXRuntime/Codegen/RtGraphImpl.h>
 
@@ -14,7 +14,7 @@ namespace MaterialX
 {
 
 // Private implementation of graphimpl prim.
-class PvtGraphImpl : public PvtPrim
+class PvtGraphImpl : public PvtCodegenImpl
 {
 public:
     PvtGraphImpl(const RtTypeInfo* typeInfo, const RtToken& name, PvtPrim* parent);
@@ -32,6 +32,9 @@ public:
 
     static PvtDataHandle createNew(const RtNode& node);
     static PvtDataHandle createNew(const RtNodeGraph& nodegraph, const RtToken& output = EMPTY_TOKEN);
+
+    void emitFunctionDefinition(const RtNode& node, RtCodegenContext& context, RtFragment& frag) const override;
+    void emitFunctionCall(const RtNode& node, RtCodegenContext& context, RtFragment& frag) const override;
 
 private:
     void clear();

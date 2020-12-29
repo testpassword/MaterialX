@@ -172,7 +172,6 @@ OslShaderGenerator::OslShaderGenerator() :
     registerImplementation("IM_thin_film_brdf_" + OslShaderGenerator::TARGET, ThinFilmNode::create);
     // <!-- <dielectric_brdf> -->
     registerImplementation("IM_dielectric_brdf_" + OslShaderGenerator::TARGET, ThinFilmSupport::create);
-
 }
 
 ShaderPtr OslShaderGenerator::generate(const string& name, ElementPtr element, GenContext& context) const

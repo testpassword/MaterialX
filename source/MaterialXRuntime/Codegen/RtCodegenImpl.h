@@ -11,8 +11,7 @@
 
 #include <MaterialXRuntime/RtNodeImpl.h>
 #include <MaterialXRuntime/RtNode.h>
-
-#include <MaterialXGenShader/GenContext.h>
+#include <MaterialXRuntime/Codegen/RtCodeGenerator.h>
 
 namespace MaterialX
 {
@@ -22,22 +21,21 @@ namespace MaterialX
 class RtCodegenImpl : public RtNodeImpl
 {
 public:
+    /// Constructor.
+    RtCodegenImpl(const RtPrim& prim) : RtNodeImpl(prim) {}
+
     /// Add additional inputs on the node if needed by the implementation.
-    virtual void addInputs(const RtNode& node, GenContext& context) const;
+    void addInputs(const RtNode& node, RtCodegenContext& context, RtFragment& frag) const;
 
     /// Create shader variables needed for the implementation of this node (e.g. uniforms, inputs and outputs).
     /// Used if the node requires explicit input data from the application.
-    virtual void createVariables(const RtNode& node, GenContext& context, Shader& shader) const;
+    void createVariables(const RtNode& node, RtCodegenContext& context, RtFragment& frag) const;
 
     /// Emit function definition for the given node instance in the given context.
-    virtual void emitFunctionDefinition(const RtNode& node, GenContext& context, ShaderStage& stage) const;
+    void emitFunctionDefinition(const RtNode& node, RtCodegenContext& context, RtFragment& frag) const;
 
     /// Emit the function call or inline source code for given node instance in the given context.
-    virtual void emitFunctionCall(const RtNode& node, GenContext& context, ShaderStage& stage) const;
-
-protected:
-    /// Constructor.
-    RtCodegenImpl(const RtPrim& prim) : RtNodeImpl(prim) {}
+    void emitFunctionCall(const RtNode& node, RtCodegenContext& context, RtFragment& frag) const;
 };
 
 }

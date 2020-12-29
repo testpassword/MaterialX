@@ -63,6 +63,9 @@ void PvtApi::loadLibrary(const RtToken& name, const RtReadOptions& options)
     file.readLibraries({ name.str() }, _searchPaths, options);
 
     _libraryRootStage->addReference(lib);
+
+    // Set relationships between nodedef and node implementations.
+    setupNodeImplRelationships();
 }
 
 void PvtApi::unloadLibrary(const RtToken& name)

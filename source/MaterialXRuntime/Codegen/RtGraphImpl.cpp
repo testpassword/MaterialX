@@ -28,12 +28,4 @@ void RtGraphImpl::initialize(const RtNodeGraph& nodegraph)
     prim()->asA<PvtGraphImpl>()->initialize(nodegraph);
 }
 
-void RtGraphImpl::emitFunctionDefinition(const RtNode& /*node*/, GenContext& /*context*/, ShaderStage& /*stage*/) const
-{
-}
-
-void RtGraphImpl::emitFunctionCall(const RtNode& /*node*/, GenContext& /*context*/, ShaderStage& /*stage*/) const
-{
-}
-
 }

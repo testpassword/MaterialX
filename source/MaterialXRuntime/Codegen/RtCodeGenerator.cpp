@@ -6,27 +6,31 @@
 #include <MaterialXRuntime/Codegen/RtCodeGenerator.h>
 #include <MaterialXRuntime/Codegen/RtOslSyntax.h>
 #include <MaterialXRuntime/Codegen/RtGraphImpl.h>
+#include <MaterialXRuntime/RtApi.h>
 
 #include <MaterialXRuntime/Private/Codegen/PvtGraphImpl.h>
 
 #include <MaterialXFormat/File.h>
 #include <MaterialXFormat/Util.h>
 
+#include <MaterialXGenShader/Util.h>
+
 #include <sstream>
 
 namespace MaterialX
 {
 
-RtFragment::RtFragment(const RtToken& name, ConstSyntaxPtr syntax) :
+RtFragment::RtFragment(const RtToken& name, ConstSyntaxPtr syntax, RtCodegenContextPtr context) :
     _name(name),
     _syntax(syntax),
+    _context(context),
     _indentations(0)
 {
 }
 
-RtFragmentPtr RtFragment::create(const RtToken& name, ConstSyntaxPtr syntax)
+RtFragmentPtr RtFragment::create(const RtToken& name, ConstSyntaxPtr syntax, RtCodegenContextPtr context)
 {
-    return std::make_shared<RtFragment>(name, syntax);
+    return std::make_shared<RtFragment>(name, syntax, context);
 }
 
 const RtToken& RtFragment::getName() const
@@ -150,18 +154,20 @@ void RtFragment::addBlock(const string& str)
     std::stringstream stream(str);
     for (string line; std::getline(stream, line); )
     {
-        size_t pos = line.find(INCLUDE);
+        const size_t pos = line.find(INCLUDE);
         if (pos != string::npos)
         {
-            size_t startQuote = line.find_first_of(QUOTE);
-            size_t endQuote = line.find_last_of(QUOTE);
+            const size_t startQuote = line.find_first_of(QUOTE);
+            const size_t endQuote = line.find_last_of(QUOTE);
             if (startQuote != string::npos && endQuote != string::npos && endQuote > startQuote)
             {
                 size_t length = (endQuote - startQuote) - 1;
                 if (length)
                 {
-                    const string filename = line.substr(startQuote + 1, length);
-                    addIncludeFile(filename);
+                    string filename = line.substr(startQuote + 1, length);
+                    tokenSubstitution(_context->getSubstitutions(), filename);
+                    const FilePath resolvedFile = RtApi::get().getSearchPath().find(filename);
+                    addIncludeFile(resolvedFile);
                 }
             }
         }
@@ -184,6 +190,12 @@ void RtFragment::addIncludeFile(const string& file)
         _includes.insert(file);
         addBlock(content);
     }
+}
+
+void RtFragment::replaceTokens(const StringMap& substitutions)
+{
+    // Replace tokens in source code
+    tokenSubstitution(substitutions, _code);
 }
 
 
@@ -240,12 +252,31 @@ RtCodegenOptionsPtr RtCodeGenerator::createOptions() const
     return std::make_shared<RtCodegenOptions>();
 }
 
-RtCodegenContextPtr RtCodeGenerator::createContext() const
+RtCodegenContextPtr RtCodeGenerator::createContext(RtCodegenOptionsPtr options) const
 {
-    RtCodegenOptionsPtr options = createOptions();
     return std::make_shared<RtCodegenContext>(options);
 }
 
+
+RtOslContext::RtOslContext(RtCodegenOptionsPtr options) :
+    RtCodegenContext(options)
+{
+    static const string T_FILE_TRANSFORM_UV = "$fileTransformUv";
+
+    // Set the include file to use for uv transformations,
+    // depending on the vertical flip flag.
+    if (options->fileTextureVerticalFlip)
+    {
+        _substitutions[T_FILE_TRANSFORM_UV] = "stdlib/" + RtOslGenerator::TARGET.str() + "/lib/mx_transform_uv_vflip.osl";
+    }
+    else
+    {
+        _substitutions[T_FILE_TRANSFORM_UV] = "stdlib/" + RtOslGenerator::TARGET.str() + "/lib/mx_transform_uv.osl";
+    }
+}
+
+
+const RtToken RtOslGenerator::TARGET("genosl");
 
 RtOslGenerator::RtOslGenerator(const RtPrim& prim) :
     RtCodeGenerator(prim),
@@ -255,11 +286,15 @@ RtOslGenerator::RtOslGenerator(const RtPrim& prim) :
 
 const RtToken& RtOslGenerator::getTarget() const
 {
-    static const RtToken GENOSL("genosl");
-    return GENOSL;
+    return TARGET;
 }
 
-RtCodegenResultPtr RtOslGenerator::generate(const RtPath& /*path*/, RtCodegenContext& /*context*/) const
+RtCodegenContextPtr RtOslGenerator::createContext(RtCodegenOptionsPtr options) const
+{
+    return std::make_shared<RtOslContext>(options);
+}
+
+RtCodegenResultPtr RtOslGenerator::generate(const RtPath& /*path*/, RtCodegenContextPtr context) const
 {
     RtPrim prim = getPrim();
     if (!prim)
@@ -281,13 +316,29 @@ RtCodegenResultPtr RtOslGenerator::generate(const RtPath& /*path*/, RtCodegenCon
         throw ExceptionRuntimeError("Unsupported prim attached to RtOslGenerator API");
     }
 
-    RtFragmentPtr frag = RtFragment::create(prim.getName(), _syntax);
+    RtFragmentPtr frag = RtFragment::create(prim.getName(), _syntax, context);
+
+    const RtToken& target = getTarget();
 
     PvtGraphImpl* impl = implH->asA<PvtGraphImpl>();
-    for (const PvtPrim* node : impl->getNodes())
+    for (const PvtPrim* p : impl->getNodes())
     {
-        frag->addLine(node->getName().str());
+        RtNode node(p->hnd());
+        RtNodeDef nodedef(node.getNodeDef());
+
+        RtPrim implprim = nodedef.getNodeImpl(target);
+        if (!(implprim && implprim.hasApi<RtCodegenImpl>()))
+        {
+            throw ExceptionRuntimeError("No valid codegen implementation found for nodedef '" + 
+                nodedef.getName().str() + "' and target '" + target.str() + "'");
+        }
+
+        RtCodegenImpl nodeimpl(implprim);
+        nodeimpl.emitFunctionDefinition(node, *context, *frag);
     }
+
+    // Perform token substitution
+    frag->replaceTokens(context->getSubstitutions());
 
     RtCodegenResultPtr result = RtCodegenResult::create();
     result->addFragment(frag);

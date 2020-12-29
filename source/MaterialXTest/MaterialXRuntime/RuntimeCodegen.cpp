@@ -71,13 +71,14 @@ TEST_CASE("Runtime: Codegen", "[runtime]")
     // Create a stage.
     mx::RtStagePtr stage = api->createStage(MAIN);
 
-    mx::RtPrim graph = api->getLibrary()->getPrimAtPath("/IMPL_standard_surface_surfaceshader");
+    mx::RtPrim graph = api->getLibrary()->getPrimAtPath("/NG_tiledimage_float");
     REQUIRE(graph);
 
     mx::RtOslGenerator gen(graph);
 
-    mx::RtCodegenContextPtr context = gen.createContext();
-    mx::RtCodegenResultPtr result = gen.generate("/", *context);
+    mx::RtCodegenOptionsPtr options = gen.createOptions();
+    mx::RtCodegenContextPtr context = gen.createContext(options);
+    mx::RtCodegenResultPtr result = gen.generate("/", context);
 
     std::cout << result->getFragment(0)->getSourceCode() << std::endl;
 }
