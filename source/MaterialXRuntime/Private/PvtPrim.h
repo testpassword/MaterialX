@@ -126,6 +126,7 @@ public:
     void removeAttribute(const RtToken& name);
 
     void setAttributeName(const RtToken& name, const RtToken& newName);
+
     RtToken renameAttribute(const RtToken& name, const RtToken& newName);
 
     PvtAttribute* getAttribute(const RtToken& name) const
@@ -185,7 +186,22 @@ public:
         return count;
     }
 
-    RtAttrIterator getAttributes(RtObjectPredicate predicate = nullptr) const;
+    RtAttrIterator getAttributes(RtObjectPredicate predicate = nullptr) const
+    {
+        return RtAttrIterator(hnd(), predicate);
+    }
+
+    RtAttrIterator getInputs() const
+    {
+        RtObjTypePredicate<RtInput> predicate;
+        return RtAttrIterator(hnd(), predicate);
+    }
+
+    RtAttrIterator getOutputs() const
+    {
+        RtObjTypePredicate<RtOutput> predicate;
+        return RtAttrIterator(hnd(), predicate);
+    }
 
     const PvtDataHandleVec& getAllAttributes() const
     {
@@ -203,7 +219,10 @@ public:
         return const_cast<PvtPrim*>(this)->getChild(name);
     }
 
-    RtPrimIterator getChildren(RtObjectPredicate predicate = nullptr) const;
+    RtPrimIterator getChildren(RtObjectPredicate predicate = nullptr) const
+    {
+        return RtPrimIterator(hnd(), predicate);
+    }
 
     const PvtDataHandleVec& getAllChildren() const
     {

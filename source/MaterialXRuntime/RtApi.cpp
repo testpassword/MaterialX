@@ -16,7 +16,7 @@
 #include <MaterialXRuntime/RtCollection.h>
 #include <MaterialXRuntime/RtConnectableApi.h>
 #include <MaterialXRuntime/Codegen/RtSourceCodeImpl.h>
-#include <MaterialXRuntime/Codegen/RtSubGraphImpl.h>
+#include <MaterialXRuntime/Codegen/RtGraphImpl.h>
 
 #include <MaterialXRuntime/Private/PvtApi.h>
 #include <MaterialXRuntime/Private/PvtPrim.h>
@@ -55,7 +55,7 @@ void RtApi::initialize()
     registerTypedSchema<RtNodeImpl>();
     registerTypedSchema<RtTargetDef>();
     registerTypedSchema<RtSourceCodeImpl>();
-    registerTypedSchema<RtSubGraphImpl>();
+    registerTypedSchema<RtGraphImpl>();
     registerTypedSchema<RtBackdrop>();
     registerTypedSchema<RtBindElement>();
     registerTypedSchema<RtLookGroup, RtLookGroupConnectableApi>();
@@ -80,7 +80,7 @@ void RtApi::shutdown()
     unregisterTypedSchema<RtNodeImpl>();
     unregisterTypedSchema<RtTargetDef>();
     unregisterTypedSchema<RtSourceCodeImpl>();
-    unregisterTypedSchema<RtSubGraphImpl>();
+    unregisterTypedSchema<RtGraphImpl>();
     unregisterTypedSchema<RtBackdrop>();
     unregisterTypedSchema<RtBindElement>();
     unregisterTypedSchema<RtLookGroup>();

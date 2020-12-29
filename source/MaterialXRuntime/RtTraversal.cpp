@@ -23,6 +23,7 @@ static const RtPrimIterator NULL_PRIM_ITERATOR;
 static const RtConnectionIterator NULL_CONNECTION_ITERATOR;
 static const RtRelationshipIterator NULL_RELATIONSHIP_ITERATOR;
 static const RtStageIterator NULL_STAGE_ITERATOR;
+static const RtGraphIterator NULL_GRAPH_ITERATOR;
 
 using StageIteratorStackFrame = std::tuple<PvtStage*, int, int>;
 
@@ -241,6 +242,7 @@ RtStageIterator& RtStageIterator::operator=(const RtStageIterator& other)
 RtStageIterator::~RtStageIterator()
 {
     delete static_cast<StageIteratorData*>(_ptr);
+    _ptr = nullptr;
 }
 
 bool RtStageIterator::operator==(const RtStageIterator& other) const
@@ -328,6 +330,99 @@ void RtStageIterator::abort()
 {
     delete static_cast<StageIteratorData*>(_ptr);
     _ptr = nullptr;
+}
+
+
+RtGraphIterator::RtGraphIterator()
+{
+}
+
+RtGraphIterator::RtGraphIterator(const RtOutput& output) :
+    _upstream(output)
+{
+}
+
+RtGraphIterator& RtGraphIterator::operator++()
+{
+    if (_upstream && _upstream.getParent().numInputs())
+    {
+        // Traverse to the first upstream edge of this prim.
+        RtAttrIterator it = _upstream.getParent().getInputs();
+        RtInput input = (*it).asA<RtInput>();
+        _stack.emplace_back(_upstream, ++it);
+
+        RtOutput output = input.getConnection();
+        if (output && !output.isSocket())
+        {
+            extendPathUpstream(output, input);
+            return *this;
+        }
+    }
+
+    while (true)
+    {
+        if (_upstream)
+        {
+            returnPathDownstream(_upstream);
+        }
+
+        if (_stack.empty())
+        {
+            // Traversal is complete.
+            *this = RtGraphIterator::end();
+            return *this;
+        }
+
+        // Traverse to our siblings.
+        StackFrame& parentFrame = _stack.back();
+        while (parentFrame.second != parentFrame.second.end())
+        {
+            RtInput input = (*parentFrame.second).asA<RtInput>();
+            ++parentFrame.second;
+
+            RtOutput output = input.getConnection();
+            if (output && !output.isSocket())
+            {
+                extendPathUpstream(output, input);
+                return *this;
+            }
+        }
+
+        // Traverse to our parent's siblings.
+        returnPathDownstream(parentFrame.first);
+        _stack.pop_back();
+    }
+
+    return *this;
+}
+
+const RtGraphIterator& RtGraphIterator::end()
+{
+    return NULL_GRAPH_ITERATOR;
+}
+
+void RtGraphIterator::extendPathUpstream(const RtOutput& upstream, const RtInput& downstream)
+{
+    const PvtOutput* output = PvtObject::ptr<PvtOutput>(upstream);
+
+    // Check for cycles.
+    if (_path.count(output))
+    {
+        throw ExceptionRuntimeError("Encountered a cycle at: " + upstream.getPath().asString());
+    }
+
+    // Extend the current path to the new element.
+    _path.insert(output);
+    _upstream = upstream;
+    _downstream = downstream;
+}
+
+void RtGraphIterator::returnPathDownstream(const RtOutput& upstream)
+{
+    const PvtOutput* output = PvtObject::ptr<PvtOutput>(upstream);
+    _path.erase(output);
+    _upstream = RtOutput();
+    _downstream = RtInput();
 }
 
 }

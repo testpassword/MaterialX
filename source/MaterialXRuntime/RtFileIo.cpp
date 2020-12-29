@@ -20,7 +20,7 @@
 #include <MaterialXRuntime/RtNodeImpl.h>
 #include <MaterialXRuntime/RtTargetDef.h>
 #include <MaterialXRuntime/Codegen/RtSourceCodeImpl.h>
-#include <MaterialXRuntime/Codegen/RtSubGraphImpl.h>
+#include <MaterialXRuntime/Codegen/RtGraphImpl.h>
 
 #include <MaterialXRuntime/Private/PvtStage.h>
 

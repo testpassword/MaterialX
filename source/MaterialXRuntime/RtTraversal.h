@@ -11,11 +11,13 @@
 
 #include <MaterialXRuntime/Library.h>
 #include <MaterialXRuntime/RtObject.h>
+#include <MaterialXRuntime/RtAttribute.h>
 
 namespace MaterialX
 {
 
 class PvtPrim;
+class PvtOutput;
 class RtPrim;
 class RtStage;
 
@@ -383,6 +385,78 @@ public:
 
 private:
     void* _ptr;
+};
+
+
+/// @class RtEdge
+/// An edge returned during graph traversal.
+class RtEdge
+{
+public:
+    RtEdge(const RtOutput& up, const RtInput& down) :
+        upstream(up),
+        downstream(down)
+    {}
+    RtOutput upstream;
+    RtInput downstream;
+};
+
+/// @class RtGraphIterator
+/// Iterator class for traversing edges between nodes in a graph.
+class RtGraphIterator
+{
+public:
+    /// Empty constructor.
+    RtGraphIterator();
+
+    /// Constructor, setting the output to start traversal on.
+    explicit RtGraphIterator(const RtOutput& output);
+
+    /// Destructor.
+    ~RtGraphIterator() {}
+
+    /// Equality operator.
+    bool operator==(const RtGraphIterator& rhs) const
+    {
+        return _upstream == rhs._upstream &&
+            _downstream == rhs._downstream &&
+            _stack == rhs._stack;
+    }
+
+    /// Inequality operator.
+    bool operator!=(const RtGraphIterator& rhs) const
+    {
+        return !(*this == rhs);
+    }
+
+    /// Dereference this iterator, returning the current edge in the traversal.
+    RtEdge operator*() const
+    {
+        return RtEdge(_upstream, _downstream);
+    }
+
+    /// Iterate to the next edge in the traversal.
+    /// @throws ExceptionFoundCycle if a cycle is encountered.
+    RtGraphIterator& operator++();
+
+    /// Return a reference to this iterator to begin traversal
+    RtGraphIterator& begin()
+    {
+        return *this;
+    }
+
+    /// Return the end iterator.
+    static const RtGraphIterator& end();
+
+private:
+    void extendPathUpstream(const RtOutput& upstream, const RtInput& downstream);
+    void returnPathDownstream(const RtOutput& upstream);
+
+    RtOutput _upstream;
+    RtInput _downstream;
+    using StackFrame = std::pair<RtOutput, RtAttrIterator>;
+    std::vector<StackFrame> _stack;
+    std::set<const PvtOutput*> _path;
 };
 
 }

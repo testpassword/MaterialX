@@ -156,17 +156,17 @@ public:
         return getPrim().getMetadata(name, type);
     }
 
-    // Accessors.
-    PvtPrim* prim() const;
-    PvtAttribute* attr(const RtToken& name) const;
-    PvtRelationship* rel(const RtToken& name) const;
-
 protected:
     /// Constructor attaching a prim to the API.
     explicit RtTypedSchema(const RtPrim& prim) :
         RtSchemaBase(prim)
     {
     }
+
+    // Accessors.
+    PvtPrim* prim() const;
+    PvtAttribute* attr(const RtToken& name) const;
+    PvtRelationship* rel(const RtToken& name) const;
 };
 
 

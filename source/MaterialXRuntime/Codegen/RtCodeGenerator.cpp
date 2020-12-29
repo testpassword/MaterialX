@@ -5,7 +5,9 @@
 
 #include <MaterialXRuntime/Codegen/RtCodeGenerator.h>
 #include <MaterialXRuntime/Codegen/RtOslSyntax.h>
-#include <MaterialXRuntime/RtNodeGraph.h>
+#include <MaterialXRuntime/Codegen/RtGraphImpl.h>
+
+#include <MaterialXRuntime/Private/Codegen/PvtGraphImpl.h>
 
 #include <MaterialXFormat/File.h>
 #include <MaterialXFormat/Util.h>
@@ -272,7 +274,13 @@ RtCodegenResultPtr RtOslGenerator::generate(const RtPath& /*path*/, RtCodegenCon
 
     RtFragmentPtr frag = RtFragment::create(prim.getName(), _syntax);
 
-    frag->addLine("BAJS");
+    PvtDataHandle implH = PvtGraphImpl::createNew(RtNode(prim));
+    PvtGraphImpl* impl = implH->asA<PvtGraphImpl>();
+
+    for (const PvtPrim* node : impl->getNodes())
+    {
+        frag->addLine(node->getName().str());
+    }
 
     RtCodegenResultPtr result = RtCodegenResult::create();
     result->addFragment(frag);

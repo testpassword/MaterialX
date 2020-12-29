@@ -206,16 +206,6 @@ RtToken PvtPrim::renameAttribute(const RtToken& name, const RtToken& newName)
     return uniqueNewName;
 }
 
-RtAttrIterator PvtPrim::getAttributes(RtObjectPredicate predicate) const
-{
-    return RtAttrIterator(hnd(), predicate);
-}
-
-RtPrimIterator PvtPrim::getChildren(RtObjectPredicate predicate) const
-{
-    return RtPrimIterator(hnd(), predicate);
-}
-
 RtToken PvtPrim::makeUniqueChildName(const RtToken& name) const
 {
     RtToken newName = name;
