@@ -11,7 +11,7 @@
 
 #include <MaterialXRuntime/RtNodeImpl.h>
 #include <MaterialXRuntime/RtNode.h>
-#include <MaterialXRuntime/Codegen/RtCodeGenerator.h>
+#include <MaterialXRuntime/Codegen/RtCodegenContext.h>
 
 namespace MaterialX
 {

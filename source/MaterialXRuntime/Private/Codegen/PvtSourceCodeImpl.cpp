@@ -4,6 +4,7 @@
 //
 
 #include <MaterialXRuntime/Private/Codegen/PvtSourceCodeImpl.h>
+#include <MaterialXRuntime/Codegen/RtCodeGenerator.h>
 #include <MaterialXRuntime/RtApi.h>
 
 #include <MaterialXFormat/Util.h>

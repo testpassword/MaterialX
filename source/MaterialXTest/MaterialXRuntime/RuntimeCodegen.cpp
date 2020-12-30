@@ -74,11 +74,11 @@ TEST_CASE("Runtime: Codegen", "[runtime]")
     mx::RtPrim graph = api->getLibrary()->getPrimAtPath("/NG_tiledimage_float");
     REQUIRE(graph);
 
-    mx::RtOslGenerator gen(graph);
+    mx::RtCodeGeneratorPtr gen = mx::RtOslGenerator::create();
 
-    mx::RtCodegenOptionsPtr options = gen.createOptions();
-    mx::RtCodegenContextPtr context = gen.createContext(options);
-    mx::RtCodegenResultPtr result = gen.generate("/", context);
+    mx::RtCodegenOptionsPtr options = gen->createOptions();
+    mx::RtCodegenContextPtr context = gen->createContext(options);
+    mx::RtCodegenResultPtr result = gen->generate(graph , "/", context);
 
     std::cout << result->getFragment(0)->getSourceCode() << std::endl;
 }

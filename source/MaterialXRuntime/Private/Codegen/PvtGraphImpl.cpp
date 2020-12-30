@@ -5,6 +5,8 @@
 
 #include <MaterialXRuntime/Private/Codegen/PvtGraphImpl.h>
 
+#include <MaterialXRuntime/Codegen/RtCodeGenerator.h>
+
 #include <deque>
 
 namespace MaterialX
@@ -161,15 +163,75 @@ void PvtGraphImpl::sort()
     }
 }
 
-void PvtGraphImpl::emitFunctionDefinition(const RtNode& /*node*/, RtCodegenContext& /*context*/, RtFragment& /*frag*/) const
+void PvtGraphImpl::emitFunctionDefinition(const RtNode& /*node*/, RtCodegenContext& context, RtFragment& frag) const
 {
+    const RtCodeGenerator* gen = context.getCodeGenerator();
 
+    // Emit functions for all child nodes.
+    for (const PvtPrim* p : _nodeOrder)
+    {
+        RtNode node(p->hnd());
+        RtNodeDef nodedef(node.getNodeDef());
+        RtCodegenImpl nodeimpl = gen->getCodegenImpl(nodedef);
+        nodeimpl.emitFunctionDefinition(node, context, frag);
+    }
 
+    string functionName = getName().str();
+    frag.getSyntax().makeValidName(functionName);
+
+    // Begin function signature.
+    frag.beginLine();
+    frag.addString("void " + functionName + +"(");
+
+    string delim = "";
+/*
+    // Add all inputs
+    for (ShaderGraphInputSocket* inputSocket : _rootGraph->getInputSockets())
+    {
+        shadergen.emitString(delim + syntax.getTypeName(inputSocket->getType()) + " " + inputSocket->getVariable(), stage);
+        delim = ", ";
+    }
+
+    // Add all outputs
+    for (ShaderGraphOutputSocket* outputSocket : _rootGraph->getOutputSockets())
+    {
+        shadergen.emitString(delim + syntax.getOutputTypeName(outputSocket->getType()) + " " + outputSocket->getVariable(), stage);
+        delim = ", ";
+    }
+*/
+    // End function signature.
+    frag.addString(")");
+    frag.endLine(false);
+
+    // Begin function body.
+    frag.beginScope();
+
+    for (const PvtPrim* p : _nodeOrder)
+    {
+        RtNode node(p->hnd());
+        RtNodeDef nodedef(node.getNodeDef());
+        RtCodegenImpl nodeimpl = gen->getCodegenImpl(nodedef);
+        nodeimpl.emitFunctionCall(node, context, frag);
+    }
+
+    /*
+    frag.emitFunctionCalls(*_rootGraph, context, stage);
+
+    // Emit final results
+    for (ShaderGraphOutputSocket* outputSocket : _rootGraph->getOutputSockets())
+    {
+        const string result = shadergen.getUpstreamResult(outputSocket, context);
+        shadergen.emitLine(outputSocket->getVariable() + " = " + result, stage);
+    }
+    */
+    // End function body.
+    frag.endScope();
+    frag.newLine();
 }
 
-void PvtGraphImpl::emitFunctionCall(const RtNode& /*node*/, RtCodegenContext& /*context*/, RtFragment& /*frag*/) const
+void PvtGraphImpl::emitFunctionCall(const RtNode& /*node*/, RtCodegenContext& /*context*/, RtFragment& frag) const
 {
-
+    frag.addLine("Call on me");
 }
 
 }

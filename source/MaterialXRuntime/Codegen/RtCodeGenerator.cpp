@@ -38,6 +38,11 @@ const RtToken& RtFragment::getName() const
     return _name;
 }
 
+const Syntax& RtFragment::getSyntax() const
+{
+    return *_syntax;
+}
+
 const string& RtFragment::getSourceCode() const
 {
     return _code;
@@ -241,47 +246,35 @@ RtFragmentPtr RtCodegenResult::getFragment(const RtToken& name) const
     return it != _fragments.end() ? it->second : nullptr;
 }
 
-
-bool RtCodeGenerator::isCompatible(const RtPrim& prim) const
-{
-    return prim && (prim.hasApi<RtNode>() || prim.hasApi<RtNodeGraph>());
-}
-
 RtCodegenOptionsPtr RtCodeGenerator::createOptions() const
 {
     return std::make_shared<RtCodegenOptions>();
 }
 
-RtCodegenContextPtr RtCodeGenerator::createContext(RtCodegenOptionsPtr options) const
+RtCodegenImpl RtCodeGenerator::getCodegenImpl(const RtNodeDef& nodedef) const
 {
-    return std::make_shared<RtCodegenContext>(options);
+    const RtToken& target = getTarget();
+    RtPrim prim = nodedef.getNodeImpl(target);
+    if (!(prim && prim.hasApi<RtCodegenImpl>()))
+    {
+        throw ExceptionRuntimeError("No valid codegen implementation found for nodedef '" +
+            nodedef.getName().str() + "' and target '" + target.str() + "'");
+    }
+    return RtCodegenImpl(prim);
 }
 
-
-RtOslContext::RtOslContext(RtCodegenOptionsPtr options) :
-    RtCodegenContext(options)
-{
-    static const string T_FILE_TRANSFORM_UV = "$fileTransformUv";
-
-    // Set the include file to use for uv transformations,
-    // depending on the vertical flip flag.
-    if (options->fileTextureVerticalFlip)
-    {
-        _substitutions[T_FILE_TRANSFORM_UV] = "stdlib/" + RtOslGenerator::TARGET.str() + "/lib/mx_transform_uv_vflip.osl";
-    }
-    else
-    {
-        _substitutions[T_FILE_TRANSFORM_UV] = "stdlib/" + RtOslGenerator::TARGET.str() + "/lib/mx_transform_uv.osl";
-    }
-}
 
 
 const RtToken RtOslGenerator::TARGET("genosl");
 
-RtOslGenerator::RtOslGenerator(const RtPrim& prim) :
-    RtCodeGenerator(prim),
+RtOslGenerator::RtOslGenerator() :
     _syntax(RtOslSyntax::create())
 {
+}
+
+RtCodeGeneratorPtr RtOslGenerator::create()
+{
+    return RtCodeGeneratorPtr(new RtOslGenerator());
 }
 
 const RtToken& RtOslGenerator::getTarget() const
@@ -291,17 +284,11 @@ const RtToken& RtOslGenerator::getTarget() const
 
 RtCodegenContextPtr RtOslGenerator::createContext(RtCodegenOptionsPtr options) const
 {
-    return std::make_shared<RtOslContext>(options);
+    return std::make_shared<RtOslContext>(shared_from_this(), options);
 }
 
-RtCodegenResultPtr RtOslGenerator::generate(const RtPath& /*path*/, RtCodegenContextPtr context) const
+RtCodegenResultPtr RtOslGenerator::generate(const RtPrim& prim, const RtPath& /*path*/, RtCodegenContextPtr context) const
 {
-    RtPrim prim = getPrim();
-    if (!prim)
-    {
-        throw ExceptionRuntimeError("Prim attached to RtOslGenerator API is not valid");
-    }
-
     PvtDataHandle implH;
     if (prim.hasApi<RtNodeGraph>())
     {

@@ -12,6 +12,8 @@
 
 #include <MaterialXCore/Library.h>
 
+#include <MaterialXRuntime/RtPointer.h>
+
 #include <unordered_set>
 #include <limits>
 #include <cstring>
@@ -22,7 +24,7 @@ namespace MaterialX
 /// Number to match if an index is valid.
 const size_t INVALID_INDEX = std::numeric_limits<size_t>::max();
 
-// Forward delcarations
+/// Forward delcarations
 class RtApi;
 class RtObject;
 class RtPath;
@@ -32,6 +34,24 @@ class RtAttribute;
 class RtInput;
 class RtOutput;
 class RtRelationship;
+class RtNode;
+class RtNodeDef;
+class RtNodeImpl;
+class RtNodeGraph;
+class RtFragment;
+class RtCodegenOptions;
+class RtCodegenContext;
+class RtCodegenResult;
+class RtCodeGenerator;
+class RtCodegenImpl;
+
+/// Shared pointer types
+using RtFragmentPtr = RtSharedPtr<RtFragment>;
+using RtCodegenOptionsPtr = RtSharedPtr<RtCodegenOptions>;
+using RtCodegenResultPtr = RtSharedPtr<RtCodegenResult>;
+using RtCodegenContextPtr = RtSharedPtr<RtCodegenContext>;
+using RtCodeGeneratorPtr = RtSharedPtr<RtCodeGenerator>;
+using RtCodeGeneratorConstPtr = RtSharedPtr<const RtCodeGenerator>;
 
 /// Predicate for filtering objects during traversal.
 using RtObjectPredicate = std::function<bool(const RtObject& obj)>;
