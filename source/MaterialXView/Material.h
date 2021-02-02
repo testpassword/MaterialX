@@ -195,11 +195,7 @@ class Material
 
     mx::DocumentPtr _doc;
     mx::TypedElementPtr _elem;
-<<<<<<< HEAD
-    mx::TypedElementPtr _material;
-=======
     mx::NodePtr _materialNode;
->>>>>>> 52396794ccfc8983dfb6c587025412b0bdbd95ea
 
     std::string _udim;
     bool _hasTransparency;
