@@ -90,7 +90,7 @@ TEST_CASE("GenShader: TypeDesc Check", "[genshader]")
     REQUIRE_THROWS(mx::TypeDesc::registerType("color3", mx::TypeDesc::BASETYPE_FLOAT));
 
     // Make sure we can't request an unknown type
-    REQUIRE_THROWS(mx::TypeDesc::get("bar"));
+    REQUIRE(mx::TypeDesc::get("bar") == nullptr);
 }
 
 TEST_CASE("GenShader: Shader Translation", "[translate]")
