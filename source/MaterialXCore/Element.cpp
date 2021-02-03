@@ -137,9 +137,16 @@ ElementPtr Element::getDescendant(const string& namePath) const
     return elem;
 }
 
+void Element::setVersionIntegers(int majorVersion, int minorVersion)
+{
+    string versionString = std::to_string(majorVersion) + "." +
+                           std::to_string(minorVersion);
+    setVersionString(versionString);
+}
+
 std::pair<int, int> Element::getVersionIntegers() const
 {
-    string versionString = getVersionString();
+    const string& versionString = getVersionString();
     StringVec splitVersion = splitString(versionString, ".");
     try
     {
@@ -289,6 +296,21 @@ ElementPtr Element::addChildOfCategory(const string& category, string name)
     registerChildElement(child);
 
     return child;
+}
+
+ElementPtr Element::changeChildCategory(ElementPtr child, const string& category)
+{
+    int childIndex = getChildIndex(child->getName());
+    if (childIndex == -1)
+    {
+        return nullptr;
+    }
+
+    removeChild(child->getName());
+    ElementPtr newChild = addChildOfCategory(category, child->getName());
+    setChildIndex(child->getName(), childIndex);
+    newChild->copyContentFrom(child);
+    return newChild;
 }
 
 ElementPtr Element::getRoot()

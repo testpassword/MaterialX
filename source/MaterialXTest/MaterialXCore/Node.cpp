@@ -96,7 +96,7 @@ TEST_CASE("Node", "[node]")
     REQUIRE(custom->getNodeDef() == customNodeDef);
     custom->setVersionString("1");
     REQUIRE(custom->getNodeDef() == nullptr);
-    custom->setVersionString("2");
+    custom->removeAttribute(mx::Element::VERSION_ATTRIBUTE);
     REQUIRE(custom->getNodeDef() == customNodeDef);
 
     // Define a custom type.
@@ -647,22 +647,22 @@ TEST_CASE("Node Definition Creation", "[nodedef]")
                 {
                     std::string interfaceName = input->getNamePath();
                     interfaceName = nodeDef->createValidChildName(interfaceName);
-                    newGraph->addInterface(input->getNamePath(newGraph), interfaceName);
+                    newGraph->addInterfaceName(input->getNamePath(newGraph), interfaceName);
                     REQUIRE(nodeDef->getChild(interfaceName));
                     try
                     {
                         // Check duplicate failure case
-                        newGraph->addInterface(input->getNamePath(newGraph), interfaceName);
+                        newGraph->addInterfaceName(input->getNamePath(newGraph), interfaceName);
                     }
                     catch (mx::Exception& e)
                     {
                         REQUIRE(e.what());
-                        newGraph->removeInterface(input->getNamePath(newGraph));
+                        newGraph->removeInterfaceName(input->getNamePath(newGraph));
                         REQUIRE(nodeDef->getChild(interfaceName) == nullptr);
-                        newGraph->addInterface(input->getNamePath(newGraph), interfaceName);
+                        newGraph->addInterfaceName(input->getNamePath(newGraph), interfaceName);
 
                         const std::string newInterfaceName = interfaceName + "_renamed";
-                        newGraph->renameInterface(input->getNamePath(newGraph), newInterfaceName);
+                        newGraph->modifyInterfaceName(input->getNamePath(newGraph), newInterfaceName);
                         REQUIRE(nodeDef->getChild(newInterfaceName));
                     }
                 }

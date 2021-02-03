@@ -32,12 +32,14 @@ if(MSVC)
     target_link_libraries(
         MaterialXRenderGlsl
         MaterialXRenderHw
+        MaterialXGenGlsl
         Opengl32
         ${CMAKE_DL_LIBS})
 elseif(APPLE)
     target_link_libraries(
         MaterialXRenderGlsl
         MaterialXRenderHw
+        MaterialXGenGlsl
         ${CMAKE_DL_LIBS}
         ${OPENGL_LIBRARIES}
         "-framework Foundation"
@@ -46,6 +48,7 @@ elseif(UNIX)
     target_link_libraries(
         MaterialXRenderGlsl
         MaterialXRenderHw
+        MaterialXGenGlsl
         ${CMAKE_DL_LIBS}
         ${OPENGL_LIBRARIES}
         ${X11_LIBRARIES}
@@ -58,8 +61,7 @@ set_target_properties(
     COMPILE_FLAGS "${EXTERNAL_COMPILE_FLAGS}"
     LINK_FLAGS "${EXTERNAL_LINK_FLAGS}"
     VERSION "${MATERIALX_LIBRARY_VERSION}"
-    SOVERSION "${MATERIALX_MAJOR_VERSION}"
-    DEBUG_POSTFIX "${MATERIALX_DEBUG_POSTFIX}")
+    SOVERSION "${MATERIALX_MAJOR_VERSION}")
 
 target_include_directories(MaterialXRenderGlsl
     PUBLIC

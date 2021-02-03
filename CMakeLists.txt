@@ -20,8 +20,8 @@ endif()
 
 project(MaterialX)
 set(MATERIALX_MAJOR_VERSION 1)
-set(MATERIALX_MINOR_VERSION 37)
-set(MATERIALX_BUILD_VERSION 4)
+set(MATERIALX_MINOR_VERSION 38)
+set(MATERIALX_BUILD_VERSION 0)
 set(MATERIALX_LIBRARY_VERSION ${MATERIALX_MAJOR_VERSION}.${MATERIALX_MINOR_VERSION}.${MATERIALX_BUILD_VERSION})
 
 cmake_minimum_required(VERSION 3.1)
@@ -57,7 +57,6 @@ set(MATERIALX_PYTHON_PYBIND11_DIR "" CACHE PATH
     "Path to a folder containing the PyBind11 source to be used in building MaterialX Python.")
 
 set(MATERIALX_OIIO_DIR "" CACHE PATH "Path to the root folder of the OpenImageIO installation.")
-set(MATERIALX_DEBUG_POSTFIX "" CACHE STRING "Postfix to append to the target file name for debug configuration (e.g. 'd').")
 
 # Helpers for OSL validation
 set(MATERIALX_OSLC_EXECUTABLE "" CACHE FILEPATH "Full path to the oslc binary.")
@@ -163,8 +162,6 @@ endif()
 add_definitions(-DMATERIALX_OSLC_EXECUTABLE=\"${MATERIALX_OSLC_EXECUTABLE}\")
 add_definitions(-DMATERIALX_TESTRENDER_EXECUTABLE=\"${MATERIALX_TESTRENDER_EXECUTABLE}\")
 add_definitions(-DMATERIALX_OSL_INCLUDE_PATH=\"${MATERIALX_OSL_INCLUDE_PATH}\")
-add_definitions(-DCMAKE_CXX_VISIBILITY_PRESET=hidden)
-add_definitions(-DCMAKE_VISIBILITY_INLINES_HIDDEN=ON)
 if(MATERIALX_BUILD_OIIO)
     add_definitions(-DMATERIALX_BUILD_OIIO)
 endif()
@@ -184,6 +181,9 @@ endif()
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/installed" CACHE PATH "Default install path" FORCE)
 endif()
+
+# Set the installation path for shared libraries
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 # Adjust compiler settings
 if(MSVC)
@@ -342,6 +342,10 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.6.2")
         set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT MaterialXTest)
     endif()
 endif()
+
+# Install root-level documents
+install(FILES CHANGELOG.md README.md
+        DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(${CMAKE_BINARY_DIR}/cmake/MaterialXConfigVersion.cmake

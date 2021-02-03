@@ -19,8 +19,6 @@ void bindPyNode(py::module& mod)
         .def("getConnectedNode", &mx::Node::getConnectedNode)
         .def("setConnectedNodeName", &mx::Node::setConnectedNodeName)
         .def("getConnectedNodeName", &mx::Node::getConnectedNodeName)
-        .def("setConnectedOutput", &mx::Node::setConnectedOutput)
-        .def("getConnectedOutput", &mx::Node::getConnectedOutput)
         .def("getNodeDef", &mx::Node::getNodeDef,
             py::arg("target") = mx::EMPTY_STRING)
         .def("getImplementation", &mx::Node::getImplementation,
@@ -53,9 +51,9 @@ void bindPyNode(py::module& mod)
         .def("setNodeDef", &mx::NodeGraph::setNodeDef)
         .def("getNodeDef", &mx::NodeGraph::getNodeDef)
         .def("getDeclaration", &mx::NodeGraph::getDeclaration)
-        .def("addInterface", &mx::NodeGraph::addInterface)
-        .def("removeInterface", &mx::NodeGraph::removeInterface)
-        .def("renameInterface", &mx::NodeGraph::renameInterface)
+        .def("addInterfaceName", &mx::NodeGraph::addInterfaceName)
+        .def("removeInterfaceName", &mx::NodeGraph::removeInterfaceName)
+        .def("modifyInterfaceName", &mx::NodeGraph::modifyInterfaceName)
         .def_readonly_static("CATEGORY", &mx::NodeGraph::CATEGORY);
 
     py::class_<mx::Backdrop, mx::BackdropPtr, mx::Element>(mod, "Backdrop")

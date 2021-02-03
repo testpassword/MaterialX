@@ -17,20 +17,6 @@ const string Document::CMS_CONFIG_ATTRIBUTE = "cmsconfig";
 
 namespace {
 
-const string DOCUMENT_VERSION_STRING = std::to_string(MATERIALX_MAJOR_VERSION) + "." +
-                                       std::to_string(MATERIALX_MINOR_VERSION);
-
-template<class T> shared_ptr<T> updateChildSubclass(ElementPtr parent, ElementPtr origChild)
-{
-    string childName = origChild->getName();
-    int childIndex = parent->getChildIndex(childName);
-    parent->removeChild(childName);
-    shared_ptr<T> newChild = parent->addChild<T>(childName);
-    parent->setChildIndex(childName, childIndex);
-    newChild->copyContentFrom(origChild);
-    return newChild;
-}
-
 NodeDefPtr getShaderNodeDef(ElementPtr shaderRef)
 {
     if (shaderRef->hasAttribute(NodeDef::NODE_DEF_ATTRIBUTE))
@@ -57,121 +43,6 @@ NodeDefPtr getShaderNodeDef(ElementPtr shaderRef)
     }
     return NodeDefPtr();
 }
-
-void convertMaterialsToNodes(DocumentPtr doc)
-{
-    for (ElementPtr mat : doc->getChildrenOfType<Element>("material"))
-    {
-        string materialName = mat->getName();
-
-        // Create a temporary name for the material element
-        // so the new node can reuse the existing name.
-        string validName = doc->createValidChildName(materialName + "1");
-        mat->setName(validName);
-
-        // Create a new material node
-        NodePtr materialNode = nullptr;
-
-        // Only include the shader refs explicitly specified on the material instance
-        for (ElementPtr shaderRef : mat->getChildrenOfType<Element>("shaderref"))
-        {
-            // See if shader has been created already.
-            // Should not occur as the shaderref is a uniquely named
-            // child of a uniquely named material element, but the two combined
-            // may have been used for another node instance which not a shader node.
-            string shaderNodeName = materialName + "_" + shaderRef->getName();
-            NodePtr existingShaderNode = doc->getNode(shaderNodeName);
-            if (existingShaderNode)
-            {
-                const string& existingType = existingShaderNode->getType();
-                if (existingType == VOLUME_SHADER_TYPE_STRING ||
-                    existingType == SURFACE_SHADER_TYPE_STRING ||
-                    existingType == DISPLACEMENT_SHADER_TYPE_STRING)
-                {
-                    throw Exception("Shader node already exists: " + shaderNodeName);
-                }
-                else
-                {
-                    shaderNodeName = doc->createValidChildName(shaderNodeName);
-                }
-            }
-
-            // Find the shader type if defined
-            string shaderNodeType = SURFACE_SHADER_TYPE_STRING;
-            NodeDefPtr nodeDef = getShaderNodeDef(shaderRef);
-            if (nodeDef)
-            {
-                shaderNodeType = nodeDef->getType();
-            }
-
-            // Add in a new shader node
-            const string shaderNodeCategory = shaderRef->getAttribute("node");
-            NodePtr shaderNode = doc->addNode(shaderNodeCategory, shaderNodeName, shaderNodeType);
-            shaderNode->setSourceUri(shaderRef->getSourceUri());
-
-            for (ElementPtr child : shaderRef->getChildren())
-            {
-                ElementPtr port = nullptr;
-
-                // Copy over bindinputs as inputs, and bindparams as params
-                if (child->getCategory() == "bindinput")
-                {
-                    port = shaderNode->addInput(child->getName(), child->getAttribute(TypedElement::TYPE_ATTRIBUTE));
-                }
-                else if (child->getCategory() == "bindparam")
-                {
-                    port = shaderNode->addChildOfCategory("parameter", child->getName());
-                    port->setAttribute(TypedElement::TYPE_ATTRIBUTE, child->getAttribute(TypedElement::TYPE_ATTRIBUTE));
-                }
-                else if (child->getCategory() == "bindtoken")
-                {
-                    TokenPtr token = shaderNode->addToken(child->getName());
-                    token->copyContentFrom(child);
-                }
-                if (port)
-                {
-                    // Copy over attributes.
-                    // Note: We preserve inputs which have nodegraph connections,
-                    // as well as top level output connections.
-                    port->copyContentFrom(child);
-                }
-            }
-
-            // Create a new material node if not already created and
-            // add a reference from the material node to the new shader node
-            if (!materialNode)
-            {
-                materialNode = doc->addMaterialNode(materialName, shaderNode);
-                materialNode->setSourceUri(mat->getSourceUri());
-                // Note: Inheritance does not get transfered to the node we do
-                // not perform the following:
-                //      - materialNode->setInheritString(mat->getInheritString());
-            }
-
-            // Create input to replace each shaderref. Use shaderref name as unique
-            // input name.
-            InputPtr shaderInput = materialNode->getInput(shaderNodeType);
-            if (!shaderInput)
-            {
-                shaderInput = materialNode->addInput(shaderNodeType, shaderNodeType);
-                shaderInput->setNodeName(shaderNode->getName());
-            }
-            // Make sure to copy over any target and version information from the shaderref.
-            if (!shaderRef->getTarget().empty())
-            {
-                shaderInput->setTarget(shaderRef->getTarget());
-            }
-            if (!shaderRef->getVersionString().empty())
-            {
-                shaderInput->setVersionString(shaderRef->getVersionString());
-            }
-        }
-
-        // Remove the original material element
-        doc->removeChild(mat->getName());
-    }
-}
-
 
 } // anonymous namespace
 
@@ -272,12 +143,10 @@ Document::~Document()
 void Document::initialize()
 {
     _root = getSelf();
-
-    DocumentPtr doc = getDocument();
-    _cache->doc = doc;
+    _cache->doc = getDocument();
 
     clearContent();
-    setVersionString(DOCUMENT_VERSION_STRING);
+    setVersionIntegers(MATERIALX_MAJOR_VERSION, MATERIALX_MINOR_VERSION);
 }
 
 NodeDefPtr Document::addNodeDefFromGraph(const NodeGraphPtr nodeGraph, const string& nodeDefName, const string& node,
@@ -473,51 +342,13 @@ bool Document::validate(string* message) const
     return GraphElement::validate(message) && res;
 }
 
-bool Document::convertParametersToInputs()
-{
-    bool anyConverted = false;
-
-    // Convert all parameters to be inputs. If needed set them to be "uniform".
-    const StringSet uniformTypes = { FILENAME_TYPE_STRING, STRING_TYPE_STRING };
-    const string PARAMETER_CATEGORY_STRING("parameter");
-    for (ElementPtr e : traverseTree())
-    {
-        InterfaceElementPtr elem = e->asA<InterfaceElement>();
-        if (!elem)
-        {
-            continue;
-        }
-        vector<ElementPtr> children = elem->getChildren();
-        for (ElementPtr child : children)
-        {
-            if (child->getCategory() == PARAMETER_CATEGORY_STRING)
-            {
-                InputPtr newInput = changeChildCategory(elem, child, Input::CATEGORY)->asA<Input>();
-                if (uniformTypes.count(child->getAttribute(TypedElement::TYPE_ATTRIBUTE)))
-                {
-                    newInput->setIsUniform(true);
-                }
-                else
-                {
-                    // TODO: Determine based on usage whether to make
-                    // the input a uniform. 
-                    newInput->setIsUniform(true);
-                }
-                anyConverted = true;
-            }
-        }
-    }
-    return anyConverted;
-}
-
-void Document::upgradeVersion(bool applyFutureUpdates)
+void Document::upgradeVersion()
 {
     std::pair<int, int> versions = getVersionIntegers();
     int majorVersion = versions.first;
     int minorVersion = versions.second;
     if (majorVersion == MATERIALX_MAJOR_VERSION &&
-        minorVersion == MATERIALX_MINOR_VERSION &&
-        !applyFutureUpdates)
+        minorVersion == MATERIALX_MINOR_VERSION)
     {
         return;
     }
@@ -545,13 +376,9 @@ void Document::upgradeVersion(bool applyFutureUpdates)
                 elem->setAttribute(NodeDef::NODE_ATTRIBUTE, elem->getAttribute("shadername"));
                 elem->removeAttribute("shadername");
             }
-            vector<ElementPtr> origChildren = elem->getChildren();
-            for (ElementPtr child : origChildren)
+            for (ElementPtr child : getChildrenOfType<Element>("assign"))
             {
-                if (child->getCategory() == "assign")
-                {
-                    changeChildCategory(elem, child, MaterialAssign::CATEGORY);
-                }
+                elem->changeChildCategory(child, "materialassign");
             }
         }
         minorVersion = 24;
@@ -599,11 +426,11 @@ void Document::upgradeVersion(bool applyFutureUpdates)
             {
                 if (child->getCategory() == "opgraph")
                 {
-                    changeChildCategory(elem, child, NodeGraph::CATEGORY);
+                    elem->changeChildCategory(child, "nodegraph");
                 }
                 else if (child->getCategory() == "shader")
                 {
-                    NodeDefPtr nodeDef = changeChildCategory(elem, child, NodeDef::CATEGORY)->asA<NodeDef>();
+                    NodeDefPtr nodeDef = elem->changeChildCategory(child, "nodedef")->asA<NodeDef>();
                     if (nodeDef->hasAttribute("shadertype"))
                     {
                         nodeDef->setType(SURFACE_SHADER_TYPE_STRING);
@@ -629,7 +456,7 @@ void Document::upgradeVersion(bool applyFutureUpdates)
                     {
                         if (elem->isA<Node>())
                         {
-                            InputPtr input = updateChildSubclass<Input>(elem, child);
+                            InputPtr input = elem->changeChildCategory(child, "input")->asA<Input>();
                             input->setNodeName(input->getAttribute("value"));
                             input->removeAttribute("value");
                             if (input->getConnectedNode())
@@ -703,7 +530,7 @@ void Document::upgradeVersion(bool applyFutureUpdates)
         {
             for (ElementPtr child : geomInfo->getChildrenOfType<Element>("geomattr"))
             {
-                changeChildCategory(geomInfo, child, GeomProp::CATEGORY);
+                geomInfo->changeChildCategory(child, "geomprop");
             }
         }
         if (getGeomPropValue("udim") && !getGeomPropValue("udimset"))
@@ -868,7 +695,7 @@ void Document::upgradeVersion(bool applyFutureUpdates)
         {
             for (ElementPtr child : geomInfo->getChildrenOfType<Element>("geomattr"))
             {
-                changeChildCategory(geomInfo, child, GeomProp::CATEGORY);
+                geomInfo->changeChildCategory(child, "geomprop");
             }
         }
         for (ElementPtr elem : traverseTree())
@@ -924,7 +751,7 @@ void Document::upgradeVersion(bool applyFutureUpdates)
                 ElementPtr cutoff = node->getChild("cutoff");
                 if (cutoff)
                 {
-                    cutoff = updateChildSubclass<Input>(node, cutoff);
+                    cutoff = node->changeChildCategory(cutoff, "input");
                     cutoff->setName("value2");
                 }
                 InputPtr in1 = node->getInput("in1");
@@ -1016,8 +843,6 @@ void Document::upgradeVersion(bool applyFutureUpdates)
     // Upgrade from 1.37 to 1.38
     if (majorVersion == 1 && minorVersion >= 37)
     {
-        convertMaterialsToNodes(asA<Document>());
-
         // Convert color2 types to vector2
         const StringMap COLOR2_CHANNEL_MAP = { { "r", "x" }, { "a", "y" } };
         for (ElementPtr elem : traverseTree())
@@ -1057,6 +882,90 @@ void Document::upgradeVersion(bool applyFutureUpdates)
             }
         }
 
+        // Convert material elements to nodes
+        for (ElementPtr mat : getChildrenOfType<Element>("material"))
+        {
+            string materialName = mat->getName();
+            NodePtr materialNode = nullptr;
+
+            for (ElementPtr shaderRef : mat->getChildrenOfType<Element>("shaderref"))
+            {
+                // Find the shader type if defined
+                string shaderNodeType = SURFACE_SHADER_TYPE_STRING;
+                NodeDefPtr nodeDef = getShaderNodeDef(shaderRef);
+                if (nodeDef)
+                {
+                    shaderNodeType = nodeDef->getType();
+                }
+
+                // Add the shader node.
+                string shaderNodeName = createValidChildName(shaderRef->getName());
+                string shaderNodeCategory = shaderRef->getAttribute(NodeDef::NODE_ATTRIBUTE);
+                NodePtr shaderNode = addNode(shaderNodeCategory, shaderNodeName, shaderNodeType);
+                shaderNode->setSourceUri(shaderRef->getSourceUri());
+
+                for (ElementPtr child : shaderRef->getChildren())
+                {
+                    ElementPtr port = nullptr;
+
+                    // Copy over bindinputs as inputs, and bindparams as params
+                    if (child->getCategory() == "bindinput")
+                    {
+                        port = shaderNode->addInput(child->getName(), child->getAttribute(TypedElement::TYPE_ATTRIBUTE));
+                    }
+                    else if (child->getCategory() == "bindparam")
+                    {
+                        port = shaderNode->addChildOfCategory("parameter", child->getName());
+                        port->setAttribute(TypedElement::TYPE_ATTRIBUTE, child->getAttribute(TypedElement::TYPE_ATTRIBUTE));
+                    }
+                    else if (child->getCategory() == "bindtoken")
+                    {
+                        TokenPtr token = shaderNode->addToken(child->getName());
+                        token->copyContentFrom(child);
+                    }
+                    if (port)
+                    {
+                        // Copy over attributes.
+                        // Note: We preserve inputs which have nodegraph connections,
+                        // as well as top level output connections.
+                        port->copyContentFrom(child);
+                    }
+                }
+
+                // Create a new material node if not already created and
+                // add a reference from the material node to the new shader node
+                if (!materialNode)
+                {
+                    materialNode = addMaterialNode(createValidName("temp"), shaderNode);
+                    materialNode->setSourceUri(mat->getSourceUri());
+                }
+
+                // Create input to replace each shaderref. Use shaderref name as unique
+                // input name.
+                InputPtr shaderInput = materialNode->getInput(shaderNodeType);
+                if (!shaderInput)
+                {
+                    shaderInput = materialNode->addInput(shaderNodeType, shaderNodeType);
+                    shaderInput->setNodeName(shaderNode->getName());
+                }
+                if (!shaderRef->getTarget().empty())
+                {
+                    shaderInput->setTarget(shaderRef->getTarget());
+                }
+                if (!shaderRef->getVersionString().empty())
+                {
+                    shaderInput->setVersionString(shaderRef->getVersionString());
+                }
+            }
+
+            // Remove the material element and transfer its name to the material node.
+            removeChild(materialName);
+            if (materialNode)
+            {
+                materialNode->setName(materialName);
+            }
+        }
+
         // Update atan2 interface and rotate3d interface
         const string ATAN2 = "atan2";
         const string IN1 = "in1";
@@ -1085,11 +994,107 @@ void Document::upgradeVersion(bool applyFutureUpdates)
             ElementPtr axis = nodedef->getChild(AXIS);
             if (axis)
             {
-                updateChildSubclass<Input>(nodedef, axis);
+                nodedef->changeChildCategory(axis, "input");
             }
         }
 
-        // Update nodes
+        // Update BSDF interfaces
+        using StringPair = std::pair<string, string>;
+        const StringPair DIELECTRIC_BRDF = { "dielectric_brdf", "dielectric_bsdf" };
+        const StringPair DIELECTRIC_BTDF = { "dielectric_btdf", "dielectric_bsdf" };
+        const StringPair GENERALIZED_SCHLICK_BRDF = { "generalized_schlick_brdf", "generalized_schlick_bsdf" };
+        const StringPair CONDUCTOR_BRDF = { "conductor_brdf", "conductor_bsdf" };
+        const StringPair SHEEN_BRDF = { "sheen_brdf", "sheen_bsdf" };
+        const StringPair DIFFUSE_BRDF = { "diffuse_brdf", "oren_nayar_diffuse_bsdf" };
+        const StringPair BURLEY_DIFFUSE_BRDF = { "burley_diffuse_brdf", "burley_diffuse_bsdf" };
+        const StringPair DIFFUSE_BTDF = { "diffuse_btdf", "translucent_bsdf" };
+        const StringPair SUBSURFACE_BRDF = { "subsurface_brdf", "subsurface_bsdf" };
+        const StringPair THIN_FILM_BRDF = { "thin_film_brdf", "thin_film_bsdf" };
+
+        const string SCATTER_MODE = "scatter_mode";
+        const string BSDF = "BSDF";
+        const string LAYER = "layer";
+        const string TOP = "top";
+        const string BASE = "base";
+        const string INTERIOR = "interior";
+        const string ARTISTIC_IOR = "artistic_ior";
+        const string COMPLEX_IOR = "complex_ior";
+        const string REFLECTIVITY = "reflectivity";
+        const string EDGE_COLOR = "edge_color";
+        const string IOR = "ior";
+        const string EXTINCTION = "extinction";
+        const string COLOR3 = "color3";
+        const string VECTOR3 = "vector3";
+        const string CONVERT = "convert";
+        const string IN = "in";
+
+        // Function for upgrading BSDF nodedef.
+        auto upgradeBsdfNodeDef = [SCATTER_MODE](NodeDefPtr nodedef, const string& newCategory, bool addScatterMode = false)
+        {
+            if (nodedef)
+            {
+                nodedef->setName(newCategory);
+                if (addScatterMode)
+                {
+                    InputPtr mode = nodedef->addInput(SCATTER_MODE, STRING_TYPE_STRING);
+                    mode->setIsUniform(true);
+                    mode->setValueString("R");
+                    mode->setAttribute("enum", "R,T,RT");
+                }
+            }
+        };
+
+        // Update nodedefs.
+        upgradeBsdfNodeDef(getNodeDef(DIELECTRIC_BRDF.first), DIELECTRIC_BRDF.second, true);
+        upgradeBsdfNodeDef(getNodeDef(GENERALIZED_SCHLICK_BRDF.first), GENERALIZED_SCHLICK_BRDF.second, true);
+        upgradeBsdfNodeDef(getNodeDef(CONDUCTOR_BRDF.first), CONDUCTOR_BRDF.second);
+        upgradeBsdfNodeDef(getNodeDef(SHEEN_BRDF.first), SHEEN_BRDF.second);
+        upgradeBsdfNodeDef(getNodeDef(DIFFUSE_BRDF.first), DIFFUSE_BRDF.second);
+        upgradeBsdfNodeDef(getNodeDef(BURLEY_DIFFUSE_BRDF.first), BURLEY_DIFFUSE_BRDF.second);
+        upgradeBsdfNodeDef(getNodeDef(DIFFUSE_BTDF.first), DIFFUSE_BTDF.second);
+        upgradeBsdfNodeDef(getNodeDef(SUBSURFACE_BRDF.first), SUBSURFACE_BRDF.second);
+        upgradeBsdfNodeDef(getNodeDef(THIN_FILM_BRDF.first), THIN_FILM_BRDF.second);
+        removeNodeDef(DIELECTRIC_BTDF.first);
+        removeNodeDef(COMPLEX_IOR);
+
+        // Function for upgrading old nested layering setup
+        // to new setup with layer operators.
+        auto upgradeBsdfLayering = [TOP, BASE, LAYER, BSDF](NodePtr node)
+        {
+            InputPtr base = node->getInput(BASE);
+            if (base)
+            {
+                NodePtr baseNode = base->getConnectedNode();
+                if (baseNode)
+                {
+                    GraphElementPtr parent = node->getParent()->asA<GraphElement>();
+                    // Rename the top bsdf node, and give its old name to the layer operator
+                    // so we don't need to update any connection references.
+                    const string oldName = node->getName();
+                    node->setName(oldName + "__layer_top");
+                    NodePtr layer = parent->addNode(LAYER, oldName, BSDF);
+                    InputPtr layerTop = layer->addInput(TOP, BSDF);
+                    InputPtr layerBase = layer->addInput(BASE, BSDF);
+                    layerTop->setConnectedNode(node);
+                    layerBase->setConnectedNode(baseNode);
+                }
+                node->removeInput(BASE);
+            }
+        };
+
+        // Function for copy all attributes from one element to another.
+        auto copyAttributes = [](ConstElementPtr src, ElementPtr dest)
+        {
+            for (const string& attr : src->getAttributeNames())
+            {
+                dest->setAttribute(attr, src->getAttribute(attr));
+            }
+        };
+
+        // Storage for inputs found connected downstream from artistic_ior node.
+        vector<InputPtr> artisticIorConnections, artisticExtConnections;
+
+        // Update all nodes.
         for (ElementPtr elem : traverseTree())
         {
             NodePtr node = elem->asA<Node>();
@@ -1125,16 +1130,161 @@ void Document::upgradeVersion(bool applyFutureUpdates)
                 ElementPtr axis = node->getChild(AXIS);
                 if (axis)
                 {
-                    updateChildSubclass<Input>(node, axis);
+                    node->changeChildCategory(axis, "input");
                 }
             }
+            else if (nodeCategory == DIELECTRIC_BRDF.first)
+            {
+                node->setCategory(DIELECTRIC_BRDF.second);
+                upgradeBsdfLayering(node);
+            }
+            else if (nodeCategory == DIELECTRIC_BTDF.first)
+            {
+                node->setCategory(DIELECTRIC_BTDF.second);
+                node->removeInput(INTERIOR);
+                InputPtr mode = node->addInput(SCATTER_MODE, STRING_TYPE_STRING);
+                mode->setValueString("T");
+            }
+            else if (nodeCategory == GENERALIZED_SCHLICK_BRDF.first)
+            {
+                node->setCategory(GENERALIZED_SCHLICK_BRDF.second);
+                upgradeBsdfLayering(node);
+            }
+            else if (nodeCategory == SHEEN_BRDF.first)
+            {
+                node->setCategory(SHEEN_BRDF.second);
+                upgradeBsdfLayering(node);
+            }
+            else if (nodeCategory == THIN_FILM_BRDF.first)
+            {
+                node->setCategory(THIN_FILM_BRDF.second);
+                upgradeBsdfLayering(node);
+            }
+            else if (nodeCategory == CONDUCTOR_BRDF.first)
+            {
+                node->setCategory(CONDUCTOR_BRDF.second);
+
+                // Create an artistic_ior node to convert from artistic to physical parameterization.
+                GraphElementPtr parent = node->getParent()->asA<GraphElement>();
+                NodePtr artisticIor = parent->addNode(ARTISTIC_IOR, node->getName() + "__artistic_ior", "multioutput");
+                OutputPtr artisticIor_ior = artisticIor->addOutput(IOR, COLOR3);
+                OutputPtr artisticIor_extinction = artisticIor->addOutput(EXTINCTION, COLOR3);
+
+                // Copy values and connections from conductor node to artistic_ior node.
+                InputPtr reflectivity = node->getInput(REFLECTIVITY);
+                if (reflectivity)
+                {
+                    InputPtr artisticIor_reflectivity = artisticIor->addInput(REFLECTIVITY, COLOR3);
+                    copyAttributes(reflectivity, artisticIor_reflectivity);
+                }
+                InputPtr edge_color = node->getInput(EDGE_COLOR);
+                if (edge_color)
+                {
+                    InputPtr artisticIor_edge_color = artisticIor->addInput(EDGE_COLOR, COLOR3);
+                    copyAttributes(edge_color, artisticIor_edge_color);
+                }
+
+                // Update the parameterization on the conductor node
+                // and connect it to the artistic_ior node.
+                node->removeInput(REFLECTIVITY);
+                node->removeInput(EDGE_COLOR);
+                InputPtr ior = node->addInput(IOR, COLOR3);
+                ior->setNodeName(artisticIor->getName());
+                ior->setOutputString(artisticIor_ior->getName());
+                InputPtr extinction = node->addInput(EXTINCTION, COLOR3);
+                extinction->setNodeName(artisticIor->getName());
+                extinction->setOutputString(artisticIor_extinction->getName());
+            }
+            else if (nodeCategory == DIFFUSE_BRDF.first)
+            {
+                node->setCategory(DIFFUSE_BRDF.second);
+            }
+            else if (nodeCategory == BURLEY_DIFFUSE_BRDF.first)
+            {
+                node->setCategory(BURLEY_DIFFUSE_BRDF.second);
+            }
+            else if (nodeCategory == DIFFUSE_BTDF.first)
+            {
+                node->setCategory(DIFFUSE_BTDF.second);
+            }
+            else if (nodeCategory == SUBSURFACE_BRDF.first)
+            {
+                node->setCategory(SUBSURFACE_BRDF.second);
+            }
+            else if (nodeCategory == ARTISTIC_IOR)
+            {
+                OutputPtr ior = node->getOutput(IOR);
+                if (ior)
+                {
+                    ior->setType(COLOR3);
+                }
+                OutputPtr extinction = node->getOutput(EXTINCTION);
+                if (extinction)
+                {
+                    extinction->setType(COLOR3);
+                }
+            }
+
+            // Search for connections to artistic_ior with vector3 type.
+            // If found we must insert a conversion node color3->vector3
+            // since the outputs of artistic_ior is now color3.
+            // Save the inputs here and insert the conversion nodes below,
+            // since we can't modify the graph while traversing it.
+            for (InputPtr input : node->getInputs())
+            {
+                if (input->getOutputString() == IOR && input->getType() == VECTOR3)
+                {
+                    NodePtr connectedNode = input->getConnectedNode();
+                    if (connectedNode && connectedNode->getCategory() == ARTISTIC_IOR)
+                    {
+                        artisticIorConnections.push_back(input);
+                    }
+                }
+                else if (input->getOutputString() == EXTINCTION && input->getType() == VECTOR3)
+                {
+                    NodePtr connectedNode = input->getConnectedNode();
+                    if (connectedNode && connectedNode->getCategory() == ARTISTIC_IOR)
+                    {
+                        artisticExtConnections.push_back(input);
+                    }
+                }
+            }
+        }
+
+        // Insert conversion nodes for artistic_ior connections found above.
+        for (InputPtr input : artisticIorConnections)
+        {
+            NodePtr artisticIorNode = input->getConnectedNode();
+            ElementPtr node = input->getParent();
+            GraphElementPtr parent = node->getParent()->asA<GraphElement>();
+            NodePtr convert = parent->addNode(CONVERT, node->getName() + "__convert_ior", VECTOR3);
+            InputPtr convertInput = convert->addInput(IN, COLOR3);
+            convertInput->setNodeName(artisticIorNode->getName());
+            convertInput->setOutputString(IOR);
+            input->setNodeName(convert->getName());
+            input->removeAttribute(PortElement::OUTPUT_ATTRIBUTE);
+        }
+        for (InputPtr input : artisticExtConnections)
+        {
+            NodePtr artisticIorNode = input->getConnectedNode();
+            ElementPtr node = input->getParent();
+            GraphElementPtr parent = node->getParent()->asA<GraphElement>();
+            NodePtr convert = parent->addNode(CONVERT, node->getName() + "__convert_extinction", VECTOR3);
+            InputPtr convertInput = convert->addInput(IN, COLOR3);
+            convertInput->setNodeName(artisticIorNode->getName());
+            convertInput->setOutputString(EXTINCTION);
+            input->setNodeName(convert->getName());
+            input->removeAttribute(PortElement::OUTPUT_ATTRIBUTE);
         }
 
         // Make it so that interface names and nodes in a nodegraph are not duplicates
         // If they are, rename the nodes.
         for (NodeGraphPtr nodegraph : getNodeGraphs())
         {
-            StringSet interfaceNames;
+            // Clear out any erroneously set version 
+            nodegraph->removeAttribute(Element::VERSION_ATTRIBUTE);
+
+            StringSet interfaceNames;            
             for (auto child : nodegraph->getChildren())
             {
                 NodePtr node = child->asA<Node>();
@@ -1167,19 +1317,50 @@ void Document::upgradeVersion(bool applyFutureUpdates)
                     node->setName(newNodeName);
                 }
             }
-        }       
+        }   
 
-        // While we are in the process of supporting 1.38. Leave files as 1.37
-        minorVersion = 37;
+        // Convert parameters to inputs, applying uniform markings as needed.
+        const string FRAME_OFFSET_STRING = "frameoffset";
+        const string INDEX_STRING = "index";
+        const string DEFAULT_STRING = "default";
+        for (ElementPtr elem : traverseTree())
+        {
+            if (elem->isA<InterfaceElement>())
+            {
+                for (ElementPtr param : elem->getChildrenOfType<Element>("parameter"))
+                {
+                    InputPtr input = elem->changeChildCategory(param, "input")->asA<Input>();
+                    if (elem->isA<NodeDef>())
+                    {
+                        // Strings and filename types should always be uniforms.
+                        const string& inputType = input->getType();
+                        if (inputType == FILENAME_TYPE_STRING || inputType == STRING_TYPE_STRING)
+                        {
+                            input->setIsUniform(true);
+                        }
+                        // Some integer inputs should be set as uniforms
+                        else if (inputType == "integer")
+                        {
+                            if (input->getName() == FRAME_OFFSET_STRING)
+                            {
+                                input->setIsUniform(true);
+                            }
+                            else if (input->getName() == INDEX_STRING)
+                            {
+                                input->setIsUniform(true);
+                            }
+                            else if (input->getName() == DEFAULT_STRING)
+                            {
+                                input->setIsUniform(true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    convertParametersToInputs();
-
-    if (majorVersion == MATERIALX_MAJOR_VERSION &&
-        minorVersion == MATERIALX_MINOR_VERSION)
-    {
-        setVersionString(DOCUMENT_VERSION_STRING);
-    }
+    setVersionIntegers(majorVersion, minorVersion);
 }
 
 void Document::invalidateCache()

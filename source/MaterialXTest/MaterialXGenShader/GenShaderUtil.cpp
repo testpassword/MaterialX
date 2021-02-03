@@ -23,7 +23,8 @@ namespace mx = MaterialX;
 namespace GenShaderUtil
 {
 
-const std::string LAYOUT_SUFFIX = "_layout";
+const std::string LAYOUT_SUFFIX("_layout");
+const std::string SOURCE_CODE_STRING("sourcecode");
 
 namespace
 {
@@ -43,14 +44,20 @@ namespace
 bool getShaderSource(mx::GenContext& context,
                     const mx::ImplementationPtr implementation,
                     mx::FilePath& sourcePath,
-                    mx::FilePath& resolvedPath,
+                    std::string& resolvedSource,
                     std::string& sourceContents)
 {
     if (implementation)
     {
+        resolvedSource = implementation->getAttribute(SOURCE_CODE_STRING);
+        if (!resolvedSource.empty())
+        {
+            return true;
+        }
         sourcePath = implementation->getFile();
-        resolvedPath = context.resolveSourceFile(sourcePath);
-        sourceContents = mx::readFile(resolvedPath.asString());
+        mx::FilePath resolvedPath = context.resolveSourceFile(sourcePath);
+        sourceContents = mx::readFile(resolvedPath);
+        resolvedSource = resolvedPath.asString();
         return !sourceContents.empty();
     }
     return false;
@@ -67,7 +74,8 @@ void checkImplementations(mx::GenContext& context,
     const mx::ShaderGenerator& shadergen = context.getShaderGenerator();
 
     mx::FileSearchPath searchPath; 
-    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+    mx::FilePath librariesRoot = mx::FilePath::getCurrentPath() / mx::FilePath("libraries");
+    searchPath.append(librariesRoot);
     loadLibraries({ "targets", "adsk", "stdlib", "pbrlib" }, searchPath, doc);
 
     const std::string& target = shadergen.getTarget();
@@ -78,7 +86,9 @@ void checkImplementations(mx::GenContext& context,
     implDumpBuffer.open(fileName, std::ios::out);
     std::ostream implDumpStream(&implDumpBuffer);
 
-    context.registerSourceCodeSearchPath(searchPath);
+    mx::FileSearchPath sourceSearchPath = searchPath;
+    sourceSearchPath.append(librariesRoot / mx::FilePath("adsk"));
+    context.registerSourceCodeSearchPath(sourceSearchPath);
 
     // Node types to explicitly skip temporarily.
     mx::StringSet skipNodeTypes =
@@ -94,7 +104,7 @@ void checkImplementations(mx::GenContext& context,
         "absorption_vdf",
         "anisotropic_vdf",
         "thin_surface",
-        "thin_film_brdf",
+        "thin_film_bsdf",
         "worleynoise2d",
         "worleynoise3d",
         "geompropvalue",
@@ -232,9 +242,10 @@ void checkImplementations(mx::GenContext& context,
                 // Check for an implementation explicitly stored
                 else
                 {
-                    mx::FilePath sourcePath, resolvedPath;
+                    mx::FilePath sourcePath;
+                    std::string resolvedSource;
                     std::string contents;
-                    if (!getShaderSource(context, impl, sourcePath, resolvedPath, contents))
+                    if (!getShaderSource(context, impl, sourcePath, resolvedSource, contents))
                     {
                         missing++;
                         missing_str += "Missing source code: " + sourcePath.asString() + " for nodedef: "
@@ -243,7 +254,7 @@ void checkImplementations(mx::GenContext& context,
                     else
                     {
                         found_str += "Found impl and src for nodedef: " + nodeDefName + ", Node: "
-                            + nodeName + +". Impl: " + impl->getName() + ". Path: " + resolvedPath.asString() + ".\n";
+                            + nodeName + +". Impl: " + impl->getName() + ". Source: " + resolvedSource + ".\n";
                     }
                 }
             }
@@ -607,7 +618,6 @@ void ShaderGeneratorTester::validate(const mx::GenOptions& generateOptions, cons
     mx::StringVec errorLog;
     mx::FileSearchPath searchPath(_libSearchPath);
     mx::XmlReadOptions readOptions;
-    readOptions.applyFutureUpdates = options.applyFutureUpdates;
     for (const auto& testRoot : _testRootPaths)
     {
         mx::loadDocuments(testRoot, searchPath, _skipFiles, overrideFiles, _documents, _documentPaths, 
@@ -678,27 +688,6 @@ void ShaderGeneratorTester::validate(const mx::GenOptions& generateOptions, cons
                     << e.what() << std::endl;
             CHECK(importedLibrary);
             continue;
-        }
-
-        if (options.applyFutureUpdates &&
-            (!doc->getNodes(mx::SURFACE_MATERIAL_NODE_STRING).empty() ||
-             !doc->getNodes(mx::VOLUME_MATERIAL_NODE_STRING).empty()))
-        {
-            _logFile << "Updated version document written to: " << doc->getSourceUri() + "modified.mtlxx" << std::endl;
-
-            mx::StringSet xincludeFiles = doc->getReferencedSourceUris();
-            auto skipXincludes = [xincludeFiles](mx::ConstElementPtr elem)
-            {
-                if (elem->hasSourceUri())
-                {
-                    return (xincludeFiles.count(elem->getSourceUri()) == 0);
-                }
-                return true;
-            };
-            mx::XmlWriteOptions writeOptions;
-            writeOptions.writeXIncludeEnable = true;
-            writeOptions.elementPredicate = skipXincludes;
-            mx::writeToXmlFile(doc, doc->getSourceUri() + "_modified.mtlxx", &writeOptions);
         }
 
         // Find and register lights
@@ -890,7 +879,6 @@ void ShaderGeneratorTester::validate(const mx::GenOptions& generateOptions, cons
 void TestSuiteOptions::print(std::ostream& output) const
 {
     output << "Render Test Options:" << std::endl;
-    output << "\tApply future updates: " << std::to_string(applyFutureUpdates) << std::endl;
     output << "\tOverride Files: { ";
     for (const auto& overrideFile : overrideFiles) { output << overrideFile << " "; }
     output << "} " << std::endl;
@@ -954,7 +942,6 @@ bool TestSuiteOptions::readOptions(const std::string& optionFile)
     const std::string SHADERBALL_OBJ("shaderball.obj");
     const std::string EXTERNAL_LIBRARY_PATHS("externalLibraryPaths");
     const std::string EXTERNAL_TEST_PATHS("externalTestPaths");
-    const std::string APPLY_LATEST_UPDATES("applyFutureUpdates");
     const std::string WEDGE_FILES("wedgeFiles");
     const std::string WEDGE_PARAMETERS("wedgeParameters");
     const std::string WEDGE_RANGE_MIN("wedgeRangeMin");
@@ -972,13 +959,11 @@ bool TestSuiteOptions::readOptions(const std::string& optionFile)
     enableDirectLighting = true;
     enableIndirectLighting = true;
     specularEnvironmentMethod = mx::SPECULAR_ENVIRONMENT_FIS;
-    applyFutureUpdates = false;
 
     MaterialX::DocumentPtr doc = MaterialX::createDocument();
-    try {
-        mx::XmlReadOptions readOptions;
-        readOptions.applyFutureUpdates = true;
-        MaterialX::readFromXmlFile(doc, optionFile, mx::FileSearchPath(), &readOptions);
+    try
+    {
+        MaterialX::readFromXmlFile(doc, optionFile, mx::FileSearchPath());
 
         MaterialX::NodeDefPtr optionDefs = doc->getNodeDef(RENDER_TEST_OPTIONS_STRING);
         if (optionDefs)
@@ -1124,10 +1109,6 @@ bool TestSuiteOptions::readOptions(const std::string& optionFile)
                     else if (name == BAKE_HDRS)
                     {
                         bakeHdrs = val->asA<mx::BoolVec>();
-                    }
-                    else if (name == APPLY_LATEST_UPDATES)
-                    {
-                        applyFutureUpdates = p->getValue()->asA<bool>();
                     }
                 }
             }

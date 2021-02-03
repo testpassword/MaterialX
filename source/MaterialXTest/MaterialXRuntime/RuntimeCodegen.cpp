@@ -62,7 +62,6 @@ TEST_CASE("Runtime: Codegen", "[runtime]")
     // Load in stdlib
     api->setSearchPath(searchPath);
     mx::RtReadOptions readOptions;
-    readOptions.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, readOptions);
     api->loadLibrary(STDLIB, readOptions);
     api->loadLibrary(PBRLIB, readOptions);

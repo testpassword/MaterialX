@@ -597,9 +597,7 @@ class Document : public GraphElement
 
     /// Upgrade the content of this document from earlier supported versions to
     /// the library version.
-    /// @param applyFutureUpdates Apply updates that test prototype functionality
-    ///    for future versions of MaterialX
-    void upgradeVersion(bool applyFutureUpdates = true);
+    void upgradeVersion();
 
     /// @}
     /// @name Color Management System
@@ -655,13 +653,6 @@ class Document : public GraphElement
     ///    each error will be appended.
     /// @return True if the document passes all tests, false otherwise.
     bool validate(string* message = nullptr) const override;
-
-    /// @}
-    /// @name Versioning
-    /// @{
-
-    /// Convert Parameter Elements to Input Elements
-    bool convertParametersToInputs();
 
     /// @}
     /// @name Utility

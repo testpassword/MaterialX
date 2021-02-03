@@ -94,7 +94,6 @@ TEST_CASE("Runtime: Material Element Upgrade", "[runtime]")
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
     mx::RtReadOptions options;
-    options.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, options);
     api->loadLibrary(STDLIB, options);
     api->loadLibrary(PBRLIB, options);
@@ -824,7 +823,7 @@ TEST_CASE("Runtime: NodeGraphs", "[runtime]")
     mx::RtNodeDef addgraphDef(addgraphPrim);    
 
     REQUIRE(graph1.getDefinition() == ND_ADDGRAPH);
-    REQUIRE(graph1.getVersion() == ADDGRAPH_VERSION);
+    REQUIRE(graph1.getVersion() == mx::EMPTY_TOKEN);
     REQUIRE(api->hasNodeDef(addgraphDef.getName()));
     REQUIRE(addgraphDef.numInputs() == 2);
     REQUIRE(addgraphDef.numOutputs() == 1);
@@ -837,19 +836,9 @@ TEST_CASE("Runtime: NodeGraphs", "[runtime]")
     addgraphDef.setTarget(ADDGRAPH_TARGET);
     REQUIRE(addgraphDef.getTarget() == ADDGRAPH_TARGET);
 
-    // Check implementation search based on nodegraph.
+    // Check nodegraph implementation search based on nodedef name.
     mx::RtPrim addGraphImpl = stage->getImplementation(addgraphDef);
-    // Exact version check
-    {
-        REQUIRE(addGraphImpl.getPath() == graph1.getPath());
-    }
-    // Bad version check
-    {
-        graph1.setVersion(mx::RtToken("badVersion")); 
-        addGraphImpl = stage->getImplementation(addgraphDef);
-        REQUIRE_FALSE(addGraphImpl.isValid());
-        graph1.setVersion(ADDGRAPH_VERSION);
-    }
+    REQUIRE(addGraphImpl.getPath() == graph1.getPath());
 
     // Check instance creation:
     mx::RtPrim agPrim = stage->createPrim("addgraph1", ND_ADDGRAPH);
@@ -960,7 +949,6 @@ TEST_CASE("Runtime: FileIo", "[runtime]")
         // Load in stdlib
         api->setSearchPath(searchPath);
         mx::RtReadOptions readOptions;
-        readOptions.applyFutureUpdates = true;
         api->loadLibrary(TARGETS, readOptions);
         api->loadLibrary(STDLIB, readOptions);
 
@@ -1011,7 +999,6 @@ TEST_CASE("Runtime: FileIo", "[runtime]")
         // Load in stdlib
         api->setSearchPath(searchPath);
         mx::RtReadOptions options;
-        options.applyFutureUpdates = true;
         api->loadLibrary(TARGETS, options);
         api->loadLibrary(STDLIB, options);
 
@@ -1066,7 +1053,6 @@ TEST_CASE("Runtime: DefaultLook", "[runtime]")
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
     mx::RtReadOptions options;
-    options.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, options);
     api->loadLibrary(STDLIB, options);
     api->loadLibrary(PBRLIB, options);
@@ -1099,7 +1085,6 @@ TEST_CASE("Runtime: Namespaced definitions", "[runtime]")
     }
     api->setSearchPath(searchPath);
     mx::RtReadOptions options;
-    options.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, options);
     api->loadLibrary(STDLIB, options);
     api->loadLibrary(PBRLIB, options);
@@ -1127,7 +1112,6 @@ TEST_CASE("Runtime: Conflict resolution", "[runtime]")
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
     mx::RtReadOptions options;
-    options.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, options);
     api->loadLibrary(STDLIB, options);
     api->loadLibrary(PBRLIB, options);
@@ -1211,7 +1195,6 @@ TEST_CASE("Runtime: FileIo NodeGraph", "[runtime]")
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
     mx::RtReadOptions readOptions;
-    readOptions.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, readOptions);
     api->loadLibrary(STDLIB, readOptions);
 
@@ -1275,7 +1258,6 @@ TEST_CASE("Runtime: Rename", "[runtime]")
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
     mx::RtReadOptions options;
-    options.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, options);
     api->loadLibrary(STDLIB, options);
 
@@ -1319,7 +1301,6 @@ TEST_CASE("Runtime: Stage References", "[runtime]")
     // Load in stdlib
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     mx::RtReadOptions readOptions;
-    readOptions.applyFutureUpdates = true;
     api->setSearchPath(searchPath);
     api->loadLibrary(TARGETS, readOptions);
     api->loadLibrary(STDLIB, readOptions);
@@ -1329,7 +1310,7 @@ TEST_CASE("Runtime: Stage References", "[runtime]")
     mx::RtStagePtr stage = api->createStage(MAIN);
 
     // Test access and usage of contents from the library.
-    mx::RtPrim nodedef = api->getLibrary()->getPrimAtPath("/ND_complex_ior");
+    mx::RtPrim nodedef = api->getLibrary()->getPrimAtPath("/ND_artistic_ior");
     REQUIRE(nodedef.isValid());
     mx::RtNode node1 = stage->createPrim("/nodeA", nodedef.getName());
     REQUIRE(node1.isValid());
@@ -1369,7 +1350,6 @@ TEST_CASE("Runtime: Traversal", "[runtime]")
     api->setSearchPath(searchPath);
 
     mx::RtReadOptions options;
-    options.applyFutureUpdates = true;
 
     // Load in the standard libraries.
     api->loadLibrary(TARGETS, options);
@@ -1450,7 +1430,7 @@ TEST_CASE("Runtime: Traversal", "[runtime]")
     mx::RtObjTypePredicate<mx::RtInput> inputFilter;
 
     // Travers a nodedef finding all its inputs.
-    mx::RtNodeDef generalized_schlick_brdf = api->getLibrary()->getPrimAtPath("/ND_generalized_schlick_brdf");
+    mx::RtNodeDef generalized_schlick_brdf = api->getLibrary()->getPrimAtPath("/ND_generalized_schlick_bsdf");
     REQUIRE(generalized_schlick_brdf);
     size_t inputCount = 0;
     for (auto it = generalized_schlick_brdf.getPrim().getAttributes(inputFilter); !it.isDone(); ++it)
@@ -1542,7 +1522,6 @@ TEST_CASE("Runtime: Looks", "[runtime]")
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
     mx::RtReadOptions libReadOptions;
-    libReadOptions.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, libReadOptions);
     api->loadLibrary(STDLIB, libReadOptions);
     api->loadLibrary(PBRLIB, libReadOptions);
@@ -1618,7 +1597,6 @@ TEST_CASE("Runtime: Looks", "[runtime]")
         readOptions.readLookInformation = true;
         // Do not upgrade on reload:
         mx::DocumentPtr doc = mx::createDocument();
-        readOptions.applyFutureUpdates = false;
 
         mx::RtFileIo stageIo(stage);
         stageIo.write("rtLookExport.mtlx", useOptions ? &writeOptions : nullptr);
@@ -1772,13 +1750,13 @@ TEST_CASE("Runtime: Looks", "[runtime]")
 mx::RtToken toTestResolver(const mx::RtToken& str, const mx::RtToken& type)
 {
     mx::StringResolverPtr resolver = mx::StringResolver::create();
-    return mx::RtToken(resolver->resolve(str, type) + "_toTestResolver");
+    return mx::RtToken(resolver->resolve(str.str(), type.str()) + "_toTestResolver");
 }
 
 mx::RtToken fromTestResolver(const mx::RtToken& str, const mx::RtToken& type)
 {
     mx::StringResolverPtr resolver = mx::StringResolver::create();
-    return mx::RtToken(resolver->resolve(str, type) + "_fromTestResolver");
+    return mx::RtToken(resolver->resolve(str.str(), type.str()) + "_fromTestResolver");
 }
 
 TEST_CASE("Runtime: NameResolvers", "[runtime]")
@@ -1826,7 +1804,6 @@ TEST_CASE("Runtime: libraries", "[runtime]")
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
     mx::RtReadOptions options;
-    options.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, options);
     api->loadLibrary(STDLIB, options);
     api->loadLibrary(PBRLIB, options);
@@ -1857,7 +1834,6 @@ TEST_CASE("Runtime: units", "[runtime]")
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
     mx::RtReadOptions options;
-    options.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, options);
     api->loadLibrary(STDLIB, options);
     // Load in stdlib twice on purpose to ensure no exception is thrown when trying to add a duplicate unit 
@@ -1889,9 +1865,7 @@ TEST_CASE("Runtime: units", "[runtime]")
         // Test that read and write of files with units works.
         std::stringstream inStream;
         mx::DocumentPtr inDoc = mx::createDocument();
-        mx::XmlReadOptions readOptions;
-        readOptions.applyFutureUpdates = true;
-        mx::readFromXmlFile(inDoc, test, testSearchPath, &readOptions);
+        mx::readFromXmlFile(inDoc, test, testSearchPath);
 
         mx::DocumentPtr outDoc = mx::createDocument();
         std::stringstream outStream;
@@ -1927,7 +1901,6 @@ TEST_CASE("Runtime: Commands", "[runtime]")
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
     mx::RtReadOptions options;
-    options.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, options);
     api->loadLibrary(STDLIB, options);
 
@@ -2334,7 +2307,6 @@ TEST_CASE("Runtime: graph output connection", "[runtime]")
                                   mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
     mx::RtReadOptions options;
-    options.applyFutureUpdates = true;
     api->loadLibrary(TARGETS, options);
     api->loadLibrary(STDLIB, options);
     api->loadLibrary(PBRLIB, options);

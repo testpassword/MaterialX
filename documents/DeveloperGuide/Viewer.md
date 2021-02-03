@@ -71,10 +71,13 @@ By default, the MaterialX viewer loads and saves image files using `stb_image`, 
 - `D`: Save each node graph in the current material as a DOT file.  See www.graphviz.org for more details on this format.
 - `F`: Capture the current frame and save to file.
 - `W`: Create a wedge rendering and save to file.
-- `RIGHT` : Switch to next material
-- `LEFT` : Switch to previous material  
-- `UP` : Zoom in with the camera.  
-- `DOWN` : Zoom out with the camera.
+- `B`: Bake the current material to textures.
+- `UP` : Select the previous geometry.
+- `DOWN` : Select the next geometry.
+- `RIGHT` : Switch to the next material.
+- `LEFT` : Switch to the previous material.
+- `+` : Zoom in with the camera.
+- `-` : Zoom out with the camera.
 
 ### Command-Line Options
 
@@ -96,6 +99,7 @@ The following are common command-line options for MaterialXView, and a complete 
 - `--screenWidth [INTEGER]` : Specify the width of the screen image in pixels (defaults to 1280)
 - `--screenHeight [INTEGER]` : Specify the height of the screen image in pixels (defaults to 960)
 - `--screenColor [VECTOR3]` : Specify the background color of the viewer as three comma-separated floats (defaults to 0.3,0.3,0.32)
+- `--captureFilename [FILENAME]` : Specify the filename to which the first rendered frame should be written
 - `--msaa [INTEGER]` : Specify the multisampling count for screen anti-aliasing (defaults to 0)
 - `--refresh [INTEGER]` : Specify the refresh period for the viewer in milliseconds (defaults to 50, set to -1 to disable)
 - `--remap [TOKEN1:TOKEN2]` : Specify the remapping from one token to another when MaterialX document is loaded
