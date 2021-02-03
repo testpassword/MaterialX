@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<materialx version="1.37" colorspace="lin_rec709">
+  <material name="adskmat_093" uiname="Paint - Enamel Glossy (Red)">
+    <shaderref name="shaderref1" node="adsk_opaque">
+      <bindinput name="surface_albedo" type="color3" colorspace="gamma24" value="1, 1, 1" />
+      <bindinput name="surface_roughness" type="float" value="0.0774597" />
+      <bindinput name="surface_anisotropy" type="float" value="0" />
+      <bindinput name="surface_rotation" type="float" value="0" />
+      <bindinput name="opaque_albedo" type="color3" colorspace="gamma24" value="0.767376, 0.205984, 0.151704" />
+      <bindinput name="opaque_f0" type="float" value="0.0602702" />
+      <bindinput name="opaque_mfp_modifier" type="color3" value="1, 1, 1" />
+      <bindinput name="opaque_translucency" type="boolean" value="false" />
+      <bindinput name="opaque_mfp" type="float" value="0.5" unit="millimeter" unittype="distance" />
+      <bindinput name="opaque_emission" type="boolean" value="false" />
+      <bindinput name="opaque_luminance" type="float" value="0" />
+    </shaderref>
+  </material>
+  <nodegraph name="adskmat_093_inputGraph" />
+</materialx>

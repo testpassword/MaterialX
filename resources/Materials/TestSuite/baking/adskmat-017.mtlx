@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<materialx version="1.38" colorspace="lin_rec709">
+  <adsk_metal name="shader_adskmat_017" type="surfaceshader">
+    <input name="surface_albedo" type="color3" output="surface_albedo_map_output" nodegraph="adskmat_017_inputGraph" />
+    <input name="surface_roughness" type="float" value="0.447214" />
+    <input name="surface_normal" type="vector3" output="surface_normal_map_output" nodegraph="adskmat_017_inputGraph" />
+    <input name="surface_anisotropy" type="float" value="0.95" />
+    <input name="surface_rotation" type="float" value="90" />
+    <input name="metal_f0" type="color3" colorspace="gamma24" value="0.959822, 0.96226, 0.965052" />
+  </adsk_metal>
+  <surfacematerial name="adskmat_017" type="material" uiname="Aluminum - Brushed Linear">
+    <input name="surfaceshader" type="surfaceshader" nodename="shader_adskmat_017" />
+  </surfacematerial>
+  <nodegraph name="adskmat_017_inputGraph">
+    <adsk_bitmap name="surface_albedo_texture" type="color3">
+      <input name="file" type="filename" value="resources/images/brush_spec.png" colorspace="srgb_texture" />
+      <input name="realworld_scale" type="vector2" value="2, 2" unit="inch" unittype="distance" />
+    </adsk_bitmap>
+    <output name="surface_albedo_map_output" type="color3" nodename="surface_albedo_texture" />
+    <adsk_height_map name="surface_normal_texture" type="vector3">
+      <input name="file" type="filename" value="resources/images/brush_long_bump.png" colorspace="lin_rec709" />
+      <input name="realworld_scale" type="vector2" value="2, 1.33" unit="inch" unittype="distance" />
+      <input name="depth" type="float" value="0.003" unit="inch" unittype="distance" />
+    </adsk_height_map>
+    <output name="surface_normal_map_output" type="vector3" nodename="surface_normal_texture" />
+  </nodegraph>
+</materialx>

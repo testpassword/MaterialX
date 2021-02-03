@@ -711,7 +711,8 @@ void GlslShaderRenderTester::runBake(mx::DocumentPtr doc, const mx::FileSearchPa
     mx::TextureBakerPtr baker = mx::TextureBaker::create(bakeWidth, bakeHeight, baseType);
     baker->setupUnitSystem(doc);
     baker->setImageHandler(_renderer->getImageHandler());
-    baker->setOptimizeConstants(true);
+    baker->setOptimizeConstants(false);
+    baker->setDistanceUnit("foot");
     
     try
     {
@@ -732,11 +733,13 @@ TEST_CASE("Render: GLSL TestSuite", "[renderglsl]")
     const mx::FilePath testRootPath = mx::FilePath::getCurrentPath() / mx::FilePath("resources/Materials/TestSuite");
     const mx::FilePath testRootPath2 = mx::FilePath::getCurrentPath() / mx::FilePath("resources/Materials/Examples/StandardSurface");
     const mx::FilePath testRootPath3 = mx::FilePath::getCurrentPath() / mx::FilePath("resources/Materials/Examples/UsdPreviewSurface");
+    const mx::FilePath testRootPathBaking = mx::FilePath::getCurrentPath() / mx::FilePath("resources/Materials/TestSuite/baking");
     mx::FilePathVec testRootPaths;
-    testRootPaths.push_back(testRootPath);
-    testRootPaths.push_back(testRootPath2);
-    testRootPaths.push_back(testRootPath3);
-
+    //testRootPaths.push_back(testRootPath);
+    //testRootPaths.push_back(testRootPath1);
+    //testRootPaths.push_back(testRootPath2);
+    //testRootPaths.push_back(testRootPath3);
+    testRootPaths.push_back(testRootPathBaking);
     mx::FilePath optionsFilePath = testRootPath / mx::FilePath("_options.mtlx");
 
     renderTester.validate(testRootPaths, optionsFilePath);

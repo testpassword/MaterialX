@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<materialx version="1.37" colorspace="lin_rec709">
+  <material name="adskmat_043" uiname="Brass Mesh - Wire Small">
+    <shaderref name="shaderref1" node="adsk_metal">
+      <bindinput name="surface_albedo" type="color3" output="surface_albedo_map_output" nodegraph="adskmat_043_inputGraph" />
+      <bindinput name="surface_roughness" type="float" value="0.122474" />
+      <bindinput name="surface_normal" type="vector3" output="surface_normal_map_output" nodegraph="adskmat_043_inputGraph" />
+      <bindinput name="surface_anisotropy" type="float" value="0" />
+      <bindinput name="surface_rotation" type="float" value="0" />
+      <bindinput name="surface_cutout" type="color3" output="surface_cutout_map_output" nodegraph="adskmat_043_inputGraph" />
+      <bindinput name="metal_f0" type="color3" colorspace="gamma24" value="0.954687, 0.797738, 0.484529" />
+    </shaderref>
+  </material>
+  <nodegraph name="adskmat_043_inputGraph">
+    <adsk_bitmap name="surface_albedo_texture" type="color3">
+      <parameter name="file" type="filename" value="resources/images/mesh_wire_spec.png" colorspace="srgb_texture" />
+      <input name="realworld_scale" type="vector2" value="0.25, 0.25" unit="inch" unittype="distance" />
+    </adsk_bitmap>
+    <output name="surface_albedo_map_output" type="color3" nodename="surface_albedo_texture" />
+    <adsk_normal_map name="surface_normal_texture" type="vector3">
+      <parameter name="file" type="filename" value="resources/images/mesh_wire_norm.png" colorspace="lin_rec709" />
+      <input name="realworld_scale" type="vector2" value="0.25, 0.25" unit="inch" unittype="distance" />
+    </adsk_normal_map>
+    <output name="surface_normal_map_output" type="vector3" nodename="surface_normal_texture" />
+    <adsk_bitmap name="surface_cutout_texture" type="color3">
+      <parameter name="file" type="filename" value="resources/images/mesh_wire_cutout.png" colorspace="lin_rec709" />
+      <input name="realworld_scale" type="vector2" value="0.25, 0.25" unit="inch" unittype="distance" />
+    </adsk_bitmap>
+    <output name="surface_cutout_map_output" type="color3" nodename="surface_cutout_texture" />
+  </nodegraph>
+</materialx>

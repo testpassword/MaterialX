@@ -454,6 +454,9 @@ BakedDocumentVec TextureBaker::createBakeDocuments(DocumentPtr doc, const FileSe
             {
                 continue;
             }
+            //TODO: Dump shader source
+            std::string baked_shader_src = hwShader->getSourceCode();
+            baked_shader_src;
             imageHandler->setSearchPath(imageSearchPath);
             resolver->setUdimString(tag);
             imageHandler->setFilenameResolver(resolver);

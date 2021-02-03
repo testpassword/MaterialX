@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<materialx version="1.38" colorspace="lin_rec709">
+  <adsk_metal name="shader_adskmat_018" type="surfaceshader">
+    <input name="surface_albedo" type="color3" colorspace="gamma24" value="1, 1, 1" />
+    <input name="surface_roughness" type="float" value="0.447214" />
+    <input name="surface_normal" type="vector3" output="surface_normal_map_output" nodegraph="adskmat_018_inputGraph" />
+    <input name="surface_anisotropy" type="float" value="0.85" />
+    <input name="surface_rotation" type="float" output="surface_rotation_map_output" nodegraph="adskmat_018_inputGraph" />
+    <input name="metal_f0" type="color3" colorspace="gamma24" value="0.959822, 0.96226, 0.965052" />
+  </adsk_metal>
+  <surfacematerial name="adskmat_018" type="material" uiname="Aluminum - Brushed Radial">
+    <input name="surfaceshader" type="surfaceshader" nodename="shader_adskmat_018" />
+  </surfacematerial>
+  <nodegraph name="adskmat_018_inputGraph">
+    <adsk_height_map name="surface_normal_texture" type="vector3">
+      <input name="file" type="filename" value="resources/images/brush_radial_bump.png" colorspace="lin_rec709" />
+      <input name="realworld_scale" type="vector2" value="3, 3" unit="inch" unittype="distance" />
+      <input name="depth" type="float" value="0.003" unit="inch" unittype="distance" />
+    </adsk_height_map>
+    <output name="surface_normal_map_output" type="vector3" nodename="surface_normal_texture" />
+    <adsk_bitmap_remap name="surface_rotation_texture" type="float">
+      <input name="file" type="filename" value="resources/images/radial_anisdir.png" colorspace="lin_rec709" />
+      <input name="realworld_scale" type="vector2" value="3, 3" unit="inch" unittype="distance" />
+      <input name="outlow" type="float" value="0" />
+      <input name="outhigh" type="float" value="180" />
+    </adsk_bitmap_remap>
+    <output name="surface_rotation_map_output" type="float" nodename="surface_rotation_texture" />
+  </nodegraph>
+</materialx>

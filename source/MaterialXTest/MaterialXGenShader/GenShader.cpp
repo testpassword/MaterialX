@@ -104,11 +104,11 @@ TEST_CASE("GenShader: Shader Translation", "[translate]")
 
     const std::string USD_PREVIEW_SURFACE_NAME("UsdPreviewSurface");
 
-    mx::FilePath testPath = mx::FilePath::getCurrentPath() / mx::FilePath("resources/Materials/Examples/StandardSurface");
+    mx::FilePath testPath = mx::FilePath::getCurrentPath() / mx::FilePath("resources/Materials/TestSuite/baking");
     for (mx::FilePath& mtlxFile : testPath.getFilesInDirectory("mtlx"))
     {
         mx::DocumentPtr doc = mx::createDocument();
-        mx::StringSet libFiles = loadLibraries({ "targets", "stdlib", "pbrlib", "bxdf", "translation" }, searchPath, doc);
+        mx::StringSet libFiles = loadLibraries({ "adsk", "targets", "stdlib", "pbrlib", "bxdf", "translation" }, searchPath, doc);
 
         mx::readFromXmlFile(doc, testPath / mtlxFile, searchPath);
         mtlxFile.removeExtension();

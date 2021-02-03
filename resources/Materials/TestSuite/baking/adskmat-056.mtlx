@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<materialx version="1.37" colorspace="lin_rec709">
+  <material name="adskmat_156" uiname="Glass (Red)">
+    <shaderref name="shaderref1" node="adsk_transparent">
+      <bindinput name="surface_albedo" type="color3" colorspace="gamma24" value="1, 1, 1" />
+      <bindinput name="surface_roughness" type="float" value="0" />
+      <bindinput name="surface_anisotropy" type="float" value="0" />
+      <bindinput name="surface_rotation" type="float" value="0" />
+      <bindinput name="transparent_color" type="color3" colorspace="gamma24" value="0.767376, 0.205984, 0.151704" />
+      <bindinput name="transparent_ior" type="float" value="1.52" />
+      <bindinput name="transparent_distance" type="float" value="15" unit="millimeter" unittype="distance" />
+    </shaderref>
+  </material>
+  <nodegraph name="adskmat_156_inputGraph" />
+</materialx>

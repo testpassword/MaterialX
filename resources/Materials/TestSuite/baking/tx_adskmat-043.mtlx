@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<materialx version="1.37" colorspace="lin_rec709" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <nodegraph name="adskmat_043_inputGraph">
+    <adsk_bitmap name="surface_albedo_texture" type="color3">
+      <input name="file" type="filename" value="resources/images/mesh_wire_spec.png" colorspace="srgb_texture" />
+      <input name="realworld_scale" type="vector2" value="0.25, 0.25" unit="inch" unittype="distance" />
+    </adsk_bitmap>
+    <Usd_normal_map name="surface_normal_texture" type="vector3">
+      <input name="file" type="filename" value="resources/images/mesh_wire_norm.png" colorspace="lin_rec709" />
+      <input name="realworld_scale" type="vector2" value="0.25, 0.25" unit="inch" unittype="distance" />
+    </Usd_normal_map>
+    <adsk_bitmap name="surface_cutout_texture" type="color3">
+      <input name="file" type="filename" value="resources/images/mesh_wire_cutout.png" colorspace="lin_rec709" />
+      <input name="realworld_scale" type="vector2" value="0.25, 0.25" unit="inch" unittype="distance" />
+    </adsk_bitmap>
+    <adsk_metal_to_UsdPreviewSurface name="node1" type="multioutput" nodedef="ND_adsk_metal_to_UsdPreviewSurface">
+      <input name="surface_albedo" type="color3" nodename="surface_albedo_texture" />
+      <input name="surface_roughness" type="float" value="0.122474" />
+      <input name="surface_normal" type="vector3" nodename="surface_normal_texture" />
+      <input name="surface_anisotropy" type="float" value="0" />
+      <input name="surface_rotation" type="float" value="0" />
+      <input name="surface_cutout" type="color3" nodename="surface_cutout_texture" />
+      <input name="metal_f0" type="color3" value="0.954687, 0.797738, 0.484529" colorspace="gamma24" />
+    </adsk_metal_to_UsdPreviewSurface>
+    <dot name="diffuseColor_dot" type="color3">
+      <input name="in" type="color3" nodename="node1" output="diffuseColor_out" />
+    </dot>
+    <output name="diffuseColor_out" type="color3" nodename="diffuseColor_dot" />
+    <dot name="specularColor_dot" type="color3">
+      <input name="in" type="color3" nodename="node1" output="specularColor_out" />
+    </dot>
+    <output name="specularColor_out" type="color3" nodename="specularColor_dot" />
+    <dot name="roughness_dot" type="float">
+      <input name="in" type="float" nodename="node1" output="roughness_out" />
+    </dot>
+    <output name="roughness_out" type="float" nodename="roughness_dot" />
+    <dot name="ior_dot" type="float">
+      <input name="in" type="float" nodename="node1" output="ior_out" />
+    </dot>
+    <output name="ior_out" type="float" nodename="ior_dot" />
+    <dot name="metallic_dot" type="float">
+      <input name="in" type="float" nodename="node1" output="metallic_out" />
+    </dot>
+    <output name="metallic_out" type="float" nodename="metallic_dot" />
+    <dot name="opacity_dot" type="float">
+      <input name="in" type="float" nodename="node1" output="opacity_out" />
+    </dot>
+    <output name="opacity_out" type="float" nodename="opacity_dot" />
+    <dot name="opacityThreshold_dot" type="float">
+      <input name="in" type="float" nodename="node1" output="opacityThreshold_out" />
+    </dot>
+    <output name="opacityThreshold_out" type="float" nodename="opacityThreshold_dot" />
+    <dot name="normal_dot" type="vector3">
+      <input name="in" type="vector3" nodename="node1" output="normal_out" />
+    </dot>
+    <output name="normal_out" type="vector3" nodename="normal_dot" />
+  </nodegraph>
+  <UsdPreviewSurface name="shaderref1" type="surfaceshader">
+    <input name="diffuseColor" type="color3" output="diffuseColor_out" nodegraph="adskmat_043_inputGraph" />
+    <input name="specularColor" type="color3" output="specularColor_out" nodegraph="adskmat_043_inputGraph" />
+    <input name="roughness" type="float" output="roughness_out" nodegraph="adskmat_043_inputGraph" />
+    <input name="ior" type="float" output="ior_out" nodegraph="adskmat_043_inputGraph" />
+    <input name="metallic" type="float" output="metallic_out" nodegraph="adskmat_043_inputGraph" />
+    <input name="opacity" type="float" output="opacity_out" nodegraph="adskmat_043_inputGraph" />
+    <input name="opacityThreshold" type="float" output="opacityThreshold_out" nodegraph="adskmat_043_inputGraph" />
+    <input name="normal" type="vector3" output="normal_out" nodegraph="adskmat_043_inputGraph" />
+  </UsdPreviewSurface>
+  <surfacematerial name="adskmat_043" type="material">
+    <input name="surfaceshader" type="surfaceshader" nodename="shaderref1" />
+  </surfacematerial>
+</materialx>

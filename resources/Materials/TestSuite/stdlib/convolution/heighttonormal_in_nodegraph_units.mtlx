@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<materialx version="1.37">
+  <nodedef name="ND_my_height_map" node="my_height_map">
+    <input name="file" type="filename" value=""/>
+    <input name="depth" type="float" value="0.2"/>
+    <output name="out" type="vector3" default="0.0, 1.0, 0.0"/>
+  </nodedef>
+  <nodegraph name="NG_my_height_map" nodedef="ND_my_height_map">
+    <image name="b_image" type="color3">
+      <input name="file" type="filename" interfacename="file" />
+      <input name="texcoord" type="vector2" value="0.0, 0.0" />
+      <input name="uaddressmode" type="string" value="periodic" />
+      <input name="vaddressmode" type="string" value="periodic" />
+    </image>
+    <extract name="extract1" type="float">
+        <input name="in" type="color3" nodename="b_image" />
+        <parameter name="index" type="integer" value="0" />
+    </extract>
+    <heighttonormal name="heighttonormal1" type="vector3">
+      <input name="in" type="float" nodename="extract1" />
+      <input name="scale" type="float" interfacename="depth" />
+    </heighttonormal>
+    <output name="HeightToNormalMap_output" type="vector3" nodename="heighttonormal1" />
+  </nodegraph>
+
+  <!-- material -->
+  <nodegraph name="heightmap_graph">
+    <my_height_map name="heightnormal_texturemap" type="vector3">
+      <input name="file" type="filename" value="resources/Images/Plane001HeightMap.png" />
+      <input name="depth" type="float" value="0.461538" />
+    </my_height_map>
+    <output name="heightmap_graph_output" type="vector3" nodename="heightnormal_texturemap" />
+  </nodegraph>
+  <standard_surface name="SR_gold_pass" type="surfaceshader">
+    <input name="base" type="float" value="0.8" />
+    <input name="base_color" type="color3" value="1.0,1.0,1.0" />
+    <input name="specular" type="float" value="0.269231" />
+    <input name="specular_color" type="color3" value="0.998, 0.981, 0.751" />
+    <input name="specular_roughness" type="float" value="0.02" />
+    <input name="metalness" type="float" value="1" />
+    <input name="normal" type="vector3" output="heightmap_graph_output" nodegraph="heightmap_graph" />
+  </standard_surface>
+  <surfacematerial name="Gold_pass" type="material">
+    <input name="surfaceshader" type="surfaceshader" nodename="SR_gold_pass" />
+  </surfacematerial>
+</materialx>

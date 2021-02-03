@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<materialx version="1.37" colorspace="lin_rec709">
+  <material name="adskmat_005" uiname="Paint - Metallic (Green)">
+    <shaderref name="shaderref1" node="adsk_layered">
+      <bindinput name="surface_albedo" type="color3" colorspace="gamma24" value="1, 1, 1" />
+      <bindinput name="surface_roughness" type="float" value="0" />
+      <bindinput name="surface_anisotropy" type="float" value="0" />
+      <bindinput name="surface_rotation" type="float" value="0" />
+      <bindinput name="layered_f0" type="float" value="0.0602702" />
+      <bindinput name="layered_fraction" type="float" value="0.75" />
+      <bindinput name="layered_fraction_invert" type="boolean" value="true" />
+      <bindinput name="layered_bottom_f0" type="color3" colorspace="gamma24" value="0.268604, 0.588564, 0.281161" />
+      <bindinput name="layered_diffuse" type="color3" colorspace="gamma24" value="0.268604, 0.588564, 0.281161" />
+      <bindinput name="layered_roughness" type="float" value="0.547723" />
+      <bindinput name="layered_anisotropy" type="float" value="0" />
+      <bindinput name="layered_rotation" type="float" value="0" />
+    </shaderref>
+  </material>
+  <nodegraph name="adskmat_005_inputGraph" />
+</materialx>

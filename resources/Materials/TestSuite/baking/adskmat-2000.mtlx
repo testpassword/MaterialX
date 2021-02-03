@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<materialx version="1.37" colorspace="lin_rec709">
+  <material name="adskmat_2000" uiname="Clear - Single Pane">
+    <shaderref name="shaderref1" node="adsk_glazing">
+      <bindinput name="surface_albedo" type="color3" colorspace="gamma24" value="1, 1, 1" />
+      <bindinput name="surface_roughness" type="float" value="0" />
+      <bindinput name="surface_anisotropy" type="float" value="0" />
+      <bindinput name="surface_rotation" type="float" value="0" />
+      <bindinput name="glazing_transmission_color" type="color3" colorspace="gamma24" value="0.945277, 0.945277, 0.945277" />
+      <bindinput name="glazing_transmission_roughness" type="float" value="0" />
+      <bindinput name="glazing_f0" type="color3" colorspace="gamma24" value="0.313304, 0.313304, 0.313304" />
+      <bindinput name="glazing_backface_culling" type="boolean" value="true" />
+    </shaderref>
+  </material>
+  <nodegraph name="adskmat_2000_inputGraph" />
+</materialx>

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<materialx version="1.37" colorspace="lin_rec709">
+  <material name="adskmat_029" uiname="Aluminum - Anodized Glossy (Blue)">
+    <shaderref name="shaderref1" node="adsk_metal">
+      <bindinput name="surface_albedo" type="color3" colorspace="gamma24" value="1, 1, 1" />
+      <bindinput name="surface_roughness" type="float" value="0.122474" />
+      <bindinput name="surface_anisotropy" type="float" value="0" />
+      <bindinput name="surface_rotation" type="float" value="0" />
+      <bindinput name="metal_f0" type="color3" colorspace="gamma24" value="0.34919, 0.583831, 0.854306" />
+    </shaderref>
+  </material>
+  <nodegraph name="adskmat_029_inputGraph" />
+</materialx>

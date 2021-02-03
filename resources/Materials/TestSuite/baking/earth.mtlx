@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<materialx version="1.38" colorspace="lin_rec709">
+  <adsk_metal name="shader_F_Earth_5920e32b32fa42138fa52aef925a5f42" type="surfaceshader">
+    <input name="metal_f0" type="color3" output="metal_f0_map_output" nodegraph="F_Earth_5920e32b32fa42138fa52aef925a5f42_inputGraph" />
+    <input name="surface_albedo" type="color3" value="1, 1, 1" />
+    <input name="surface_roughness" type="float" value="0.264575" />
+    <input name="surface_anisotropy" type="float" value="0" />
+    <input name="surface_rotation" type="float" value="0" />
+  </adsk_metal>
+  <surfacematerial name="F_Earth_5920e32b32fa42138fa52aef925a5f42" type="material" uiname="Earth">
+    <input name="surfaceshader" type="surfaceshader" nodename="shader_F_Earth_5920e32b32fa42138fa52aef925a5f42" />
+  </surfacematerial>
+  <nodegraph name="F_Earth_5920e32b32fa42138fa52aef925a5f42_inputGraph">
+    <adsk_bitmap name="metal_f0_texture" type="color3">
+      <input name="file" type="filename" value="resources/images/2k_earth_daymap.jpg" colorspace="srgb_texture" />
+      <input name="realworld_offset" type="vector2" value="0, 0" unit="inch" unittype="distance" />
+      <input name="realworld_scale" type="vector2" value="12, 6" unit="inch" unittype="distance" />
+      <input name="uv_offset" type="vector2" value="0, 0" />
+      <input name="uv_scale" type="vector2" value="0.6634, 0.6634" />
+      <input name="rotation_angle" type="float" value="0" />
+      <input name="rgbamount" type="float" value="1" />
+      <input name="invert" type="boolean" value="false" />
+    </adsk_bitmap>
+    <output name="metal_f0_map_output" type="color3" nodename="metal_f0_texture" />
+  </nodegraph>
+</materialx>

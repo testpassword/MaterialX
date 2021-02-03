@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<materialx version="1.38" colorspace="lin_rec709" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <UsdPreviewSurface name="shader_F_Earth_5920e32b32fa42138fa52aef925a5f42" type="surfaceshader">
+    <input name="diffuseColor" type="color3" output="diffuseColor_out" nodegraph="F_Earth_5920e32b32fa42138fa52aef925a5f42_inputGraph" />
+    <input name="specularColor" type="color3" output="specularColor_out" nodegraph="F_Earth_5920e32b32fa42138fa52aef925a5f42_inputGraph" />
+    <input name="roughness" type="float" output="roughness_out" nodegraph="F_Earth_5920e32b32fa42138fa52aef925a5f42_inputGraph" />
+    <input name="ior" type="float" output="ior_out" nodegraph="F_Earth_5920e32b32fa42138fa52aef925a5f42_inputGraph" />
+    <input name="metallic" type="float" output="metallic_out" nodegraph="F_Earth_5920e32b32fa42138fa52aef925a5f42_inputGraph" />
+    <input name="opacity" type="float" output="opacity_out" nodegraph="F_Earth_5920e32b32fa42138fa52aef925a5f42_inputGraph" />
+    <input name="opacityThreshold" type="float" output="opacityThreshold_out" nodegraph="F_Earth_5920e32b32fa42138fa52aef925a5f42_inputGraph" />
+    <input name="normal" type="vector3" output="normal_out" nodegraph="F_Earth_5920e32b32fa42138fa52aef925a5f42_inputGraph" />
+  </UsdPreviewSurface>
+  <surfacematerial name="F_Earth_5920e32b32fa42138fa52aef925a5f42" type="material" uiname="Earth">
+    <input name="surfaceshader" type="surfaceshader" nodename="shader_F_Earth_5920e32b32fa42138fa52aef925a5f42" />
+  </surfacematerial>
+  <nodegraph name="F_Earth_5920e32b32fa42138fa52aef925a5f42_inputGraph">
+    <adsk_bitmap name="metal_f0_texture" type="color3">
+      <input name="file" type="filename" value="resources/images/2k_earth_daymap.jpg" colorspace="srgb_texture" />
+      <input name="realworld_offset" type="vector2" value="0, 0" unit="inch" unittype="distance" />
+      <input name="realworld_scale" type="vector2" value="12, 6" unit="inch" unittype="distance" />
+      <input name="uv_offset" type="vector2" value="0, 0" />
+      <input name="uv_scale" type="vector2" value="0.6634, 0.6634" />
+      <input name="rotation_angle" type="float" value="0" />
+      <input name="rgbamount" type="float" value="1" />
+      <input name="invert" type="boolean" value="false" />
+    </adsk_bitmap>
+    <adsk_metal_to_UsdPreviewSurface name="node1" type="multioutput" nodedef="ND_adsk_metal_to_UsdPreviewSurface">
+      <input name="metal_f0" type="color3" nodename="metal_f0_texture" />
+      <input name="surface_albedo" type="color3" value="1, 1, 1" />
+      <input name="surface_roughness" type="float" value="0.264575" />
+      <input name="surface_anisotropy" type="float" value="0" />
+      <input name="surface_rotation" type="float" value="0" />
+    </adsk_metal_to_UsdPreviewSurface>
+    <dot name="diffuseColor_dot" type="color3">
+      <input name="in" type="color3" nodename="node1" output="diffuseColor_out" />
+    </dot>
+    <output name="diffuseColor_out" type="color3" nodename="diffuseColor_dot" />
+    <dot name="specularColor_dot" type="color3">
+      <input name="in" type="color3" nodename="node1" output="specularColor_out" />
+    </dot>
+    <output name="specularColor_out" type="color3" nodename="specularColor_dot" />
+    <dot name="roughness_dot" type="float">
+      <input name="in" type="float" nodename="node1" output="roughness_out" />
+    </dot>
+    <output name="roughness_out" type="float" nodename="roughness_dot" />
+    <dot name="ior_dot" type="float">
+      <input name="in" type="float" nodename="node1" output="ior_out" />
+    </dot>
+    <output name="ior_out" type="float" nodename="ior_dot" />
+    <dot name="metallic_dot" type="float">
+      <input name="in" type="float" nodename="node1" output="metallic_out" />
+    </dot>
+    <output name="metallic_out" type="float" nodename="metallic_dot" />
+    <dot name="opacity_dot" type="float">
+      <input name="in" type="float" nodename="node1" output="opacity_out" />
+    </dot>
+    <output name="opacity_out" type="float" nodename="opacity_dot" />
+    <dot name="opacityThreshold_dot" type="float">
+      <input name="in" type="float" nodename="node1" output="opacityThreshold_out" />
+    </dot>
+    <output name="opacityThreshold_out" type="float" nodename="opacityThreshold_dot" />
+    <dot name="normal_dot" type="vector3">
+      <input name="in" type="vector3" nodename="node1" output="normal_out" />
+    </dot>
+    <output name="normal_out" type="vector3" nodename="normal_dot" />
+  </nodegraph>
+</materialx>
