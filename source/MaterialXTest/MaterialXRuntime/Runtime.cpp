@@ -265,7 +265,7 @@ TEST_CASE("Runtime: Types", "[runtime]")
     REQUIRE(color4Type->getSemantic() == mx::RtTypeDef::SEMANTIC_COLOR);
 
     // Make sure we can register a new custom type
-    auto createFoo = [](mx::RtObject&) -> mx::RtValue
+    auto createFoo = [](mx::RtAllocator&) -> mx::RtValue
     {
         return mx::RtValue(7);
     };
@@ -292,23 +292,21 @@ TEST_CASE("Runtime: Types", "[runtime]")
     REQUIRE(fooType2 == fooType);
 
     // Test create/parse/copy values
-    // An stage is needed to hold allocated data.
-    mx::RtStagePtr stage = api->createStage(MAIN);
-    mx::RtPrim rootPrim = stage->getRootPrim();
+    mx::RtAllocator allocator;
 
-    mx::RtValue fooValue = fooType->createValue(rootPrim);
+    mx::RtValue fooValue = fooType->createValue(allocator);
     REQUIRE(fooValue.asInt() == 7);
     fooType->fromStringValue("bar", fooValue);
     REQUIRE(fooValue.asInt() == 42);
 
     const mx::RtTypeDef* stringType = mx::RtTypeDef::findType(mx::RtType::STRING);
-    mx::RtValue stringValue1 = stringType->createValue(rootPrim);
-    mx::RtValue stringValue2 = stringType->createValue(rootPrim);
+    mx::RtValue stringValue1 = stringType->createValue(allocator);
+    mx::RtValue stringValue2 = stringType->createValue(allocator);
     stringValue1.asString() = "foobar";
     stringType->copyValue(stringValue1, stringValue2);
     REQUIRE(stringValue2.asString() == "foobar");
 
-    mx::RtValue intValue = integerType->createValue(rootPrim);
+    mx::RtValue intValue = integerType->createValue(allocator);
     integerType->fromStringValue("12345", intValue);
     REQUIRE(intValue.asInt() == 12345);
     std::string value;

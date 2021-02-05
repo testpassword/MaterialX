@@ -6,6 +6,7 @@
 #include <MaterialXRuntime/Private/PvtTypeDef.h>
 
 #include <MaterialXRuntime/RtTypeDef.h>
+#include <MaterialXRuntime/RtApi.h>
 
 #include <MaterialXCore/Util.h>
 
@@ -20,27 +21,27 @@ static string VALUE_STRING_ONE = "1";
 static string VALUE_STRING_ZERO = "0";
 
 template<class T>
-RtValue createValue(RtPrim&)
+RtValue createValue(RtAllocator&)
 {
     return RtValue((T)0);
 }
-template<> RtValue createValue<Matrix33>(RtPrim& owner)
+template<> RtValue createValue<Matrix33>(RtAllocator& allocator)
 {
-    return RtValue(Matrix33::IDENTITY, owner);
+    return RtValue(Matrix33::IDENTITY, allocator);
 }
-template<> RtValue createValue<Matrix44>(RtPrim& owner)
+template<> RtValue createValue<Matrix44>(RtAllocator& allocator)
 {
-    return RtValue(Matrix44::IDENTITY, owner);
+    return RtValue(Matrix44::IDENTITY, allocator);
 }
-template<> RtValue createValue<string>(RtPrim& owner)
+template<> RtValue createValue<string>(RtAllocator& allocator)
 {
-    return RtValue(string(""), owner);
+    return RtValue(string(""), allocator);
 }
-template<> RtValue createValue<RtToken>(RtPrim&)
+template<> RtValue createValue<RtToken>(RtAllocator&)
 {
     return RtValue(EMPTY_TOKEN);
 }
-RtValue createNoneValue(RtPrim&)
+RtValue createNoneValue(RtAllocator&)
 {
     return RtValue(0);
 }
@@ -113,6 +114,7 @@ template <> void toStringValue<bool>(const RtValue& src, string& dest)
 template <> void toStringValue<float>(const RtValue& src, string& dest)
 {
     std::stringstream ss;
+    RtApi::get().setStreamFloatFormat(ss);
     ss << src.asFloat();
     dest = ss.str();
 }
@@ -126,6 +128,7 @@ template<class T>
 void toStringVector(const T& src, string& dest)
 {
     std::stringstream ss;
+    RtApi::get().setStreamFloatFormat(ss);
     for (size_t i = 0; i < T::numElements(); ++i)
     {
         if (i)
@@ -140,6 +143,7 @@ template<class T>
 void toStringMatrix(const T& src, string& dest)
 {
     std::stringstream ss;
+    RtApi::get().setStreamFloatFormat(ss);
     for (size_t i = 0; i < T::numColumns(); i++)
     {
         for (size_t j = 0; j < T::numRows(); j++)

@@ -38,6 +38,7 @@ const RtToken RtType::SURFACESHADER("surfaceshader");
 const RtToken RtType::VOLUMESHADER("volumeshader");
 const RtToken RtType::DISPLACEMENTSHADER("displacementshader");
 const RtToken RtType::LIGHTSHADER("lightshader");
+const RtToken RtType::THINFILM("thinfilm");
 const RtToken RtType::MATERIAL("material");
 const RtToken RtType::AUTO("auto");
 
@@ -67,9 +68,9 @@ RtTypeDef::~RtTypeDef()
     delete static_cast<PvtTypeDef*>(_ptr);
 }
 
-RtValue RtTypeDef::createValue(RtPrim& owner) const
+RtValue RtTypeDef::createValue(RtAllocator& allocator) const
 {
-    return static_cast<PvtTypeDef*>(_ptr)->getValueFuncs().create(owner);
+    return static_cast<PvtTypeDef*>(_ptr)->getValueFuncs().create(allocator);
 }
 
 void RtTypeDef::copyValue(const RtValue& src, RtValue& dest) const

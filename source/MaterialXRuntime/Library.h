@@ -38,20 +38,26 @@ class RtNode;
 class RtNodeDef;
 class RtNodeImpl;
 class RtNodeGraph;
-class RtFragment;
-class RtCodegenOptions;
-class RtCodegenContext;
-class RtCodegenResult;
-class RtCodeGenerator;
-class RtCodegenImpl;
 
-/// Shared pointer types
-using RtFragmentPtr = RtSharedPtr<RtFragment>;
-using RtCodegenOptionsPtr = RtSharedPtr<RtCodegenOptions>;
-using RtCodegenResultPtr = RtSharedPtr<RtCodegenResult>;
-using RtCodegenContextPtr = RtSharedPtr<RtCodegenContext>;
-using RtCodeGeneratorPtr = RtSharedPtr<RtCodeGenerator>;
-using RtCodeGeneratorConstPtr = RtSharedPtr<const RtCodeGenerator>;
+namespace Codegen
+{
+    class Syntax;
+    class TypeSyntax;
+    class Fragment;
+    class CodegenOptions;
+    class CodegenContext;
+    class CodegenResult;
+    class CodeGenerator;
+
+    /// Shared pointer types
+    using SyntaxPtr = RtSharedPtr<Syntax>;
+    using TypeSyntaxPtr = RtSharedPtr<TypeSyntax>;
+    using FragmentPtr = RtSharedPtr<Fragment>;
+    using CodegenOptionsPtr = RtSharedPtr<CodegenOptions>;
+    using CodegenContextPtr = RtSharedPtr<CodegenContext>;
+    using CodegenResultPtr = RtSharedPtr<CodegenResult>;
+    using CodeGeneratorPtr = RtSharedPtr<CodeGenerator>;
+}
 
 /// Predicate for filtering objects during traversal.
 using RtObjectPredicate = std::function<bool(const RtObject& obj)>;

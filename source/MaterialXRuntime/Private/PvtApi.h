@@ -21,6 +21,8 @@
 #include <MaterialXRuntime/Private/PvtCommand.h>
 #include <MaterialXRuntime/Private/PvtMessage.h>
 
+#include <sstream>
+
 namespace MaterialX
 {
 
@@ -335,6 +337,30 @@ public:
         return _unitDefinitions;
     }
 
+    void setFloatFormat(FloatFormat format)
+    {
+        _floatFormat = format;
+    }
+
+    void setFloatPrecision(int precision)
+    {
+        _floatPrecision = precision;
+    }
+
+    void setStreamFloatFormat(std::stringstream& ss)
+    {
+        setStreamFloatFormat(_floatFormat, _floatPrecision, ss);
+    }
+
+    static void setStreamFloatFormat(FloatFormat format, int precision, std::stringstream& ss)
+    {
+        ss.setf(std::ios_base::fmtflags(
+            (format == FloatFormat::FIXED ? std::ios_base::fixed :
+            (format == FloatFormat::SCIENTIFIC ? std::ios_base::scientific : 0))),
+            std::ios_base::floatfield);
+        ss.precision(precision);
+    }
+
     static PvtApi* cast(RtApi& api)
     {
         return reinterpret_cast<PvtApi*>(api._ptr);
@@ -359,6 +385,9 @@ public:
     PvtDataHandleRecord _nodedefs;
     PvtDataHandleRecord _nodeimpls;
     PvtDataHandleRecord _targetdefs;
+
+    FloatFormat _floatFormat;
+    int _floatPrecision;
 };
 
 }

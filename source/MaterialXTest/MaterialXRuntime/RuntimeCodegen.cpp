@@ -32,7 +32,8 @@
 #include <MaterialXRuntime/RtMessage.h>
 #include <MaterialXRuntime/Tokens.h>
 
-#include <MaterialXRuntime/Codegen/RtCodeGenerator.h>
+#include <MaterialXRuntime/Codegen/CodeGenerator.h>
+#include <MaterialXRuntime/Commands/PrimCommands.h>
 
 
 #include <cstdlib>
@@ -59,7 +60,7 @@ TEST_CASE("Runtime: Codegen", "[runtime]")
 
     mx::RtScopedApiHandle api;
 
-    // Load in stdlib
+    // Load in standard libraries.
     api->setSearchPath(searchPath);
     mx::RtReadOptions readOptions;
     api->loadLibrary(TARGETS, readOptions);
@@ -69,15 +70,28 @@ TEST_CASE("Runtime: Codegen", "[runtime]")
 
     // Create a stage.
     mx::RtStagePtr stage = api->createStage(MAIN);
-
+    mx::RtPrim node = stage->createPrim(mx::RtToken("ND_artistic_ior"));
+/*
     mx::RtPrim graph = api->getLibrary()->getPrimAtPath("/NG_tiledimage_float");
     REQUIRE(graph);
+    mx::RtCommandResult cmdResult;
+    mx::RtCommand::copyPrim(stage, graph, cmdResult);
+    mx::RtPrim newGraph = cmdResult.getObject();
+*/
+    mx::Codegen::CodeGeneratorPtr gen = mx::Codegen::OslGenerator::create();
 
-    mx::RtCodeGeneratorPtr gen = mx::RtOslGenerator::create();
+    mx::Codegen::CodegenOptionsPtr options = gen->createOptions();
+    mx::Codegen::CodegenContextPtr context = gen->createContext(options);
+    mx::Codegen::CodegenResultPtr result = gen->generate(node, "/", context);
 
-    mx::RtCodegenOptionsPtr options = gen->createOptions();
-    mx::RtCodegenContextPtr context = gen->createContext(options);
-    mx::RtCodegenResultPtr result = gen->generate(graph , "/", context);
+    mx::Codegen::SourceCode sourceCode(gen->getSyntax());
+    mx::Codegen::FragmentCompiler compiler;
 
-    std::cout << result->getFragment(0)->getSourceCode() << std::endl;
+    compiler.compileFunction(*context, *result->getFragment(0), sourceCode);
+
+    sourceCode.newLine();
+
+    compiler.compileFunctionCall(*context, *result->getFragment(0), sourceCode);
+
+    std::cout << sourceCode.asString() << std::endl;
 }

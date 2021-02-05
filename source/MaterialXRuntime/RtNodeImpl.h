@@ -48,6 +48,30 @@ public:
     /// node or shader is called something else but is functionally equivalent
     /// to the node described by the nodedef.
     const RtToken& getImplName() const;
+
+    /// Set a file containing the source code to use for this implementation.
+    void setFile(const string& file);
+
+    /// Return a file containing the source code used by this implementation.
+    const string& getFile() const;
+
+    /// Set a string containing the source code to use for this implementation.
+    void setSourceCode(const string& source);
+
+    /// Return a string containing the source code used by this implementation.
+    const string& getSourceCode() const;
+
+    /// Set the format used by the source code in this implementation.
+    void setFormat(const RtToken& format);
+
+    /// Return the format used by the source code in this implementation.
+    const RtToken& getFormat() const;
+
+    /// Set the function name to use for this implementation.
+    void setFunction(const RtToken& function);
+
+    /// Return the function name to use for this implementation.
+    const RtToken& getFunction() const;
 };
 
 }

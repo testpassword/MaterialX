@@ -17,6 +17,36 @@
 namespace MaterialX
 {
 
+/// Allocator class handling allocation of value data.
+/// The data allocated is kept by the allocator and freed
+/// upon allocator destruction or by calling free() explicitly.
+/// NOTE: Data is stored as raw byte pointers and destructors
+/// for allocated objects will not be called when freeing data.
+class RtAllocator
+{
+public:
+    /// Destructor.
+    ~RtAllocator();
+
+    /// Allocate and return a block of data.
+    uint8_t* alloc(size_t size);
+
+    /// Free all allocated data.
+    void free();
+
+    /// Allocate and return a single object of templated type.
+    /// The object constructor is called to initialize it.
+    template<class T>
+    T* allocType()
+    {
+        uint8_t* buffer = alloc(sizeof(T));
+        return new (buffer) T();
+    }
+
+private:
+    vector<uint8_t*> _storage;
+};
+
 /// @class RtValue
 /// Generic value class for storing values of all the data types
 /// supported by the API. Values that fit into 16 bytes of data
@@ -41,10 +71,16 @@ public:
     explicit RtValue(void* v) { asPtr() = v; }
 
     /// Explicit value constructor for large values.
+    /// Allocated data is managed by the given allocator.
+    explicit RtValue(const Matrix33& v, RtAllocator& allocator);
+    explicit RtValue(const Matrix44& v, RtAllocator& allocator);
+    explicit RtValue(const string& v, RtAllocator& allocator);
+
+    /// Explicit value constructor for large values.
     /// Allocated data is managed by the given prim.
-    explicit RtValue(const Matrix33& v, RtPrim& prim);
-    explicit RtValue(const Matrix44& v, RtPrim& prim);
-    explicit RtValue(const string& v, RtPrim& prim);
+    explicit RtValue(const Matrix33& v, RtPrim owner);
+    explicit RtValue(const Matrix44& v, RtPrim owner);
+    explicit RtValue(const string& v, RtPrim owner);
 
     /// Return bool value.
     const bool& asBool() const
@@ -206,9 +242,19 @@ public:
     }
 
     /// Create a new value of given type.
+    /// If the type is a large value the given allocator will
+    /// handle allocation and take ownership of the data.
+    static RtValue createNew(const RtToken& type, RtAllocator& allocator);
+
+    /// Create a new value of given type.
     /// If the type is a large value the given prim will take
     /// ownership of allocated data.
     static RtValue createNew(const RtToken& type, RtPrim owner);
+
+    /// Clone a value of given type.
+    /// If the type is a large value the given allocator will
+    /// handle allocation and take ownership of the data.
+    static RtValue clone(const RtToken& type, const RtValue& value, RtAllocator& allocator);
 
     /// Clone a value of given type.
     /// If the type is a large value the given prim will take

@@ -14,51 +14,84 @@
 namespace MaterialX
 {
 
-RtValue::RtValue(const Matrix33& v, RtPrim& prim)
+RtAllocator::~RtAllocator()
+{
+    free();
+}
+
+uint8_t* RtAllocator::alloc(size_t size)
+{
+    uint8_t* ptr = new uint8_t[size];
+    _storage.push_back(ptr);
+    return ptr;
+}
+
+void RtAllocator::free()
+{
+    for (uint8_t* ptr : _storage)
+    {
+        delete[] ptr;
+    }
+    _storage.clear();
+}
+
+
+RtValue::RtValue(const Matrix33& v, RtAllocator& allocator)
 {
     // Allocate storage for the value.
-    PvtAllocator& allocator = PvtObject::ptr<PvtPrim>(prim)->getAllocator();
     *_reinterpret_cast<Matrix33**>(&_data) = allocator.allocType<Matrix33>();
 
     // Copy the value.
     asMatrix33() = v;
 }
 
-RtValue::RtValue(const Matrix44& v, RtPrim& prim)
+RtValue::RtValue(const Matrix44& v, RtAllocator& allocator)
 {
     // Allocate storage for the value.
-    PvtAllocator& allocator = PvtObject::ptr<PvtPrim>(prim)->getAllocator();
     *_reinterpret_cast<Matrix44**>(&_data) = allocator.allocType<Matrix44>();
 
     // Copy the value.
     asMatrix44() = v;
 }
 
-RtValue::RtValue(const string& v, RtPrim& prim)
+RtValue::RtValue(const string& v, RtAllocator& allocator)
 {
     // Allocate storage for the value.
-    PvtAllocator& allocator = PvtObject::ptr<PvtPrim>(prim)->getAllocator();
     *_reinterpret_cast<string**>(&_data) = allocator.allocType<string>();
 
     // Copy the value.
     asString() = v;
 }
 
-RtValue RtValue::createNew(const RtToken& type, RtPrim owner)
+RtValue::RtValue(const Matrix33& v, RtPrim owner) : RtValue(v, PvtObject::ptr<PvtPrim>(owner)->getAllocator()) {}
+RtValue::RtValue(const Matrix44& v, RtPrim owner) : RtValue(v, PvtObject::ptr<PvtPrim>(owner)->getAllocator()) {}
+RtValue::RtValue(const string& v, RtPrim owner) : RtValue(v, PvtObject::ptr<PvtPrim>(owner)->getAllocator()) {}
+
+RtValue RtValue::createNew(const RtToken& type, RtAllocator& allocator)
 {
     const RtTypeDef* typeDef = RtTypeDef::findType(type);
     if (!typeDef)
     {
         throw ExceptionRuntimeError("Type '" + type.str() + "' is not a registered type");
     }
-    return typeDef->createValue(owner);
+    return typeDef->createValue(allocator);
+}
+
+RtValue RtValue::createNew(const RtToken& type, RtPrim owner)
+{
+    return createNew(type, PvtObject::ptr<PvtPrim>(owner)->getAllocator());
+}
+
+RtValue RtValue::clone(const RtToken& type, const RtValue& value, RtAllocator& allocator)
+{
+    RtValue clonedValue = createNew(type, allocator);
+    copy(type, value, clonedValue);
+    return clonedValue;
 }
 
 RtValue RtValue::clone(const RtToken& type, const RtValue& value, RtPrim owner)
 {
-    RtValue clonedValue = createNew(type, owner);
-    copy(type, value, clonedValue);
-    return clonedValue;
+    return clone(type, value, PvtObject::ptr<PvtPrim>(owner)->getAllocator());
 }
 
 void RtValue::copy(const RtToken& type, const RtValue& src, RtValue& dest)

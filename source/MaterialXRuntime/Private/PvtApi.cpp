@@ -30,6 +30,9 @@ void PvtApi::reset()
     _libraryRootStage = RtStage::createNew(libRootName);
 
     _unitDefinitions = UnitConverterRegistry::create();
+
+    _floatFormat = FloatFormat::DEFAULT;
+    _floatPrecision = 6;
 }
 
 void PvtApi::createLibrary(const RtToken& name)

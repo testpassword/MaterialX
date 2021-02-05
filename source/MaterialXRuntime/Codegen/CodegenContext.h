@@ -3,10 +3,10 @@
 // All rights reserved. See LICENSE.txt for license.
 //
 
-#ifndef MATERIALX_RTCODEGENCONTEXT_H
-#define MATERIALX_RTCODEGENCONTEXT_H
+#ifndef MATERIALX_CODEGEN_CODEGENCONTEXT_H
+#define MATERIALX_CODEGEN_CODEGENCONTEXT_H
 
-/// @file RtCodegenContext.h
+/// @file CodegenContext.h
 /// TODO: Docs
 
 #include <MaterialXRuntime/Library.h>
@@ -16,10 +16,12 @@
 
 namespace MaterialX
 {
+namespace Codegen
+{
 
-/// @class RtCodegenOptions
+/// @class CodegenOptions
 /// Base class for options used by a code generator.
-class RtCodegenOptions : public RtSharedBase<RtCodegenOptions>
+class CodegenOptions : public RtSharedBase<CodegenOptions>
 {
 public:
     /// If true the y-component of texture coordinates used for sampling
@@ -29,33 +31,30 @@ public:
     bool fileTextureVerticalFlip = false;
 };
 
-using RtCodegenOptionsPtr = RtSharedPtr<RtCodegenOptions>;
-
-
-/// @class RtCodegenContext
+/// @class CodegenContext
 /// Base class for context data needed by code generators.
 /// Derived code generators can derive from this class to hold
 /// custom context data and needed by the generator.
-class RtCodegenContext : public RtSharedBase<RtCodegenContext>
+class CodegenContext : public RtSharedBase<CodegenContext>
 {
 public:
     /// Destructor.
-    virtual ~RtCodegenContext() {}
+    virtual ~CodegenContext() {}
 
     /// Return an instance to the code generator that created this context.
-    const RtCodeGenerator* getCodeGenerator() const
+    const CodeGenerator* getCodeGenerator() const
     {
         return _generator.get();
     }
 
     /// Return the options instance.
-    const RtCodegenOptions* getOptions() const
+    const CodegenOptions* getOptions() const
     {
         return _options.get();
     }
 
     /// Return the options instance.
-    RtCodegenOptions* getOptions()
+    CodegenOptions* getOptions()
     {
         return _options.get();
     }
@@ -82,16 +81,16 @@ public:
 
 protected:
     /// Constructor.
-    RtCodegenContext(RtCodeGeneratorConstPtr generator, RtCodegenOptionsPtr options) :
+    CodegenContext(CodeGeneratorPtr generator, CodegenOptionsPtr options) :
         _generator(generator),
         _options(options)
     {}
 
     // Code generator for this context.
-    RtCodeGeneratorConstPtr _generator;
+    CodeGeneratorPtr _generator;
 
     // Options.
-    RtCodegenOptionsPtr _options;
+    CodegenOptionsPtr _options;
 
     // Set of globally reserved words.
     StringSet _reservedWords;
@@ -100,15 +99,17 @@ protected:
     StringMap _substitutions;
 };
 
-/// @class RtOslContext
+/// @class OslContext
 /// Class for context data needed by OSL code generators.
-class RtOslContext : public RtCodegenContext
+class OslContext : public CodegenContext
 {
 public:
     /// Constructor.
-    RtOslContext(RtCodeGeneratorConstPtr generator, RtCodegenOptionsPtr options);
+    OslContext(CodeGeneratorPtr generator, CodegenOptionsPtr options);
 };
 
-}
+} // namepspace Codegen
+} // namepspace MaterialX
+
 
 #endif

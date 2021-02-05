@@ -3,25 +3,27 @@
 // All rights reserved.  See LICENSE.txt for license.
 //
 
-#ifndef MATERIALX_RTOSLSYNTAX_H
-#define MATERIALX_RTOSLSYNTAX_H
+#ifndef MATERIALX_CODEGEN_OSLSYNTAX_H
+#define MATERIALX_CODEGEN_OSLSYNTAX_H
 
 /// @file
 /// OSL syntax class
 
-#include <MaterialXGenShader/Syntax.h>
+#include <MaterialXRuntime/Codegen/Syntax.h>
 
 namespace MaterialX
 {
+namespace Codegen
+{
 
-/// @class RtOslSyntax
+/// @class OslSyntax
 /// Syntax class for OSL (Open Shading Language)
-class RtOslSyntax : public Syntax
+class OslSyntax : public Syntax
 {
 public:
-    RtOslSyntax();
+    OslSyntax();
 
-    static SyntaxPtr create() { return std::make_shared<RtOslSyntax>(); }
+    static SyntaxPtr create() { return std::make_shared<OslSyntax>(); }
 
     const string& getOutputQualifier() const override;
     const string& getConstantQualifier() const override { return EMPTY_STRING; };
@@ -36,6 +38,7 @@ public:
     static const StringVec COLOR4_MEMBERS;
 };
 
+} // namespace Codegen
 } // namespace MaterialX
 
 #endif

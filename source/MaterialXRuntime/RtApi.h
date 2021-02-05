@@ -23,6 +23,14 @@
 namespace MaterialX
 {
 
+/// Float formats to use when writing out values to strings.
+enum class FloatFormat
+{
+    DEFAULT = 0,
+    FIXED = 1,
+    SCIENTIFIC = 2
+};
+
 class RtApi
 {
 public:
@@ -223,6 +231,22 @@ public:
 
     /// Return a registry of unit definitions
     UnitConverterRegistryPtr getUnitDefinitions();
+
+
+    /// Set float formatting for converting values to strings.
+    /// Formats to use are FloatFormatFixed, FloatFormatScientific 
+    /// or FloatFormatDefault to set default format.
+    void setFloatFormat(FloatFormat format);
+
+    /// Set float precision for converting values to strings.
+    void setFloatPrecision(int precision);
+
+    /// Set float format on a stream according to format and precision
+    /// previously assigned to the API.
+    void setStreamFloatFormat(std::stringstream& ss);
+
+    /// Set float format on a stream according to given format and precision.
+    static void setStreamFloatFormat(FloatFormat format, int precision, std::stringstream& ss);
 
     /// Get the singleton API instance.
     static RtApi& get();

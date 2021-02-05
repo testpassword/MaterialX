@@ -19,8 +19,6 @@
 #include <MaterialXRuntime/Tokens.h>
 #include <MaterialXRuntime/RtNodeImpl.h>
 #include <MaterialXRuntime/RtTargetDef.h>
-#include <MaterialXRuntime/Codegen/RtSourceCodeImpl.h>
-#include <MaterialXRuntime/Codegen/RtGraphImpl.h>
 
 #include <MaterialXRuntime/Private/PvtStage.h>
 
@@ -550,47 +548,26 @@ namespace
 
         const RtToken name(src->getName());
         const RtToken nodedef(src->getNodeDefString());
+        const RtToken function(src->getAttribute(Tokens::FUNCTION.str()));
+        const RtToken format(src->getAttribute(Tokens::FORMAT.str()));
 
-        const string& sourcecode = src->getAttribute(Tokens::SOURCECODE.str());
-        const string& file = src->getAttribute(Tokens::FILE.str());
-
-        PvtPrim* prim = nullptr;
-        if (file.empty() && sourcecode.empty())
-        {
-            // Create a generic node implementation.
-            prim = stage->createPrim(parent->getPath(), name, RtNodeImpl::typeName());
-        }
-        else
-        {
-            // Create a source code implementation.
-            prim = stage->createPrim(parent->getPath(), name, RtSourceCodeImpl::typeName());
-
-            RtSourceCodeImpl impl(prim->hnd());
-            if (!sourcecode.empty())
-            {
-                impl.setSourceCode(sourcecode);
-            }
-            else
-            {
-                impl.setFile(file);
-            }
-
-            const string& function = src->getAttribute(Tokens::FUNCTION.str());
-            if (!function.empty())
-            {
-                impl.setFunction(function);
-            }
-
-            const string& format = src->getAttribute(Tokens::FORMAT.str());
-            if (!format.empty())
-            {
-                impl.setFormat(RtToken(format));
-            }
-        }
-
+        PvtPrim* prim = stage->createPrim(parent->getPath(), name, RtNodeImpl::typeName());
         RtNodeImpl impl(prim->hnd());
         impl.setNodeDef(nodedef);
         impl.setTarget(target);
+        impl.setFunction(function);
+        impl.setFormat(format);
+
+        const string& sourcecode = src->getAttribute(Tokens::SOURCECODE.str());
+        if (!sourcecode.empty())
+        {
+            impl.setSourceCode(sourcecode);
+        }
+        else
+        {
+            const string& file = src->getAttribute(Tokens::FILE.str());
+            impl.setFile(file);
+        }
 
         readMetadata(src, prim, nodeimplMetadata);
 

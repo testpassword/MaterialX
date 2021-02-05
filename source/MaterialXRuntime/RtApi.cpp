@@ -15,8 +15,6 @@
 #include <MaterialXRuntime/RtLook.h>
 #include <MaterialXRuntime/RtCollection.h>
 #include <MaterialXRuntime/RtConnectableApi.h>
-#include <MaterialXRuntime/Codegen/RtSourceCodeImpl.h>
-#include <MaterialXRuntime/Codegen/RtGraphImpl.h>
 
 #include <MaterialXRuntime/Private/PvtApi.h>
 #include <MaterialXRuntime/Private/PvtPrim.h>
@@ -54,8 +52,6 @@ void RtApi::initialize()
     registerTypedSchema<RtNodeGraph>();
     registerTypedSchema<RtNodeImpl>();
     registerTypedSchema<RtTargetDef>();
-    registerTypedSchema<RtSourceCodeImpl>();
-    registerTypedSchema<RtGraphImpl>();
     registerTypedSchema<RtBackdrop>();
     registerTypedSchema<RtBindElement>();
     registerTypedSchema<RtLookGroup, RtLookGroupConnectableApi>();
@@ -79,8 +75,6 @@ void RtApi::shutdown()
     unregisterTypedSchema<RtNodeGraph>();
     unregisterTypedSchema<RtNodeImpl>();
     unregisterTypedSchema<RtTargetDef>();
-    unregisterTypedSchema<RtSourceCodeImpl>();
-    unregisterTypedSchema<RtGraphImpl>();
     unregisterTypedSchema<RtBackdrop>();
     unregisterTypedSchema<RtBindElement>();
     unregisterTypedSchema<RtLookGroup>();
@@ -315,6 +309,26 @@ RtTokenVec RtApi::getStageNames() const
 UnitConverterRegistryPtr RtApi::getUnitDefinitions()
 {
     return _cast(_ptr)->getUnitDefinitions();
+}
+
+void RtApi::setFloatFormat(FloatFormat format)
+{
+    _cast(_ptr)->setFloatFormat(format);
+}
+
+void RtApi::setFloatPrecision(int precision)
+{
+    _cast(_ptr)->setFloatPrecision(precision);
+}
+
+void RtApi::setStreamFloatFormat(std::stringstream& ss)
+{
+    _cast(_ptr)->setStreamFloatFormat(ss);
+}
+
+void RtApi::setStreamFloatFormat(FloatFormat format, int precision, std::stringstream& ss)
+{
+    PvtApi::setStreamFloatFormat(format, precision, ss);
 }
 
 RtApi& RtApi::get()

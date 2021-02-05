@@ -18,50 +18,6 @@
 namespace MaterialX
 {
 
-// Allocator class handling allocation of data for prims.
-// The data allocated is kept by the allocator and freed
-// upon allocator destruction or by calling free() explicitly.
-// NOTE: Data is stored as raw byte pointers and destructors
-// for allocated objects will not be called when freeing data.
-class PvtAllocator
-{
-public:
-    ~PvtAllocator()
-    {
-        free();
-    }
-
-    // Allocate and return a block of data.
-    uint8_t* alloc(size_t size)
-    {
-        uint8_t* ptr = new uint8_t[size];
-        _storage.push_back(ptr);
-        return ptr;
-    }
-
-    // Allocate and return a single object of templated type.
-    // The object constructor is called to initialize it.
-    template<class T>
-    T* allocType()
-    {
-        uint8_t* buffer = alloc(sizeof(T));
-        return new (buffer) T();
-    }
-
-    // Free all allocated data.
-    void free()
-    {
-        for (uint8_t* ptr : _storage)
-        {
-            delete[] ptr;
-        }
-        _storage.clear();
-    }
-
-private:
-    vector<uint8_t*> _storage;
-};
-
 class RtAttrIterator;
 class RtPrimIterator;
 
@@ -229,7 +185,7 @@ public:
         return _primOrder;
     }
 
-    PvtAllocator& getAllocator()
+    RtAllocator& getAllocator()
     {
         return _allocator;
     }
@@ -276,7 +232,7 @@ protected:
     PvtDataHandleMap _primMap;
     PvtDataHandleVec _primOrder;
 
-    PvtAllocator _allocator;
+    RtAllocator _allocator;
 
     friend class PvtApi;
     friend class PvtStage;

@@ -61,4 +61,52 @@ const RtToken& RtNodeImpl::getImplName() const
     return data ? data->getValue().asToken() : EMPTY_TOKEN;
 }
 
+void RtNodeImpl::setFile(const string& file)
+{
+    RtTypedValue* data = addMetadata(Tokens::FILE, RtType::STRING);
+    data->getValue().asString() = file;
+}
+
+const string& RtNodeImpl::getFile() const
+{
+    const RtTypedValue* data = getMetadata(Tokens::FILE, RtType::STRING);
+    return data ? data->getValue().asString() : EMPTY_STRING;
+}
+
+void RtNodeImpl::setSourceCode(const string& source)
+{
+    RtTypedValue* data = addMetadata(Tokens::SOURCECODE, RtType::STRING);
+    data->getValue().asString() = source;
+}
+
+const string& RtNodeImpl::getSourceCode() const
+{
+    const RtTypedValue* data = getMetadata(Tokens::SOURCECODE, RtType::STRING);
+    return data ? data->getValue().asString() : EMPTY_STRING;
+}
+
+void RtNodeImpl::setFormat(const RtToken& format)
+{
+    RtTypedValue* data = addMetadata(Tokens::FORMAT, RtType::TOKEN);
+    data->getValue().asToken() = format;
+}
+
+const RtToken& RtNodeImpl::getFormat() const
+{
+    const RtTypedValue* data = getMetadata(Tokens::FORMAT, RtType::TOKEN);
+    return data ? data->getValue().asToken() : EMPTY_TOKEN;
+}
+
+void RtNodeImpl::setFunction(const RtToken& function)
+{
+    RtTypedValue* data = addMetadata(Tokens::FUNCTION, RtType::TOKEN);
+    data->getValue().asToken() = function;
+}
+
+const RtToken& RtNodeImpl::getFunction() const
+{
+    const RtTypedValue* data = getMetadata(Tokens::FUNCTION, RtType::TOKEN);
+    return data ? data->getValue().asToken() : EMPTY_TOKEN;
+}
+
 }

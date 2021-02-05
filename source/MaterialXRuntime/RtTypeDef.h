@@ -48,24 +48,25 @@ public:
     static const RtToken VOLUMESHADER;
     static const RtToken DISPLACEMENTSHADER;
     static const RtToken LIGHTSHADER;
+    static const RtToken THINFILM;
     static const RtToken MATERIAL;
     static const RtToken AUTO;
 };
 
 /// Function type for creating a value of a specific data type.
-using RtValueCreateFunc = std::function<RtValue(RtPrim & owner)>;
+using RtValueCreateFunc = std::function<RtValue(RtAllocator& allocator)>;
 
 /// Function type for copying a value of a specific data type.
-using RtValueCopyFunc = std::function<void(const RtValue & src, RtValue & dest)>;
+using RtValueCopyFunc = std::function<void(const RtValue& src, RtValue& dest)>;
 
 /// Function type for comparing two values for equality.
-using RtValueCompareFunc = std::function<bool(const RtValue & a, const RtValue & b)>;
+using RtValueCompareFunc = std::function<bool(const RtValue& a, const RtValue& b)>;
 
 /// Function type for converting a value of a specific data type.
-using RtValueToStringFunc = std::function<void(const RtValue & src, string & dest)>;
+using RtValueToStringFunc = std::function<void(const RtValue& src, string& dest)>;
 
 /// Function type for converting a value of a specific data type.
-using RtValueFromStringFunc = std::function<void(const string & src, RtValue & dest)>;
+using RtValueFromStringFunc = std::function<void(const string& src, RtValue& dest)>;
 
 /// @struct RtValueFuncs
 /// Struct holding functions for creation and conversion
@@ -167,9 +168,9 @@ public:
     const RtTokenSet& getValidConnectionTypes() const;
 
     /// Create a new value of this type.
-    /// If the type is a large value the given prim will take
-    /// ownership of allocated data.
-    RtValue createValue(RtPrim& owner) const;
+    /// If the type is a large value the allocator will
+    /// allocate and take ownership of the data.
+    RtValue createValue(RtAllocator& allocator) const;
 
     /// Copy data from one value to another.
     void copyValue(const RtValue& src, RtValue& dest) const;
