@@ -47,11 +47,17 @@ public:
     /// Add a line of code, optionally appending a semicolon.
     void addLine(const string& str, bool semicolon = true);
 
+    /// Set the given function as defined in this source code.
+    void setDefined(const RtToken& function);
+
+    /// Return true if the given function has been defined in this source code.
+    bool isDefined(const RtToken& function) const;
+
     /// Set the given file as included in this source code.
     void setIncluded(const RtToken& file);
 
     /// Return true if the given file is set as included in this source code.
-    bool isIncluded(const RtToken& file);
+    bool isIncluded(const RtToken& file) const;
 
     /// Return the resulting source code.
     const string& asString() const;
@@ -59,6 +65,7 @@ public:
 private:
     int _indentations;
     vector<Syntax::Punctuation> _scopes;
+    RtTokenSet _functions;
     RtTokenSet _includes;
     string _code;
 };
@@ -77,8 +84,9 @@ public:
 
     virtual void declareVariable(const Fragment::Output& output, bool assignDefault, SourceCode& result);
 
-    void emitBlock(const string& block, SourceCode& result);
-    void emitInclude(const FilePath& file, SourceCode& result);
+    virtual void emitBlock(const string& block, SourceCode& result);
+    virtual void emitInclude(const FilePath& file, SourceCode& result);
+    virtual void emitVariable(const Fragment::Input& input, SourceCode& result);
 
 protected:
     Context& _context;

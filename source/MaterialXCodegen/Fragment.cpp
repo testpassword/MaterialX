@@ -29,7 +29,8 @@ Fragment::Input* Fragment::createInput(const RtToken& type, const RtToken& name)
     input->parent = this;
     input->type = type;
     input->name = name;
-    input->variable = name;
+    string variable = _name.str() + "_" + name.str();
+    input->variable = RtToken(variable);
     input->value = RtValue::createNew(type, _allocator);
     input->connection = nullptr;
     _inputs.push_back(input);
@@ -41,40 +42,22 @@ Fragment::Output* Fragment::createOutput(const RtToken& type, const RtToken& nam
     Output* output = new Output();
     output->parent = this;
     output->type = type;
-    output->name = name;
-    output->variable = name;
+    string variable = _name.str() + "_" + name.str();
+    output->variable = RtToken(variable);
     _outputs.push_back(output);
     return output;
 }
 
-void Fragment::setSourceCode(const string& source)
+void Fragment::setSourceCodeFunction(const RtToken& functionName, const string& sourceCode)
 {
-    static const string INCLUDE = "#include";
-    static const char QUOTE = '\"';
+    _sourceCode = sourceCode;
+    _functionName = functionName;
+}
 
-    std::stringstream stream(source);
-    for (string line; std::getline(stream, line); )
-    {
-        const size_t pos = line.find(INCLUDE);
-        if (pos != string::npos)
-        {
-            const size_t startQuote = line.find_first_of(QUOTE);
-            const size_t endQuote = line.find_last_of(QUOTE);
-            if (startQuote != string::npos && endQuote != string::npos && endQuote > startQuote)
-            {
-                size_t length = (endQuote - startQuote) - 1;
-                if (length)
-                {
-                    const RtToken filename(line.substr(startQuote + 1, length));
-                    _includes.insert(filename);
-                }
-            }
-        }
-        else
-        {
-            _sourceCode += line + '\n';
-        }
-    }
+void Fragment::setSourceCodeInline(const string& sourceCode)
+{
+    _sourceCode = sourceCode;
+    _functionName = EMPTY_TOKEN;
 }
 
 /*

@@ -119,12 +119,22 @@ void SourceCode::addLine(const string& str, bool semicolon)
     endLine(semicolon);
 }
 
+void SourceCode::setDefined(const RtToken& function)
+{
+    _functions.insert(function);
+}
+
+bool SourceCode::isDefined(const RtToken& function) const
+{
+    return _functions.count(function) > 0;
+}
+
 void SourceCode::setIncluded(const RtToken& file)
 {
     _includes.insert(file);
 }
 
-bool SourceCode::isIncluded(const RtToken& file)
+bool SourceCode::isIncluded(const RtToken& file) const
 {
     return _includes.count(file) > 0;
 }
@@ -145,7 +155,7 @@ void FragmentCompiler::compileFunctionCall(const Fragment& frag, SourceCode& res
     }
 
     result.beginLine();
-    result.addString("void " + frag.getName().str() + "(");
+    result.addString("void " + frag.getFunctionName().str() + "(");
 
     string delim = "";
 
@@ -153,7 +163,8 @@ void FragmentCompiler::compileFunctionCall(const Fragment& frag, SourceCode& res
     for (size_t i = 0; i < frag.numInputs(); ++i)
     {
         const Fragment::Input* input = frag.getInput(i);
-        result.addString(delim + input->variable.str());
+        result.addString(delim);
+        emitVariable(*input, result);
         delim = ", ";
     }
 
@@ -176,21 +187,12 @@ FragmentCompiler::FragmentCompiler(Context& context) :
 
 void FragmentCompiler::compileFunction(const Fragment& frag, SourceCode& result)
 {
-    // Emit any include files.
-    if (!frag.getIncludes().empty())
+    if (!frag.isInline() && !result.isDefined(frag.getFunctionName()))
     {
-        for (const RtToken& file : frag.getIncludes())
-        {
-            string modifiedFile = file.str();
-            tokenSubstitution(_context.getSubstitutions(), modifiedFile);
-            const FilePath resolvedFile = RtApi::get().getSearchPath().find(modifiedFile);
-            emitInclude(resolvedFile, result);
-        }
-        result.newLine();
+        // Add function definition.
+        emitBlock(frag.getSourceCode(), result);
+        result.setDefined(frag.getFunctionName());
     }
-
-    // Add function definition.
-    emitBlock(frag.getSourceCode(), result);
 }
 
 void FragmentCompiler::compileShader(const Fragment& frag, SourceCode& result)
@@ -245,13 +247,28 @@ void FragmentCompiler::emitInclude(const FilePath& file, SourceCode& result)
     const RtToken f(file);
     if (!result.isIncluded(f))
     {
-        const string content = readFile(file);
+        string modifiedFile = file;
+        tokenSubstitution(_context.getSubstitutions(), modifiedFile);
+        const FilePath resolvedFile = RtApi::get().getSearchPath().find(modifiedFile);
+        const string content = readFile(resolvedFile);
         if (content.empty())
         {
-            throw ExceptionRuntimeError("Could not find include file: '" + f.str() + "'");
+            throw ExceptionRuntimeError("Could not find include file: '" + resolvedFile.asString() + "'");
         }
         emitBlock(content, result);
         result.setIncluded(f);
+    }
+}
+
+void FragmentCompiler::emitVariable(const Fragment::Input& input, SourceCode& result)
+{
+    if (input.connection)
+    {
+        result.addString(input.connection->variable.str());
+    }
+    else
+    {
+        result.addString(_syntax.getValue(input.type, input.value));
     }
 }
 

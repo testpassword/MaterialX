@@ -70,22 +70,27 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
         frag->createOutput(attr.getType(), attr.getName());
     }
 
-    const string& source = nodeimpl.getSourceCode();
-    if (!source.empty())
-    {
-        frag->setSourceCode(source);
-    }
-    else
+    string source = nodeimpl.getSourceCode();
+    if (source.empty())
     {
         // TODO: Don't read the file for every new fragment. Store source string in the nodeimpl instead?
         const FilePath path = RtApi::get().getSearchPath().find(nodeimpl.getFile());
-        string contents = readFile(path);
-        if (contents.empty())
+        source = readFile(path);
+        if (source.empty())
         {
             throw ExceptionShaderGenError("Failed to get source code from file '" + path.asString() +
                 "' used by implementation '" + nodeimpl.getName().str() + "'");
         }
-        frag->setSourceCode(contents);
+    }
+
+    const RtToken& function = nodeimpl.getFunction();
+    if (function != EMPTY_TOKEN)
+    {
+        frag->setSourceCodeFunction(function, source);
+    }
+    else
+    {
+        frag->setSourceCodeInline(source);
     }
 
     return frag;

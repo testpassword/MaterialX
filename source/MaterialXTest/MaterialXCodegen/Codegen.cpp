@@ -37,30 +37,48 @@ namespace
     const mx::RtToken OUT("out");
 }
 
-TEST_CASE("Codegen: Fragments from code", "[codegen]")
+TEST_CASE("Codegen: Fragments from source", "[codegen]")
 {
     mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
     mx::Codegen::ContextPtr contex = mx::Codegen::OslContext::create(options);
-
     const mx::Codegen::FragmentGenerator& generator = contex->getGenerator();
 
-    mx::Codegen::FragmentPtr multiply1 = generator.createFragment(MULTIPLY);
-    mx::Codegen::Fragment::Input* in1 = multiply1->createInput(mx::RtType::FLOAT, IN1);
-    mx::Codegen::Fragment::Input* in2 = multiply1->createInput(mx::RtType::FLOAT, IN2);
-    mx::Codegen::Fragment::Output* out = multiply1->createOutput(mx::RtType::FLOAT, OUT);
-    multiply1->setSourceCode(
+    const std::string multiplySource =
         "void multiply(float a, float b, output float result)\n"  \
         "{\n"                                                     \
         "   result = a + b;\n"                                    \
-        "}\n"                                                     \
-    );
+        "}\n";
+
+    mx::Codegen::FragmentPtr multiply1 = generator.createFragment(mx::RtToken("mult1"));
+    multiply1->createInput(mx::RtType::FLOAT, IN1);
+    multiply1->createInput(mx::RtType::FLOAT, IN2);
+    multiply1->createOutput(mx::RtType::FLOAT, OUT);
+    multiply1->setSourceCodeFunction(MULTIPLY, multiplySource);
+
+    mx::Codegen::FragmentPtr multiply2 = generator.createFragment(mx::RtToken("mult2"));
+    multiply2->createInput(mx::RtType::FLOAT, IN1);
+    multiply2->createInput(mx::RtType::FLOAT, IN2);
+    multiply2->createOutput(mx::RtType::FLOAT, OUT);
+    multiply2->setSourceCodeFunction(MULTIPLY, multiplySource);
+
+    mx::Codegen::Fragment::Input* multiply1_in1 = multiply1->getInput(0);
+    mx::Codegen::Fragment::Input* multiply1_in2 = multiply1->getInput(1);
+    mx::Codegen::Fragment::Output* multiply1_out = multiply1->getOutput(0);
+    mx::Codegen::Fragment::Input* multiply2_in1 = multiply2->getInput(0);
+    mx::Codegen::Fragment::Input* multiply2_in2 = multiply2->getInput(1);
+    multiply1_in1->value.asFloat() = 3.0f;
+    multiply1_in2->value.asFloat() = 7.0f;
+    multiply2_in1->connection = multiply1_out;
+    multiply2_in2->connection = multiply1_out;
 
     mx::Codegen::FragmentCompiler compiler(*contex);
 
     mx::Codegen::SourceCode sourceCode;
     compiler.compileFunction(*multiply1, sourceCode);
-    sourceCode.newLine();
+    compiler.compileFunction(*multiply2, sourceCode);
     compiler.compileFunctionCall(*multiply1, sourceCode);
+    compiler.compileFunctionCall(*multiply2, sourceCode);
+
     std::cout << sourceCode.asString() << std::endl;
 }
 
@@ -88,4 +106,18 @@ TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
     mx::RtCommand::copyPrim(stage, graph, cmdResult);
     mx::RtPrim newGraph = cmdResult.getObject();
 */
+
+    mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
+    mx::Codegen::ContextPtr contex = mx::Codegen::OslContext::create(options);
+
+    const mx::Codegen::FragmentGenerator& generator = contex->getGenerator();
+    mx::Codegen::FragmentPtr frag = generator.createFragment(node);
+
+    mx::Codegen::FragmentCompiler compiler(*contex);
+
+    mx::Codegen::SourceCode sourceCode;
+    compiler.compileFunction(*frag, sourceCode);
+    sourceCode.newLine();
+    compiler.compileFunctionCall(*frag, sourceCode);
+    std::cout << sourceCode.asString() << std::endl;
 }

@@ -70,8 +70,23 @@ class Fragment : public RtSharedBase<Fragment>
         return _outputs[index];
     }
 
-    /// Set fragment source code.
-    void setSourceCode(const string& source);
+    /// Set source code as a function.
+    void setSourceCodeFunction(const RtToken& functionName, const string& sourceCode);
+
+    /// Set source code as an inline expression.
+    void setSourceCodeInline(const string& sourceCode);
+
+    /// Return fragment source code.
+    const RtToken& getFunctionName() const
+    {
+        return _functionName;
+    }
+
+    /// Return true if the fragment source code is an inline expression.
+    bool isInline() const
+    {
+        return _functionName == EMPTY_TOKEN;
+    }
 
     /// Return fragment source code.
     const string& getSourceCode() const
@@ -79,21 +94,15 @@ class Fragment : public RtSharedBase<Fragment>
         return _sourceCode;
     }
 
-    /// Return include file dependencies.
-    const RtTokenSet& getIncludes() const
-    {
-        return _includes;
-    }
-
   protected:
-    /// Name of the fragment.
+    /// Fragment name.
     const RtToken _name;
+
+    /// Fragment function name.
+    RtToken _functionName;
 
     /// Source code for this fragment.
     string _sourceCode;
-
-    /// Set of include files that has been included.
-    RtTokenSet _includes;
 
     /// Allocator for large values.
     RtAllocator _allocator;
