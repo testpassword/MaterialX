@@ -11,6 +11,8 @@
 
 #include <MaterialXCodegen/Fragment.h>
 
+#include <MaterialXFormat/File.h>
+
 namespace MaterialX
 {
 namespace Codegen
@@ -22,7 +24,7 @@ class SourceCode
 {
 public:
     /// Contructor.
-    SourceCode(const Syntax& syntax);
+    SourceCode();
 
     /// Start a new scope using the given bracket type.
     void beginScope(Syntax::Punctuation punc = Syntax::CURLY_BRACKETS);
@@ -45,23 +47,19 @@ public:
     /// Add a line of code, optionally appending a semicolon.
     void addLine(const string& str, bool semicolon = true);
 
-    /// Add a block of code.
-    void addBlock(const string& str);
+    /// Set the given file as included in this source code.
+    void setIncluded(const RtToken& file);
 
-    /// Add a single line code comment.
-    void addComment(const string& str);
-
-    /// Add an include file.
-    void addInclude(const string& file);
+    /// Return true if the given file is set as included in this source code.
+    bool isIncluded(const RtToken& file);
 
     /// Return the resulting source code.
     const string& asString() const;
 
 private:
-    const Syntax& _syntax;
     int _indentations;
     vector<Syntax::Punctuation> _scopes;
-    StringSet _includes;
+    RtTokenSet _includes;
     string _code;
 };
 
@@ -70,14 +68,24 @@ private:
 class FragmentCompiler : public RtSharedBase<FragmentCompiler>
 {
 public:
-    virtual void compileFunction(Context& context, const Fragment& frag, SourceCode& result);
-    virtual void compileFunctionCall(Context& context, const Fragment& frag, SourceCode& result);
-    virtual void compileShader(Context& context, const Fragment& frag, SourceCode& result);
+    FragmentCompiler(Context& context);
+    virtual ~FragmentCompiler() {}
 
-    virtual void declareVariable(Context& context, const Fragment::Output& output, bool assignDefault, SourceCode& result);
+    virtual void compileFunction(const Fragment& frag, SourceCode& result);
+    virtual void compileFunctionCall(const Fragment& frag, SourceCode& result);
+    virtual void compileShader(const Fragment& frag, SourceCode& result);
+
+    virtual void declareVariable(const Fragment::Output& output, bool assignDefault, SourceCode& result);
+
+    void emitBlock(const string& block, SourceCode& result);
+    void emitInclude(const FilePath& file, SourceCode& result);
+
+protected:
+    Context& _context;
+    const Syntax& _syntax;
 };
 
-} // namepspace Codegen
-} // namepspace MaterialX
+} // namespace Codegen
+} // namespace MaterialX
 
 #endif

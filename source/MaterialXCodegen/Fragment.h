@@ -24,7 +24,7 @@ namespace Codegen
 /// Class holding a fragment of code.
 class Fragment : public RtSharedBase<Fragment>
 {
-public:
+  public:
     struct Output
     {
         Fragment* parent;
@@ -39,11 +39,9 @@ public:
         Output* connection;
     };
 
+  public:
     /// Constructor.
     Fragment(const RtToken& name);
-
-    /// Create a new fragment.
-    static FragmentPtr create(const RtToken& name);
 
     /// Return the fragment name.
     const RtToken& getName() const
@@ -65,7 +63,7 @@ public:
 
     size_t numOutputs() const
     {
-        return _inputs.size();
+        return _outputs.size();
     }
     Output* getOutput(size_t index) const
     {
@@ -82,12 +80,12 @@ public:
     }
 
     /// Return include file dependencies.
-    const StringSet& getIncludes() const
+    const RtTokenSet& getIncludes() const
     {
         return _includes;
     }
 
-protected:
+  protected:
     /// Name of the fragment.
     const RtToken _name;
 
@@ -95,7 +93,7 @@ protected:
     string _sourceCode;
 
     /// Set of include files that has been included.
-    StringSet _includes;
+    RtTokenSet _includes;
 
     /// Allocator for large values.
     RtAllocator _allocator;
@@ -134,7 +132,7 @@ protected:
 };
 */
 
-} // namepspace Codegen
-} // namepspace MaterialX
+} // namespace Codegen
+} // namespace MaterialX
 
 #endif

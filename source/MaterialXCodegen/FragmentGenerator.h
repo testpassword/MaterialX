@@ -32,11 +32,20 @@ class FragmentGenerator : public RtSharedBase<FragmentGenerator>
     /// Return the syntax object for this generator.
     virtual const Syntax& getSyntax() const = 0;
 
-    /// Create a new options instance for this generator.
-    virtual OptionsPtr createOptions() const;
+    /// Return the options object for this generator.
+    const Options& getOptions() const
+    {
+        return *_options;
+    };
 
-    /// Create a new context instance for this generator.
-    virtual ContextPtr createContext(OptionsPtr options) = 0;
+    /// Return the options object for this generator.
+    Options& getOptions()
+    {
+        return *_options;
+    };
+
+    /// Create an empty fragment.
+    virtual FragmentPtr createFragment(const RtToken& name) const;
 
     /// Create a fragment from the given node or nodegraph.
     virtual FragmentPtr createFragment(const RtNode& node) const;
@@ -46,10 +55,12 @@ class FragmentGenerator : public RtSharedBase<FragmentGenerator>
 
   protected:
     /// Constructor.
-    FragmentGenerator() {}
+    FragmentGenerator(OptionsPtr options);
+
+    OptionsPtr _options;
 };
 
-} // namepspace Codegen
-} // namepspace MaterialX
+} // namespace Codegen
+} // namespace MaterialX
 
 #endif

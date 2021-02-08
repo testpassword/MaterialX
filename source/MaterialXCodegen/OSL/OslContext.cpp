@@ -11,8 +11,8 @@ namespace MaterialX
 namespace Codegen
 {
 
-OslContext::OslContext(FragmentGeneratorPtr generator, OptionsPtr options) :
-    Context(generator, options)
+OslContext::OslContext(OptionsPtr options) :
+    Context(OslGenerator::create(options))
 {
     static const string T_FILE_TRANSFORM_UV = "$fileTransformUv";
 
@@ -28,5 +28,10 @@ OslContext::OslContext(FragmentGeneratorPtr generator, OptionsPtr options) :
     }
 }
 
-} // namepspace Codegen
-} // namepspace MaterialX
+ContextPtr OslContext::create(OptionsPtr options)
+{
+    return ContextPtr(new OslContext(options));
+}
+
+} // namespace Codegen
+} // namespace MaterialX

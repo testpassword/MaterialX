@@ -10,6 +10,8 @@
 /// TODO: Docs
 
 #include <MaterialXCodegen/Library.h>
+#include <MaterialXCodegen/FragmentGenerator.h>
+
 #include <MaterialXRuntime/RtToken.h>
 
 namespace MaterialX
@@ -22,6 +24,11 @@ namespace Codegen
 class Options : public RtSharedBase<Options>
 {
 public:
+    Options();
+
+    /// Create a new options instance.
+    static OptionsPtr create();
+
     /// If true the y-component of texture coordinates used for sampling
     /// file textures will be flipped before sampling. This can be used if
     /// file textures need to be flipped vertically to match the target's
@@ -40,21 +47,27 @@ public:
     virtual ~Context();
 
     /// Return an instance to the code generator that created this context.
-    const FragmentGenerator* getGenerator() const
+    const FragmentGenerator& getGenerator() const
     {
-        return _generator.get();
+        return *_generator;
+    }
+
+    /// Return an instance to the code generator that created this context.
+    const Syntax& getSyntax() const
+    {
+        return _generator->getSyntax();
     }
 
     /// Return the options instance.
-    const Options* getOptions() const
+    const Options& getOptions() const
     {
-        return _options.get();
+        return _generator->getOptions();
     }
 
     /// Return the options instance.
-    Options* getOptions()
+    Options& getOptions()
     {
-        return _options.get();
+        return _generator->getOptions();
     }
 
     /// Add reserved words that should not be used as
@@ -79,13 +92,10 @@ public:
 
 protected:
     /// Constructor.
-    Context(FragmentGeneratorPtr generator, OptionsPtr options);
+    Context(FragmentGeneratorPtr generator);
 
     // Fragment generator.
     FragmentGeneratorPtr _generator;
-
-    // Options.
-    OptionsPtr _options;
 
     // Set of globally reserved words.
     StringSet _reservedWords;
@@ -94,8 +104,8 @@ protected:
     StringMap _substitutions;
 };
 
-} // namepspace Codegen
-} // namepspace MaterialX
+} // namespace Codegen
+} // namespace MaterialX
 
 
 #endif

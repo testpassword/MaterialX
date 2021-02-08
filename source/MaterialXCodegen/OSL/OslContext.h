@@ -17,16 +17,19 @@ namespace Codegen
 {
 
 /// @class OslContext
-/// Class for context data needed by OSL fragment generators.
+/// Class for context data needed by OSL code generation.
 class OslContext : public Context
 {
 public:
     /// Constructor.
-    OslContext(FragmentGeneratorPtr generator, OptionsPtr options);
+    OslContext(OptionsPtr options);
+
+    /// Create a new OSL context.
+    static ContextPtr create(OptionsPtr options);
 };
 
-} // namepspace Codegen
-} // namepspace MaterialX
+} // namespace Codegen
+} // namespace MaterialX
 
 
 #endif

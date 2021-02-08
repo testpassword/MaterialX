@@ -14,13 +14,15 @@ namespace Codegen
 
 const RtToken OslGenerator::TARGET("genosl");
 
-OslGenerator::OslGenerator() :
+OslGenerator::OslGenerator(OptionsPtr options) :
+    FragmentGenerator(options),
     _syntax(OslSyntax::create())
 {
 }
-FragmentGeneratorPtr OslGenerator::create()
+
+FragmentGeneratorPtr OslGenerator::create(OptionsPtr options)
 {
-    return FragmentGeneratorPtr(new OslGenerator());
+    return FragmentGeneratorPtr(new OslGenerator(options));
 }
 
 const RtToken& OslGenerator::getTarget() const
@@ -32,11 +34,6 @@ const Syntax& OslGenerator::getSyntax() const
 {
     return *_syntax;
 }
-ContextPtr OslGenerator::createContext(OptionsPtr options)
-{
-    FragmentGeneratorPtr generator = shared_from_this();
-    return std::make_shared<OslContext>(generator, options);
-}
 
-} // namepspace Codegen
-} // namepspace MaterialX
+} // namespace Codegen
+} // namespace MaterialX

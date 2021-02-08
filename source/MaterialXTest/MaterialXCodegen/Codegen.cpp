@@ -14,6 +14,7 @@
 
 #include <MaterialXCodegen/Fragment.h>
 #include <MaterialXCodegen/FragmentCompiler.h>
+#include <MaterialXCodegen/OSL/OslContext.h>
 #include <MaterialXCodegen/OSL/OslGenerator.h>
 
 #include <iostream>
@@ -29,9 +30,41 @@ namespace
     const mx::RtToken BXDFLIB("bxdf");
     const mx::RtToken ADSKLIB("adsk");
     const mx::RtToken MAIN("main");
+    const mx::RtToken MULTIPLY("multiply");
+    const mx::RtToken MULTIPLY_INLINE("multiply_inline");
+    const mx::RtToken IN1("in1");
+    const mx::RtToken IN2("in2");
+    const mx::RtToken OUT("out");
 }
 
-TEST_CASE("Codegen: Fragments", "[codegen]")
+TEST_CASE("Codegen: Fragments from code", "[codegen]")
+{
+    mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
+    mx::Codegen::ContextPtr contex = mx::Codegen::OslContext::create(options);
+
+    const mx::Codegen::FragmentGenerator& generator = contex->getGenerator();
+
+    mx::Codegen::FragmentPtr multiply1 = generator.createFragment(MULTIPLY);
+    mx::Codegen::Fragment::Input* in1 = multiply1->createInput(mx::RtType::FLOAT, IN1);
+    mx::Codegen::Fragment::Input* in2 = multiply1->createInput(mx::RtType::FLOAT, IN2);
+    mx::Codegen::Fragment::Output* out = multiply1->createOutput(mx::RtType::FLOAT, OUT);
+    multiply1->setSourceCode(
+        "void multiply(float a, float b, output float result)\n"  \
+        "{\n"                                                     \
+        "   result = a + b;\n"                                    \
+        "}\n"                                                     \
+    );
+
+    mx::Codegen::FragmentCompiler compiler(*contex);
+
+    mx::Codegen::SourceCode sourceCode;
+    compiler.compileFunction(*multiply1, sourceCode);
+    sourceCode.newLine();
+    compiler.compileFunctionCall(*multiply1, sourceCode);
+    std::cout << sourceCode.asString() << std::endl;
+}
+
+TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
 {
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
 
@@ -55,21 +88,4 @@ TEST_CASE("Codegen: Fragments", "[codegen]")
     mx::RtCommand::copyPrim(stage, graph, cmdResult);
     mx::RtPrim newGraph = cmdResult.getObject();
 */
-    mx::Codegen::FragmentGeneratorPtr gen = mx::Codegen::OslGenerator::create();
-
-    mx::Codegen::OptionsPtr options = gen->createOptions();
-    mx::Codegen::ContextPtr context = gen->createContext(options);
-
-
-    mx::Codegen::FragmentPtr frag = gen->createFragment(node);
-
-    mx::Codegen::SourceCode sourceCode(gen->getSyntax());
-    mx::Codegen::FragmentCompiler compiler;
-    compiler.compileFunction(*context, *frag, sourceCode);
-
-    sourceCode.newLine();
-
-    compiler.compileFunctionCall(*context, *frag, sourceCode);
-
-    std::cout << sourceCode.asString() << std::endl;
 }

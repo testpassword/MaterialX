@@ -25,9 +25,14 @@ namespace MaterialX
 namespace Codegen
 {
 
-OptionsPtr FragmentGenerator::createOptions() const
+FragmentGenerator::FragmentGenerator(OptionsPtr options) :
+    _options(options)
 {
-    return std::make_shared<Options>();
+}
+
+FragmentPtr FragmentGenerator::createFragment(const RtToken& name) const
+{
+    return std::make_shared<Fragment>(name);
 }
 
 FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
@@ -54,7 +59,7 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
 
     RtNodeImpl nodeimpl(nodeImplPrim);
 
-    FragmentPtr frag = Fragment::create(nodeimpl.getName());
+    FragmentPtr frag = createFragment(nodeimpl.getName());
     for (RtAttribute attr : nodedef.getInputs())
     {
         Fragment::Input* input = frag->createInput(attr.getType(), attr.getName());
@@ -91,5 +96,5 @@ FragmentGraphPtr FragmentGenerator::createFragmentGraph(const RtNode& /*node*/) 
     return nullptr;
 }
 
-} // namepspace Codegen
-} // namepspace MaterialX
+} // namespace Codegen
+} // namespace MaterialX

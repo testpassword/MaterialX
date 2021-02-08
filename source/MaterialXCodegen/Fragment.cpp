@@ -23,12 +23,6 @@ Fragment::Fragment(const RtToken& name) :
 {
 }
 
-FragmentPtr Fragment::create(const RtToken& name)
-{
-    return std::make_shared<Fragment>(name);
-}
-
-
 Fragment::Input* Fragment::createInput(const RtToken& type, const RtToken& name)
 {
     Input* input = new Input();
@@ -71,7 +65,7 @@ void Fragment::setSourceCode(const string& source)
                 size_t length = (endQuote - startQuote) - 1;
                 if (length)
                 {
-                    const string filename = line.substr(startQuote + 1, length);
+                    const RtToken filename(line.substr(startQuote + 1, length));
                     _includes.insert(filename);
                 }
             }
@@ -127,5 +121,5 @@ FragmentPtr CodegenResult::getFragment(const RtToken& name) const
 }
 */
 
-} // namepspace Codegen
-} // namepspace MaterialX
+} // namespace Codegen
+} // namespace MaterialX

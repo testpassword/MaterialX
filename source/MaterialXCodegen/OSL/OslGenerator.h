@@ -25,17 +25,17 @@ class OslGenerator : public FragmentGenerator
     static const RtToken TARGET;
 
   public:
+    /// Constructor.
+    OslGenerator(OptionsPtr options);
+      
     /// Create a new instance of this code generator.
-    static FragmentGeneratorPtr create();
+    static FragmentGeneratorPtr create(OptionsPtr options);
 
     /// Return the target identifier for this generator.
     const RtToken& getTarget() const override;
 
     /// Return the syntax object for this generator.
     const Codegen::Syntax& getSyntax() const override;
-
-    /// Create a new context instance for this generator.
-    ContextPtr createContext(OptionsPtr options) override;
 
     /// Create a fragment from the given node or nodegraph.
 //    FragmentPtr createFragment(const RtNode& node) const override;
@@ -44,13 +44,10 @@ class OslGenerator : public FragmentGenerator
 //    FragmentPtr createFragmentGraph(const RtNode& node) const override;
 
   protected:
-    /// Constructor.
-    OslGenerator();
-
     SyntaxPtr _syntax;
 };
 
-} // namepspace Codegen
-} // namepspace MaterialX
+} // namespace Codegen
+} // namespace MaterialX
 
 #endif

@@ -11,14 +11,22 @@ namespace MaterialX
 namespace Codegen
 {
 
-Context::Context(FragmentGeneratorPtr generator, OptionsPtr options) :
-    _generator(generator),
-    _options(options)
+Options::Options() :
+    fileTextureVerticalFlip(false)
+{}
+
+OptionsPtr Options::create()
+{
+    return OptionsPtr(new Options());
+}
+
+Context::Context(FragmentGeneratorPtr generator) :
+    _generator(generator)
 {}
 
 Context::~Context()
 {
 }
 
-} // namepspace Codegen
-} // namepspace MaterialX
+} // namespace Codegen
+} // namespace MaterialX

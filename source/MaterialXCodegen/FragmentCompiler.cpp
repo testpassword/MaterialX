@@ -19,8 +19,7 @@ namespace MaterialX
 namespace Codegen
 {
 
-SourceCode::SourceCode(const Syntax& syntax) :
-    _syntax(syntax),
+SourceCode::SourceCode() :
     _indentations(0)
 {
 }
@@ -30,19 +29,19 @@ void SourceCode::beginScope(Syntax::Punctuation punc)
     switch (punc) {
     case Syntax::CURLY_BRACKETS:
         beginLine();
-        _code += "{" + _syntax.getNewline();
+        _code += "{\n";
         break;
     case Syntax::PARENTHESES:
         beginLine();
-        _code += "(" + _syntax.getNewline();
+        _code += "(\n";
         break;
     case Syntax::SQUARE_BRACKETS:
         beginLine();
-        _code += "[" + _syntax.getNewline();
+        _code += "[\n";
         break;
     case Syntax::DOUBLE_SQUARE_BRACKETS:
         beginLine();
-        _code += "[[" + _syntax.getNewline();
+        _code += "[[\n";
         break;
     }
 
@@ -82,14 +81,15 @@ void SourceCode::endScope(bool semicolon, bool newline)
     if (semicolon)
         _code += ";";
     if (newline)
-        _code += _syntax.getNewline();
+        _code += "\n";
 }
 
 void SourceCode::beginLine()
 {
+    static const string INDENTATION = "    ";
     for (int i = 0; i < _indentations; ++i)
     {
-        _code += _syntax.getIndentation();
+        _code += INDENTATION;
     }
 }
 
@@ -104,7 +104,7 @@ void SourceCode::endLine(bool semicolon)
 
 void SourceCode::newLine()
 {
-    _code += _syntax.getNewline();
+    _code += "\n";
 }
 
 void SourceCode::addString(const string& str)
@@ -119,57 +119,14 @@ void SourceCode::addLine(const string& str, bool semicolon)
     endLine(semicolon);
 }
 
-void SourceCode::addComment(const string& str)
+void SourceCode::setIncluded(const RtToken& file)
 {
-    beginLine();
-    _code += _syntax.getSingleLineComment() + str;
-    endLine(false);
+    _includes.insert(file);
 }
 
-void SourceCode::addBlock(const string& str)
+bool SourceCode::isIncluded(const RtToken& file)
 {
-    const string& INCLUDE = _syntax.getIncludeStatement();
-    const string& QUOTE = _syntax.getStringQuote();
-
-    // Add each line in the block seperatelly
-    // to get correct indentation
-    std::stringstream stream(str);
-    for (string line; std::getline(stream, line); )
-    {
-        const size_t pos = line.find(INCLUDE);
-        if (pos != string::npos)
-        {
-            const size_t startQuote = line.find_first_of(QUOTE);
-            const size_t endQuote = line.find_last_of(QUOTE);
-            if (startQuote != string::npos && endQuote != string::npos && endQuote > startQuote)
-            {
-                size_t length = (endQuote - startQuote) - 1;
-                if (length)
-                {
-                    const string filename = line.substr(startQuote + 1, length);
-                    addInclude(filename);
-                }
-            }
-        }
-        else
-        {
-            addLine(line, false);
-        }
-    }
-}
-
-void SourceCode::addInclude(const string& file)
-{
-    if (!_includes.count(file))
-    {
-        string content = readFile(file);
-        if (content.empty())
-        {
-            throw ExceptionRuntimeError("Could not find include file: '" + file + "'");
-        }
-        addBlock(content);
-        _includes.insert(file);
-    }
+    return _includes.count(file) > 0;
 }
 
 const string& SourceCode::asString() const
@@ -178,13 +135,13 @@ const string& SourceCode::asString() const
 }
 
 
-void FragmentCompiler::compileFunctionCall(Context& context, const Fragment& frag, SourceCode& result)
+void FragmentCompiler::compileFunctionCall(const Fragment& frag, SourceCode& result)
 {
     // Declare all outputs.
     for (size_t i = 0; i < frag.numOutputs(); ++i)
     {
         const Fragment::Output* output = frag.getOutput(i);
-        declareVariable(context, *output, false, result);
+        declareVariable(*output, true, result);
     }
 
     result.beginLine();
@@ -207,45 +164,96 @@ void FragmentCompiler::compileFunctionCall(Context& context, const Fragment& fra
         result.addString(delim + output->variable.str());
         delim = ", ";
     }
-
+    result.addString(")");
     result.endLine();
 }
 
-void FragmentCompiler::compileFunction(Context& context, const Fragment& frag, SourceCode& result)
+FragmentCompiler::FragmentCompiler(Context& context) :
+    _context(context),
+    _syntax(context.getSyntax())
 {
-//    const Syntax& syntax = context.getCodeGenerator()->getSyntax();
+}
 
+void FragmentCompiler::compileFunction(const Fragment& frag, SourceCode& result)
+{
     // Emit any include files.
     if (!frag.getIncludes().empty())
     {
-        for (const string& file : frag.getIncludes())
+        for (const RtToken& file : frag.getIncludes())
         {
-            string modifiedFile = file;
-            tokenSubstitution(context.getSubstitutions(), modifiedFile);
+            string modifiedFile = file.str();
+            tokenSubstitution(_context.getSubstitutions(), modifiedFile);
             const FilePath resolvedFile = RtApi::get().getSearchPath().find(modifiedFile);
-            result.addInclude(resolvedFile);
+            emitInclude(resolvedFile, result);
         }
         result.newLine();
     }
 
     // Add function definition.
-    result.addBlock(frag.getSourceCode());
+    emitBlock(frag.getSourceCode(), result);
 }
 
-void FragmentCompiler::compileShader(Context& context, const Fragment& frag, SourceCode& result)
+void FragmentCompiler::compileShader(const Fragment& frag, SourceCode& result)
 {
-    compileFunction(context, frag, result);
+    compileFunction(frag, result);
 }
 
-void FragmentCompiler::declareVariable(Context& , const Fragment::Output& output, bool assignDefault, SourceCode& result)
+void FragmentCompiler::declareVariable(const Fragment::Output& output, bool assignDefault, SourceCode& result)
 {
     result.beginLine();
-    result.addString(output.type.str() + " " + output.variable.str());
+    result.addString(_syntax.getTypeName(output.type) + " " + output.variable.str());
     if (assignDefault)
     {
+        result.addString(" = " + _syntax.getDefaultValue(output.type));
     }
     result.endLine();
 }
 
-} // namepspace Codegen
-} // namepspace MaterialX
+void FragmentCompiler::emitBlock(const string& block, SourceCode& result)
+{
+    const string& INCLUDE = _syntax.getIncludeStatement();
+
+    // Add each line in the block seperatelly
+    // to get correct indentation
+    std::stringstream stream(block);
+    for (string line; std::getline(stream, line); )
+    {
+        const size_t pos = line.find(INCLUDE);
+        if (pos != string::npos)
+        {
+            const size_t startQuote = line.find_first_of('\"');
+            const size_t endQuote = line.find_last_of('\"');
+            if (startQuote != string::npos && endQuote != string::npos && endQuote > startQuote)
+            {
+                size_t length = (endQuote - startQuote) - 1;
+                if (length)
+                {
+                    const string filename = line.substr(startQuote + 1, length);
+                    emitInclude(filename, result);
+                }
+            }
+        }
+        else
+        {
+            result.addLine(line, false);
+        }
+    }
+}
+
+void FragmentCompiler::emitInclude(const FilePath& file, SourceCode& result)
+{
+    const RtToken f(file);
+    if (!result.isIncluded(f))
+    {
+        const string content = readFile(file);
+        if (content.empty())
+        {
+            throw ExceptionRuntimeError("Could not find include file: '" + f.str() + "'");
+        }
+        emitBlock(content, result);
+        result.setIncluded(f);
+    }
+}
+
+} // namespace Codegen
+} // namespace MaterialX
