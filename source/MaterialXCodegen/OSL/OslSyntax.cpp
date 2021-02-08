@@ -3,7 +3,8 @@
 // All rights reserved.  See LICENSE.txt for license.
 //
 
-#include <MaterialXRuntime/Codegen/OslSyntax.h>
+#include <MaterialXCodegen/OSL/OslSyntax.h>
+
 #include <MaterialXRuntime/RtTypeDef.h>
 #include <MaterialXRuntime/RtApi.h>
 

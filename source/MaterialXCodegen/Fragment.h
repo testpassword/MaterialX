@@ -13,7 +13,7 @@
 #include <MaterialXRuntime/RtToken.h>
 #include <MaterialXRuntime/RtValue.h>
 
-#include <MaterialXRuntime/Codegen/Syntax.h>
+#include <MaterialXCodegen/Syntax.h>
 
 namespace MaterialX
 {
@@ -104,71 +104,35 @@ protected:
     vector<Output*> _outputs;
 };
 
-
-class SourceCode
+/*
+/// @class CodegenResult
+/// Class holding the result returned by code generation.
+class FragmentGraph : public Fragment
 {
 public:
-    /// Contructor.
-    SourceCode(const Syntax& syntax);
+    /// Create a new instance of this class.
+    static FragmentGraphPtr create();
 
-    /// Start a new scope using the given bracket type.
-    void beginScope(Syntax::Punctuation punc = Syntax::CURLY_BRACKETS);
+    /// Add a new fragment to the results.
+    void addFragment(const FragmentPtr& fragment);
 
-    /// End the current scope.
-    void endScope(bool semicolon = false, bool newline = true);
+    /// Remove a fragment from the results.
+    void removeFragment(const RtToken& name);
 
-    /// Start a new line.
-    void beginLine();
+    /// Return the number of fragments contained in this result.
+    size_t numFragments() const;
 
-    /// End the current line.
-    void endLine(bool semicolon = true);
+    /// Return a fragment by index.
+    FragmentPtr getFragment(size_t index) const;
 
-    /// Add a newline character.
-    void newLine();
-
-    /// Add a generic code string.
-    void addString(const string& str);
-
-    /// Add a line of code, optionally appending a semicolon.
-    void addLine(const string& str, bool semicolon = true);
-
-    /// Add a block of code.
-    void addBlock(const string& str);
-
-    /// Add a single line code comment.
-    void addComment(const string& str);
-
-    /// Add an include file.
-    void addInclude(const string& file);
-
-    /// Return the resulting source code.
-    const string& asString() const;
-
-private:
-    const Syntax& _syntax;
-    int _indentations;
-    vector<Syntax::Punctuation> _scopes;
-    StringSet _includes;
-    string _code;
-};
-
-
-
-class FragmentCompiler;
-using FragmentCompilerPtr = RtSharedPtr<FragmentCompiler>;
-
-/// @class FragmentCompiler
-/// Class compiling fragments into functions and shaders.
-class FragmentCompiler : public RtSharedBase<FragmentCompiler>
-{
-public:
-    virtual void compileFunction(CodegenContext& context, const Fragment& frag, SourceCode& result);
-    virtual void compileFunctionCall(CodegenContext& context, const Fragment& frag, SourceCode& result);
-    virtual void compileShader(CodegenContext& context, const Fragment& frag, SourceCode& result);
+    /// Return a fragment by name.
+    FragmentPtr getFragment(const RtToken& name) const;
 
 protected:
-    void declareVariable(CodegenContext& context, const Fragment::Output& output, bool assignDefault, SourceCode& result);
+    vector<FragmentPtr> _fragmentsOrder;
+    RtTokenMap<FragmentPtr> _fragments;
 };
+*/
 
 } // namepspace Codegen
 } // namepspace MaterialX

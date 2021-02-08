@@ -1,5 +1,5 @@
 //
-// TM & (c) 2017 Lucasfilm Entertainment Company Ltd. and Lucasfilm Ltd.
+// TM & (c) 2021 Lucasfilm Entertainment Company Ltd. and Lucasfilm Ltd.
 // All rights reserved.  See LICENSE.txt for license.
 //
 
@@ -9,7 +9,7 @@
 /// @file
 /// OSL syntax class
 
-#include <MaterialXRuntime/Codegen/Syntax.h>
+#include <MaterialXCodegen/Syntax.h>
 
 namespace MaterialX
 {

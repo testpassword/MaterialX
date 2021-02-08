@@ -3,7 +3,7 @@
 // All rights reserved.  See LICENSE.txt for license.
 //
 
-#include <MaterialXRuntime/Codegen/Syntax.h>
+#include <MaterialXCodegen/Syntax.h>
 
 namespace MaterialX
 {

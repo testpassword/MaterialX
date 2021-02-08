@@ -1,18 +1,16 @@
 //
-// TM & (c) 2020 Lucasfilm Entertainment Company Ltd. and Lucasfilm Ltd.
+// TM & (c) 2021 Lucasfilm Entertainment Company Ltd. and Lucasfilm Ltd.
 // All rights reserved. See LICENSE.txt for license.
 //
 
-#ifndef MATERIALX_CODEGEN_CODEGENCONTEXT_H
-#define MATERIALX_CODEGEN_CODEGENCONTEXT_H
+#ifndef MATERIALX_CODEGEN_CONTEXT_H
+#define MATERIALX_CODEGEN_CONTEXT_H
 
-/// @file CodegenContext.h
+/// @file Context.h
 /// TODO: Docs
 
-#include <MaterialXRuntime/Library.h>
+#include <MaterialXCodegen/Library.h>
 #include <MaterialXRuntime/RtToken.h>
-
-#include <MaterialXGenShader/Syntax.h>
 
 namespace MaterialX
 {
@@ -21,7 +19,7 @@ namespace Codegen
 
 /// @class CodegenOptions
 /// Base class for options used by a code generator.
-class CodegenOptions : public RtSharedBase<CodegenOptions>
+class Options : public RtSharedBase<Options>
 {
 public:
     /// If true the y-component of texture coordinates used for sampling
@@ -31,30 +29,30 @@ public:
     bool fileTextureVerticalFlip = false;
 };
 
-/// @class CodegenContext
-/// Base class for context data needed by code generators.
-/// Derived code generators can derive from this class to hold
+/// @class Context
+/// Base class for context data needed by fragment generators.
+/// Derived generators can derive from this class to hold
 /// custom context data and needed by the generator.
-class CodegenContext : public RtSharedBase<CodegenContext>
+class Context : public RtSharedBase<Context>
 {
 public:
     /// Destructor.
-    virtual ~CodegenContext() {}
+    virtual ~Context();
 
     /// Return an instance to the code generator that created this context.
-    const CodeGenerator* getCodeGenerator() const
+    const FragmentGenerator* getGenerator() const
     {
         return _generator.get();
     }
 
     /// Return the options instance.
-    const CodegenOptions* getOptions() const
+    const Options* getOptions() const
     {
         return _options.get();
     }
 
     /// Return the options instance.
-    CodegenOptions* getOptions()
+    Options* getOptions()
     {
         return _options.get();
     }
@@ -81,31 +79,19 @@ public:
 
 protected:
     /// Constructor.
-    CodegenContext(CodeGeneratorPtr generator, CodegenOptionsPtr options) :
-        _generator(generator),
-        _options(options)
-    {}
+    Context(FragmentGeneratorPtr generator, OptionsPtr options);
 
-    // Code generator for this context.
-    CodeGeneratorPtr _generator;
+    // Fragment generator.
+    FragmentGeneratorPtr _generator;
 
     // Options.
-    CodegenOptionsPtr _options;
+    OptionsPtr _options;
 
     // Set of globally reserved words.
     StringSet _reservedWords;
 
     // Map of string substitutions used by codegen.
     StringMap _substitutions;
-};
-
-/// @class OslContext
-/// Class for context data needed by OSL code generators.
-class OslContext : public CodegenContext
-{
-public:
-    /// Constructor.
-    OslContext(CodeGeneratorPtr generator, CodegenOptionsPtr options);
 };
 
 } // namepspace Codegen

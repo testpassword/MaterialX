@@ -108,6 +108,7 @@ option(MATERIALX_BUILD_GEN_OGSXML "Build the OGSXML shader generator back-end." 
 option(MATERIALX_BUILD_GEN_OGSFX "Build the OGSFX shader generator back-end." ON)
 option(MATERIALX_BUILD_GEN_ARNOLD "Build the Arnold OSL shader generator back-end." ON)
 option(MATERIALX_BUILD_RUNTIME "Build the MaterialX Runtime data model library." OFF)
+option(MATERIALX_BUILD_CODEGEN "Build the MaterialX Codegen library." OFF)
 
 if (NOT MATERIALX_BUILD_PYTHON)
     set(MATERIALX_PYTHON_LTO OFF)
@@ -329,6 +330,12 @@ endif()
 if(MATERIALX_BUILD_RUNTIME)
     add_definitions(-DMATERIALX_BUILD_RUNTIME)
     add_subdirectory(source/MaterialXRuntime)
+
+    # Add codegen subdirectory
+    if(MATERIALX_BUILD_CODEGEN)
+        add_definitions(-DMATERIALX_BUILD_CODEGEN)
+        add_subdirectory(source/MaterialXCodegen)
+    endif()
 endif()
 
 if(MATERIALX_BUILD_JS)

@@ -5,41 +5,18 @@
 
 #include <MaterialXTest/Catch/catch.hpp>
 
-#include <MaterialXCore/Document.h>
-
-#include <MaterialXFormat/XmlIo.h>
-#include <MaterialXFormat/File.h>
-#include <MaterialXFormat/Util.h>
-
 #include <MaterialXRuntime/RtApi.h>
-#include <MaterialXRuntime/RtValue.h>
 #include <MaterialXRuntime/RtStage.h>
 #include <MaterialXRuntime/RtPrim.h>
-#include <MaterialXRuntime/RtRelationship.h>
-#include <MaterialXRuntime/RtAttribute.h>
 #include <MaterialXRuntime/RtNodeDef.h>
-#include <MaterialXRuntime/RtTypeDef.h>
-#include <MaterialXRuntime/RtNameResolver.h>
 #include <MaterialXRuntime/RtNode.h>
 #include <MaterialXRuntime/RtNodeGraph.h>
-#include <MaterialXRuntime/RtBackdrop.h>
-#include <MaterialXRuntime/RtGeneric.h>
-#include <MaterialXRuntime/RtPath.h>
-#include <MaterialXRuntime/RtFileIo.h>
-#include <MaterialXRuntime/RtTraversal.h>
-#include <MaterialXRuntime/RtLook.h>
-#include <MaterialXRuntime/RtCollection.h>
-#include <MaterialXRuntime/RtMessage.h>
-#include <MaterialXRuntime/Tokens.h>
 
-#include <MaterialXRuntime/Codegen/CodeGenerator.h>
-#include <MaterialXRuntime/Commands/PrimCommands.h>
+#include <MaterialXCodegen/Fragment.h>
+#include <MaterialXCodegen/FragmentCompiler.h>
+#include <MaterialXCodegen/OSL/OslGenerator.h>
 
-
-#include <cstdlib>
-#include <fstream>
 #include <iostream>
-#include <vector>
 
 namespace mx = MaterialX;
 
@@ -54,7 +31,7 @@ namespace
     const mx::RtToken MAIN("main");
 }
 
-TEST_CASE("Runtime: Codegen", "[runtime]")
+TEST_CASE("Codegen: Fragments", "[codegen]")
 {
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
 
@@ -78,20 +55,21 @@ TEST_CASE("Runtime: Codegen", "[runtime]")
     mx::RtCommand::copyPrim(stage, graph, cmdResult);
     mx::RtPrim newGraph = cmdResult.getObject();
 */
-    mx::Codegen::CodeGeneratorPtr gen = mx::Codegen::OslGenerator::create();
+    mx::Codegen::FragmentGeneratorPtr gen = mx::Codegen::OslGenerator::create();
 
-    mx::Codegen::CodegenOptionsPtr options = gen->createOptions();
-    mx::Codegen::CodegenContextPtr context = gen->createContext(options);
-    mx::Codegen::CodegenResultPtr result = gen->generate(node, "/", context);
+    mx::Codegen::OptionsPtr options = gen->createOptions();
+    mx::Codegen::ContextPtr context = gen->createContext(options);
+
+
+    mx::Codegen::FragmentPtr frag = gen->createFragment(node);
 
     mx::Codegen::SourceCode sourceCode(gen->getSyntax());
     mx::Codegen::FragmentCompiler compiler;
-
-    compiler.compileFunction(*context, *result->getFragment(0), sourceCode);
+    compiler.compileFunction(*context, *frag, sourceCode);
 
     sourceCode.newLine();
 
-    compiler.compileFunctionCall(*context, *result->getFragment(0), sourceCode);
+    compiler.compileFunctionCall(*context, *frag, sourceCode);
 
     std::cout << sourceCode.asString() << std::endl;
 }

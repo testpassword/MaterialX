@@ -3,16 +3,16 @@
 // All rights reserved. See LICENSE.txt for license.
 //
 
-#include <MaterialXRuntime/Codegen/CodegenContext.h>
-#include <MaterialXRuntime/Codegen/CodeGenerator.h>
+#include <MaterialXCodegen/OSL/OslContext.h>
+#include <MaterialXCodegen/OSL/OslGenerator.h>
 
 namespace MaterialX
 {
 namespace Codegen
 {
 
-OslContext::OslContext(CodeGeneratorPtr generator, CodegenOptionsPtr options) :
-    CodegenContext(generator, options)
+OslContext::OslContext(FragmentGeneratorPtr generator, OptionsPtr options) :
+    Context(generator, options)
 {
     static const string T_FILE_TRANSFORM_UV = "$fileTransformUv";
 

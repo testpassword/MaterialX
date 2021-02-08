@@ -43,20 +43,18 @@ namespace Codegen
 {
     class Syntax;
     class TypeSyntax;
+    class Options;
+    class Context;
     class Fragment;
-    class CodegenOptions;
-    class CodegenContext;
-    class CodegenResult;
-    class CodeGenerator;
+    class FragmentGenerator;
 
     /// Shared pointer types
     using SyntaxPtr = RtSharedPtr<Syntax>;
     using TypeSyntaxPtr = RtSharedPtr<TypeSyntax>;
     using FragmentPtr = RtSharedPtr<Fragment>;
-    using CodegenOptionsPtr = RtSharedPtr<CodegenOptions>;
-    using CodegenContextPtr = RtSharedPtr<CodegenContext>;
-    using CodegenResultPtr = RtSharedPtr<CodegenResult>;
-    using CodeGeneratorPtr = RtSharedPtr<CodeGenerator>;
+    using OptionsPtr = RtSharedPtr<Options>;
+    using ContextPtr = RtSharedPtr<Context>;
+    using FragmentGeneratorPtr = RtSharedPtr<FragmentGenerator>;
 }
 
 /// Predicate for filtering objects during traversal.
