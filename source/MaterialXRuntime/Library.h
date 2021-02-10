@@ -39,24 +39,6 @@ class RtNodeDef;
 class RtNodeImpl;
 class RtNodeGraph;
 
-namespace Codegen
-{
-    class Syntax;
-    class TypeSyntax;
-    class Options;
-    class Context;
-    class Fragment;
-    class FragmentGenerator;
-
-    /// Shared pointer types
-    using SyntaxPtr = RtSharedPtr<Syntax>;
-    using TypeSyntaxPtr = RtSharedPtr<TypeSyntax>;
-    using FragmentPtr = RtSharedPtr<Fragment>;
-    using OptionsPtr = RtSharedPtr<Options>;
-    using ContextPtr = RtSharedPtr<Context>;
-    using FragmentGeneratorPtr = RtSharedPtr<FragmentGenerator>;
-}
-
 /// Predicate for filtering objects during traversal.
 using RtObjectPredicate = std::function<bool(const RtObject& obj)>;
 

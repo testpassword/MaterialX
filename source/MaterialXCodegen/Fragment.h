@@ -20,12 +20,89 @@ namespace MaterialX
 namespace Codegen
 {
 
+template<class T>
+class ObjectList
+{
+public:
+    using ObjectPtr = RtSharedPtr<T>;
+
+    size_t size() const
+    {
+        return _order.size();
+    }
+
+    T* get(const RtToken& name) const
+    {
+        auto it = _objects.find(name);
+        return it != _objects.end() ? it->second.get() : nullptr;
+    }
+
+    T* get(size_t index) const
+    {
+        return index < _order.size() ? _order[index] : nullptr;
+    }
+
+    T** order()
+    {
+        return _order.data();
+    }
+
+    const T** order() const
+    {
+        return _order.data();
+    }
+
+    void add(const RtToken& name, const ObjectPtr& obj)
+    {
+        _objects[name] = obj;
+        _order.push_back(obj.get());
+    }
+
+    void remove(const RtToken& name)
+    {
+        auto i = _objects.find(name);
+        if (i != _objects.end())
+        {
+            const T* ptr = i->second.get();
+            for (auto j = _order.begin(); j != _order.end(); ++j)
+            {
+                if ((*j) == ptr)
+                {
+                    _order.erase(j);
+                    break;
+                }
+            }
+            _objects.erase(i);
+        }
+    }
+
+    void clear()
+    {
+        _objects.clear();
+        _order.clear();
+    }
+
+private:
+    RtTokenMap<ObjectPtr> _objects;
+    vector<T*> _order;
+};
+
+enum FragmentType
+{
+    FRAGMENT_TYPE_FUNCTION,
+    FRAGMENT_TYPE_INLINE,
+    FRAGMENT_TYPE_GRAPH,
+    FRAGMENT_TYPE_STAGE,
+    FRAGMENT_TYPE_BSDF,
+    FRAGMENT_TYPE_LAST
+};
+
 /// @class Fragment
 /// Class holding a fragment of code.
 class Fragment : public RtSharedBase<Fragment>
 {
   public:
-    struct Output
+    struct Port
     {
         Fragment* parent;
         RtToken type;
@@ -33,15 +110,28 @@ class Fragment : public RtSharedBase<Fragment>
         RtToken variable;
     };
 
-    struct Input : public Output
+    struct Output;
+
+    struct Input : public Port
     {
         RtValue value;
         Output* connection;
     };
 
+    struct Output : public Port
+    {
+        std::set<Input*> connections;
+    };
+
+    using OutputPtr = RtSharedPtr<Output>;
+    using InputPtr = RtSharedPtr<Input>;
+
   public:
     /// Constructor.
     Fragment(const RtToken& name);
+
+    /// Destructor.
+    virtual ~Fragment() {}
 
     /// Return the fragment name.
     const RtToken& getName() const
@@ -49,43 +139,62 @@ class Fragment : public RtSharedBase<Fragment>
         return _name;
     }
 
-    Input* createInput(const RtToken& type, const RtToken& name);
-    Output* createOutput(const RtToken& type, const RtToken& name);
+    /// Return the type of this fragment.
+    virtual FragmentType getType() const
+    {
+        return _functionName != EMPTY_TOKEN ? FRAGMENT_TYPE_FUNCTION : FRAGMENT_TYPE_INLINE;
+    }
+
+    virtual Input* createInput(const RtToken& type, const RtToken& name);
+
+    virtual Output* createOutput(const RtToken& type, const RtToken& name);
 
     size_t numInputs() const
     {
         return _inputs.size();
     }
+    
     Input* getInput(size_t index) const
     {
-        return _inputs[index];
+        return _inputs.get(index);
+    }
+
+    Input* getInput(const RtToken& name) const
+    {
+        return _inputs.get(name);
     }
 
     size_t numOutputs() const
     {
         return _outputs.size();
     }
-    Output* getOutput(size_t index) const
+
+    Output* getOutput(size_t index = 0) const
     {
-        return _outputs[index];
+        return _outputs.get(index);
     }
 
-    /// Set source code as a function.
-    void setSourceCodeFunction(const RtToken& functionName, const string& sourceCode);
+    Output* getOutput(const RtToken& name) const
+    {
+        return _outputs.get(name);
+    }
 
-    /// Set source code as an inline expression.
-    void setSourceCodeInline(const string& sourceCode);
+    /// Set fragment function name.
+    void setFunctionName(const RtToken& functionName)
+    {
+        _functionName = functionName;
+    }
 
-    /// Return fragment source code.
+    /// Return fragment function name.
     const RtToken& getFunctionName() const
     {
         return _functionName;
     }
 
-    /// Return true if the fragment source code is an inline expression.
-    bool isInline() const
+    /// Set fragment source code.
+    void setSourceCode(const string& sourceCode)
     {
-        return _functionName == EMPTY_TOKEN;
+        _sourceCode = sourceCode;
     }
 
     /// Return fragment source code.
@@ -107,39 +216,78 @@ class Fragment : public RtSharedBase<Fragment>
     /// Allocator for large values.
     RtAllocator _allocator;
 
-    vector<Input*> _inputs;
-    vector<Output*> _outputs;
+    ObjectList<Input> _inputs;
+    ObjectList<Output> _outputs;
 };
 
-/*
-/// @class CodegenResult
-/// Class holding the result returned by code generation.
+/// @class FragmentGraph
+/// Class holding a set of fragments connected in a graph.
 class FragmentGraph : public Fragment
 {
 public:
-    /// Create a new instance of this class.
-    static FragmentGraphPtr create();
+    /// Constructor.
+    FragmentGraph(const RtToken& name);
 
-    /// Add a new fragment to the results.
+    /// Return the type of this fragment.
+    FragmentType getType() const override
+    {
+        return FRAGMENT_TYPE_GRAPH;
+    }
+
+    /// Add a fragment to the graph.
     void addFragment(const FragmentPtr& fragment);
 
     /// Remove a fragment from the results.
     void removeFragment(const RtToken& name);
 
-    /// Return the number of fragments contained in this result.
+    /// Return the number of fragments contained in this graph.
     size_t numFragments() const;
 
     /// Return a fragment by index.
-    FragmentPtr getFragment(size_t index) const;
+    Fragment* getFragment(size_t index) const;
 
     /// Return a fragment by name.
-    FragmentPtr getFragment(const RtToken& name) const;
+    Fragment* getFragment(const RtToken& name) const;
+
+    /// Create a connections between two fragments.
+    void connect(Fragment::Output* src, Fragment::Input* dst);
+
+    /// Create a connections between two fragments.
+    void connect(const RtToken& srcFragment, const RtToken& srcOutput,
+                 const RtToken& dstFragment, const RtToken& dstOutput);
+
+    Input* createInput(const RtToken& type, const RtToken& name) override;
+
+    Output* createOutput(const RtToken& type, const RtToken& name) override;
+
+    Output* getInputSocket(size_t index) const
+    {
+        return _inputSockets.get(index);
+    }
+
+    Output* getInputSocket(const RtToken& name) const
+    {
+        return _inputSockets.get(name);
+    }
+
+    Input* getOutputSocket(size_t index = 0) const
+    {
+        return _outputSockets.get(index);
+    }
+
+    Input* getOutputSocket(const RtToken& name) const
+    {
+        return _outputSockets.get(name);
+    }
+
+    /// Prepare the graph for compilation.
+    void finalize();
 
 protected:
-    vector<FragmentPtr> _fragmentsOrder;
-    RtTokenMap<FragmentPtr> _fragments;
+    ObjectList<Fragment> _fragments;
+    ObjectList<Output> _inputSockets;
+    ObjectList<Input> _outputSockets;
 };
-*/
 
 } // namespace Codegen
 } // namespace MaterialX

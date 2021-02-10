@@ -78,15 +78,16 @@ public:
     FragmentCompiler(Context& context);
     virtual ~FragmentCompiler() {}
 
+    virtual void compileFragments(const Fragment::Output* output, SourceCode& result);
     virtual void compileFunction(const Fragment& frag, SourceCode& result);
-    virtual void compileFunctionCall(const Fragment& frag, SourceCode& result);
     virtual void compileShader(const Fragment& frag, SourceCode& result);
 
+    virtual void declareVariable(const Fragment::Input& input, bool assignDefault, SourceCode& result);
     virtual void declareVariable(const Fragment::Output& output, bool assignDefault, SourceCode& result);
-
     virtual void emitBlock(const string& block, SourceCode& result);
     virtual void emitInclude(const FilePath& file, SourceCode& result);
     virtual void emitVariable(const Fragment::Input& input, SourceCode& result);
+    virtual void emitFunctionCall(const Fragment& frag, SourceCode& result);
 
 protected:
     Context& _context;

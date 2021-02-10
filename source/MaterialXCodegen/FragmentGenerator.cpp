@@ -32,14 +32,16 @@ FragmentGenerator::FragmentGenerator(OptionsPtr options) :
 
 FragmentPtr FragmentGenerator::createFragment(const RtToken& name) const
 {
-    return std::make_shared<Fragment>(name);
+    return FragmentPtr(new Fragment(name));
 }
 
 FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
 {
+    const RtToken& target = getTarget();
+
     if (node.getPrim().hasApi<RtNodeGraph>())
     {
-        throw ExceptionRuntimeError("Nodegraphs not supported yet!");
+        return createFragmentGraph(node);
     }
 
     RtPrim nodedefPrim = node.getNodeDef();
@@ -49,7 +51,6 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
     }
 
     RtNodeDef nodedef(nodedefPrim);
-    const RtToken& target = getTarget();
     RtPrim nodeImplPrim = nodedef.getNodeImpl(target);
     if (!(nodeImplPrim && nodeImplPrim.hasApi<RtNodeImpl>()))
     {
@@ -59,7 +60,7 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
 
     RtNodeImpl nodeimpl(nodeImplPrim);
 
-    FragmentPtr frag = createFragment(nodeimpl.getName());
+    FragmentPtr frag = createFragment(node.getName());
     for (RtAttribute attr : nodedef.getInputs())
     {
         Fragment::Input* input = frag->createInput(attr.getType(), attr.getName());
@@ -78,26 +79,93 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
         source = readFile(path);
         if (source.empty())
         {
-            throw ExceptionShaderGenError("Failed to get source code from file '" + path.asString() +
+            throw ExceptionRuntimeError("Failed to get source code from file '" + path.asString() +
                 "' used by implementation '" + nodeimpl.getName().str() + "'");
         }
     }
 
     const RtToken& function = nodeimpl.getFunction();
-    if (function != EMPTY_TOKEN)
-    {
-        frag->setSourceCodeFunction(function, source);
-    }
-    else
-    {
-        frag->setSourceCodeInline(source);
-    }
+    frag->setFunctionName(function);
+    frag->setSourceCode(source);
 
     return frag;
 }
 
-FragmentGraphPtr FragmentGenerator::createFragmentGraph(const RtNode& /*node*/) const
+
+FragmentGraphPtr FragmentGenerator::createFragmentGraph(const RtToken& name) const
 {
+    FragmentGraphPtr frag(new FragmentGraph(name));
+    return frag;
+}
+
+FragmentGraphPtr FragmentGenerator::createFragmentGraph(const RtNode& node) const
+{
+    if (node.getPrim().hasApi<RtNodeGraph>())
+    {
+        RtNodeGraph nodegraph(node.getPrim());
+
+        FragmentGraphPtr graph = createFragmentGraph(nodegraph.getName());
+        for (RtAttribute attr : nodegraph.getInputs())
+        {
+            Fragment::Input* input = graph->createInput(attr.getType(), attr.getName());
+            RtValue::copy(input->type, attr.getValue(), input->value);
+        }
+        for (RtAttribute attr : nodegraph.getOutputs())
+        {
+            graph->createOutput(attr.getType(), attr.getName());
+        }
+
+        for (RtPrim child : nodegraph.getNodes())
+        {
+            FragmentPtr childFrag = createFragment(child);
+            graph->addFragment(childFrag);
+        }
+
+        for (RtPrim child : nodegraph.getNodes())
+        {
+            RtNode childNode(child);
+            Fragment* childFragment = graph->getFragment(childNode.getName());
+
+            for (RtAttribute attr : childNode.getInputs())
+            {
+                RtInput input = attr.asA<RtInput>();
+                RtOutput upstream = input.getConnection();
+                if (upstream)
+                {
+                    Fragment::Input* fragmentInput = childFragment->getInput(input.getName());
+                    if (upstream.isSocket())
+                    {
+                        Fragment::Output* graphSocket = graph->getInputSocket(upstream.getName());
+                        graph->connect(graphSocket, fragmentInput);
+                    }
+                    else
+                    {
+                        Fragment* upstreamChildFragment = graph->getFragment(upstream.getParent().getName());
+                        Fragment::Output* upstreamChildOutput = upstreamChildFragment->getOutput(upstream.getName());
+                        graph->connect(upstreamChildOutput, fragmentInput);
+                    }
+                }
+            }
+        }
+
+        for (RtAttribute attr : nodegraph.getOutputs())
+        {
+            RtInput socket = nodegraph.getOutputSocket(attr.getName());
+            RtOutput upstream = socket.getConnection();
+            if (upstream)
+            {
+                Fragment* upstreamChildFragment = graph->getFragment(upstream.getParent().getName());
+                Fragment::Output* upstreamChildOutput = upstreamChildFragment->getOutput(upstream.getName());
+                Fragment::Input* fragmentSocket = graph->getOutputSocket(attr.getName());
+                graph->connect(upstreamChildOutput, fragmentSocket);
+            }
+        }
+
+        graph->finalize();
+
+        return graph;
+    }
+
     return nullptr;
 }
 

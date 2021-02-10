@@ -145,13 +145,15 @@ const string& SourceCode::asString() const
 }
 
 
-void FragmentCompiler::compileFunctionCall(const Fragment& frag, SourceCode& result)
+void FragmentCompiler::emitFunctionCall(const Fragment& frag, SourceCode& result)
 {
     // Declare all outputs.
     for (size_t i = 0; i < frag.numOutputs(); ++i)
     {
         const Fragment::Output* output = frag.getOutput(i);
+        result.beginLine();
         declareVariable(*output, true, result);
+        result.endLine();
     }
 
     result.beginLine();
@@ -185,9 +187,68 @@ FragmentCompiler::FragmentCompiler(Context& context) :
 {
 }
 
+void FragmentCompiler::compileFragments(const Fragment::Output* /*output*/, SourceCode& /*result*/)
+{
+}
+
 void FragmentCompiler::compileFunction(const Fragment& frag, SourceCode& result)
 {
-    if (!frag.isInline() && !result.isDefined(frag.getFunctionName()))
+    if (result.isDefined(frag.getFunctionName()))
+    {
+        return;
+    }
+
+    if (frag.getType() == FRAGMENT_TYPE_GRAPH)
+    {
+        const FragmentGraph& graph = static_cast<const FragmentGraph&>(frag);
+
+        result.beginLine();
+        result.addString("void " + graph.getFunctionName().str() + "(");
+
+        string delim = "";
+
+        // Add all inputs
+        for (size_t i = 0; i < graph.numInputs(); ++i)
+        {
+            result.addString(delim);
+            const Fragment::Input* input = graph.getInput(i);
+            declareVariable(*input, false, result);
+            delim = ", ";
+        }
+
+        // Add all outputs
+        for (size_t i = 0; i < graph.numOutputs(); ++i)
+        {
+            result.addString(delim);
+            const Fragment::Output* output = graph.getOutput(i);
+            result.addString(_syntax.getOutputQualifier());
+            declareVariable(*output, false, result);
+            delim = ", ";
+        }
+        result.addString(")");
+        result.endLine(false);
+
+        result.beginScope();
+
+        for (size_t i = 0; i < graph.numFragments(); ++i)
+        {
+            const Fragment* child = graph.getFragment(i);
+            emitFunctionCall(*child, result);
+        }
+
+        // Emit final results
+        for (size_t i = 0; i < graph.numOutputs(); ++i)
+        {
+            const Fragment::Input* outputSocket = graph.getOutputSocket(i);
+            result.beginLine();
+            result.addString(outputSocket->variable.str() + " = ");
+            emitVariable(*outputSocket, result);
+            result.endLine();
+        }
+
+        result.endScope();
+    }
+    else if (frag.getType() == FRAGMENT_TYPE_FUNCTION)
     {
         // Add function definition.
         emitBlock(frag.getSourceCode(), result);
@@ -200,15 +261,22 @@ void FragmentCompiler::compileShader(const Fragment& frag, SourceCode& result)
     compileFunction(frag, result);
 }
 
+void FragmentCompiler::declareVariable(const Fragment::Input& input, bool assignDefault, SourceCode& result)
+{
+    result.addString(_syntax.getTypeName(input.type) + " " + input.variable.str());
+    if (assignDefault)
+    {
+        result.addString(" = " + _syntax.getDefaultValue(input.type));
+    }
+}
+
 void FragmentCompiler::declareVariable(const Fragment::Output& output, bool assignDefault, SourceCode& result)
 {
-    result.beginLine();
     result.addString(_syntax.getTypeName(output.type) + " " + output.variable.str());
     if (assignDefault)
     {
         result.addString(" = " + _syntax.getDefaultValue(output.type));
     }
-    result.endLine();
 }
 
 void FragmentCompiler::emitBlock(const string& block, SourceCode& result)

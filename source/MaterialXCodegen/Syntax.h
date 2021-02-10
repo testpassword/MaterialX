@@ -9,7 +9,8 @@
 /// @file
 /// Base class for syntax handling for code generators
 
-#include <MaterialXRuntime/Library.h>
+#include <MaterialXCodegen/Library.h>
+
 #include <MaterialXRuntime/RtToken.h>
 #include <MaterialXRuntime/RtValue.h>
 

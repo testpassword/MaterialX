@@ -12,6 +12,7 @@
 #include <MaterialXFormat/File.h>
 
 #include <sstream>
+#include <deque>
 
 namespace MaterialX
 {
@@ -19,90 +20,256 @@ namespace Codegen
 {
 
 Fragment::Fragment(const RtToken& name) :
-    _name(name)
+    _name(name),
+    _functionName(name)
 {
 }
 
 Fragment::Input* Fragment::createInput(const RtToken& type, const RtToken& name)
 {
-    Input* input = new Input();
+    if (getInput(name))
+    {
+        throw ExceptionRuntimeError("An input named '" + name.str() +
+            "' already exists in fragment '" + getName().str() + "'");
+    }
+
+    InputPtr input(new Input());
     input->parent = this;
     input->type = type;
     input->name = name;
-    string variable = _name.str() + "_" + name.str();
-    input->variable = RtToken(variable);
+    input->variable = name;
     input->value = RtValue::createNew(type, _allocator);
     input->connection = nullptr;
-    _inputs.push_back(input);
-    return input;
+
+    _inputs.add(name, input);
+
+    return input.get();
 }
 
 Fragment::Output* Fragment::createOutput(const RtToken& type, const RtToken& name)
 {
-    Output* output = new Output();
+    if (getOutput(name))
+    {
+        throw ExceptionRuntimeError("An output named '" + name.str() +
+            "' already exists in fragment '" + getName().str() + "'");
+    }
+
+    OutputPtr output(new Output());
     output->parent = this;
     output->type = type;
-    string variable = _name.str() + "_" + name.str();
-    output->variable = RtToken(variable);
-    _outputs.push_back(output);
-    return output;
+    output->name = name;
+    output->variable = name;
+
+    _outputs.add(name, output);
+
+    return output.get();
 }
 
-void Fragment::setSourceCodeFunction(const RtToken& functionName, const string& sourceCode)
+
+FragmentGraph::FragmentGraph(const RtToken& name) :
+    Fragment(name)
 {
-    _sourceCode = sourceCode;
-    _functionName = functionName;
 }
 
-void Fragment::setSourceCodeInline(const string& sourceCode)
-{
-    _sourceCode = sourceCode;
-    _functionName = EMPTY_TOKEN;
-}
-
-/*
-CodegenResultPtr CodegenResult::create()
-{
-    return std::make_shared<CodegenResult>();
-}
-
-void CodegenResult::addFragment(const FragmentPtr& fragment)
+void FragmentGraph::addFragment(const FragmentPtr& fragment)
 {
     if (getFragment(fragment->getName()))
     {
-        throw ExceptionShaderGenError("A fragment named '" + fragment->getName().str() + "' already exists");
+        throw ExceptionRuntimeError("A fragment named '" + fragment->getName().str() + 
+            "' already exists in fragment graph '" + getName().str() + "'");
     }
 
-    _fragments[fragment->getName()] = fragment;
-    _fragmentsOrder.push_back(fragment);
+    _fragments.add(fragment->getName(), fragment);
 }
 
-void CodegenResult::removeFragment(const RtToken& name)
+void FragmentGraph::removeFragment(const RtToken& name)
 {
-    auto it = _fragments.find(name);
-    if (it != _fragments.end())
+    _fragments.remove(name);
+}
+
+size_t FragmentGraph::numFragments() const
+{
+    return _fragments.size();
+}
+
+Fragment* FragmentGraph::getFragment(size_t index) const
+{
+    return _fragments.get(index);
+}
+
+Fragment* FragmentGraph::getFragment(const RtToken& name) const
+{
+    return _fragments.get(name);
+}
+
+void FragmentGraph::connect(Fragment::Output* src, Fragment::Input* dst)
+{
+    dst->connection = src;
+    src->connections.insert(dst);
+}
+
+void FragmentGraph::connect(const RtToken& srcFragment, const RtToken& srcOutput,
+    const RtToken& dstFragment, const RtToken& dstOutput)
+{
+    Fragment* src = getFragment(srcFragment);
+    Fragment* dst = getFragment(dstFragment);
+    if (!(src && dst))
     {
-        _fragmentsOrder.erase(std::find(_fragmentsOrder.begin(), _fragmentsOrder.end(), it->second));
-        _fragments.erase(it);
+        throw ExceptionRuntimeError("Failed to create connection '" + srcFragment.str() + "' -> '" + dstFragment.str() + "'");
+    }
+
+    Fragment::Output* output = src->getOutput(srcOutput);
+    Fragment::Input* input = src->getInput(dstOutput);
+    if (!(output && input))
+    {
+        throw ExceptionRuntimeError("Failed to create connection '" + srcFragment.str() + "' -> '" + dstFragment.str() + "'");
+    }
+
+    connect(output, input);
+}
+
+Fragment::Input* FragmentGraph::createInput(const RtToken& type, const RtToken& name)
+{
+    // Create the external input.
+    Fragment::Input* input = Fragment::createInput(type, name);
+
+    // Create the internal socket.
+    OutputPtr socket(new Output());
+    socket->parent = this;
+    socket->type = type;
+    socket->name = input->name;
+    socket->variable = input->variable;
+    _inputSockets.add(socket->name, socket);
+
+    return input;
+}
+
+Fragment::Output* FragmentGraph::createOutput(const RtToken& type, const RtToken& name)
+{
+    // Create the external output.
+    Fragment::Output* output = Fragment::createOutput(type, name);
+
+    // Create the internal socket.
+    InputPtr socket(new Input());
+    socket->parent = this;
+    socket->type = type;
+    socket->name = output->name;
+    socket->variable = output->variable;
+    socket->value = RtValue::createNew(type, _allocator);
+    socket->connection = nullptr;
+    _outputSockets.add(socket->name, socket);
+
+    return output;
+}
+
+void FragmentGraph::finalize()
+{
+    const size_t numFragments = _fragments.size();
+
+    // Create graph inputs for unconnected inputs inside the graph.
+    for (size_t i = 0; i < numFragments; ++i)
+    {
+        Fragment* fragment = _fragments.get(i);
+        for (size_t j = 0; j < fragment->numInputs(); ++j)
+        {
+            Input* input = fragment->getInput(j);
+            if (!input->connection)
+            {
+                // Use a consistent naming convention: <fragmentname>_<inputname>
+                // so application side can figure out what uniforms to set
+                // when node inputs change on application side.
+                const string validName = fragment->getName().str() + "_" + input->name.str();
+                const RtToken name(validName);
+                Input* external = createInput(input->type, name);
+                Output* socket = getInputSocket(external->name);
+                connect(socket, input);
+            }
+        }
+    }
+
+    // Make unique valid variable names.
+    for (size_t i = 0; i < numFragments; ++i)
+    {
+        Fragment* fragment = _fragments.get(i);
+        for (size_t j = 0; j < fragment->numInputs(); ++j)
+        {
+            Port* port = fragment->getInput(j);
+            string validName = fragment->getName().str() + "_" + port->name.str();
+            port->variable = RtToken(validName);
+        }
+        for (size_t j = 0; j < fragment->numOutputs(); ++j)
+        {
+            Port* port = fragment->getOutput(j);
+            string validName = fragment->getName().str() + "_" + port->name.str();
+            port->variable = RtToken(validName);
+        }
+    }
+
+    // Sort the fragments in topological order, using Kahn's algorithm
+    // to avoid recursion.
+
+    // Calculate in-degrees for all fragments, and enqueue those with degree 0.
+    std::unordered_map<Fragment*, int> inDegree(numFragments);
+    std::deque<Fragment*> fragmentQueue;
+    for (size_t i = 0; i < numFragments; ++i)
+    {
+        Fragment* fragment = _fragments.get(i);
+
+        int connectionCount = 0;
+        for (size_t j = 0; j < fragment->numInputs(); ++j)
+        {
+            const Input* input = fragment->getInput(j);
+            if (input->connection && input->connection->parent->getType() != FRAGMENT_TYPE_GRAPH)
+            {
+                ++connectionCount;
+            }
+        }
+
+        inDegree[fragment] = connectionCount;
+
+        if (connectionCount == 0)
+        {
+            fragmentQueue.push_back(fragment);
+        }
+    }
+
+    Fragment** sortedFragments = _fragments.order();
+    memset(sortedFragments, 0, numFragments * sizeof(Fragment*));
+    size_t count = 0;
+
+    while (!fragmentQueue.empty())
+    {
+        // Pop the queue and add to topological order.
+        Fragment* fragment = fragmentQueue.front();
+        fragmentQueue.pop_front();
+
+        sortedFragments[count++] = fragment;
+
+        // Find connected nodes and decrease their in-degree,
+        // adding node to the queue if in-degrees becomes 0.
+        for (size_t i = 0; i<fragment->numOutputs(); ++i)
+        {
+            const Output* output = fragment->getOutput(i);
+            for (const Input* downstream : output->connections)
+            {
+                if (downstream->parent->getType() != FRAGMENT_TYPE_GRAPH)
+                {
+                    Fragment* downstreamFragment = downstream->parent;
+                    if (--inDegree[downstreamFragment] <= 0)
+                    {
+                        fragmentQueue.push_back(downstreamFragment);
+                    }
+                }
+            }
+        }
+    }
+
+    // Check if there was a cycle.
+    if (count != _fragments.size())
+    {
+        throw ExceptionRuntimeError("Encountered a cycle in fragment graph '" + getName().str() + "'");
     }
 }
-
-size_t CodegenResult::numFragments() const
-{
-    return _fragmentsOrder.size();
-}
-
-FragmentPtr CodegenResult::getFragment(size_t index) const
-{
-    return _fragmentsOrder[index];
-}
-
-FragmentPtr CodegenResult::getFragment(const RtToken& name) const
-{
-    auto it = _fragments.find(name);
-    return it != _fragments.end() ? it->second : nullptr;
-}
-*/
 
 } // namespace Codegen
 } // namespace MaterialX
