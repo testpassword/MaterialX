@@ -144,54 +144,117 @@ const string& SourceCode::asString() const
     return _code;
 }
 
-
-void FragmentCompiler::emitFunctionCall(const Fragment& frag, SourceCode& result)
+string& SourceCode::asString()
 {
-    // Declare all outputs.
-    for (size_t i = 0; i < frag.numOutputs(); ++i)
+    return _code;
+}
+
+
+void FragmentCompiler::emitFunctionCall(const Fragment& frag, SourceCode& result) const
+{
+    if (frag.getFunctionName() != EMPTY_TOKEN)
     {
-        const Fragment::Output* output = frag.getOutput(i);
+        // Declare all outputs.
+        for (size_t i = 0; i < frag.numOutputs(); ++i)
+        {
+            const Fragment::Output* output = frag.getOutput(i);
+            result.beginLine();
+            declareVariable(*output, true, result);
+            result.endLine();
+        }
+
         result.beginLine();
-        declareVariable(*output, true, result);
+        result.addString(frag.getFunctionName().str() + "(");
+
+        string delim = "";
+
+        // Add all inputs
+        for (size_t i = 0; i < frag.numInputs(); ++i)
+        {
+            const Fragment::Input* input = frag.getInput(i);
+            result.addString(delim);
+            emitVariable(*input, result);
+            delim = ", ";
+        }
+
+        // Add all outputs
+        for (size_t i = 0; i < frag.numOutputs(); ++i)
+        {
+            const Fragment::Output* output = frag.getOutput(i);
+            result.addString(delim + output->variable.str());
+            delim = ", ";
+        }
+        result.addString(")");
         result.endLine();
     }
-
-    result.beginLine();
-    result.addString("void " + frag.getFunctionName().str() + "(");
-
-    string delim = "";
-
-    // Add all inputs
-    for (size_t i = 0; i < frag.numInputs(); ++i)
+    else
     {
-        const Fragment::Input* input = frag.getInput(i);
-        result.addString(delim);
-        emitVariable(*input, result);
-        delim = ", ";
-    }
+        // An inline expression.
+        const string& source = frag.getSourceCode();
+        const Syntax& syntax = _context.getSyntax();
 
-    // Add all outputs
-    for (size_t i = 0; i < frag.numOutputs(); ++i)
-    {
-        const Fragment::Output* output = frag.getOutput(i);
-        result.addString(delim + output->variable.str());
-        delim = ", ";
+        static const string prefix("{{");
+        static const string postfix("}}");
+
+        size_t pos = 0;
+        size_t i = source.find_first_of(prefix);
+        StringSet localVariableNames;
+        SourceCode inlineResult;
+        while (i != string::npos)
+        {
+            inlineResult.addString(source.substr(pos, i - pos));
+            size_t j = source.find_first_of(postfix, i + 2);
+            if (j == string::npos)
+            {
+                throw ExceptionRuntimeError("Malformed inline expression in source code for fragment " + frag.getName().str());
+            }
+
+            const RtToken variable(source.substr(i + 2, j - i - 2));
+            const Fragment::Input* input = frag.getInput(variable);
+            if (!input)
+            {
+                throw ExceptionRuntimeError("Could not find an input named '" + variable.str() + "' on fragment '" + frag.getName().str() + "'");
+            }
+
+            if (input->connection)
+            {
+                emitVariable(*input, inlineResult);
+            }
+            else
+            {
+                // Declare a local variable with this value.
+                // TODO: We should make a valid unique identifier name.
+                const string variableName = input->getLongName() + "_tmp";
+                if (!localVariableNames.count(variableName))
+                {
+                    result.beginLine();
+                    const string& qualifier = syntax.getConstantQualifier();
+                    result.addString(qualifier.empty() ? EMPTY_STRING : qualifier + " ");
+                    result.addString(syntax.getTypeName(input->type) + " " + input->variable.str() + " = " + syntax.getValue(input->type, input->value));
+                    result.endLine();
+                    localVariableNames.insert(variableName);
+                }
+                inlineResult.addString(variableName);
+            }
+
+            pos = j + 2;
+            i = source.find_first_of(prefix, pos);
+        }
+        inlineResult.addString(source.substr(pos));
+
+        result.beginLine();
+        declareVariable(*frag.getOutput(), false, result);
+        result.addString(" = " + inlineResult.asString());
+        result.endLine();
     }
-    result.addString(")");
-    result.endLine();
 }
 
-FragmentCompiler::FragmentCompiler(Context& context) :
-    _context(context),
-    _syntax(context.getSyntax())
+FragmentCompiler::FragmentCompiler(const Context& context) :
+    _context(context)
 {
 }
 
-void FragmentCompiler::compileFragments(const Fragment::Output* /*output*/, SourceCode& /*result*/)
-{
-}
-
-void FragmentCompiler::compileFunction(const Fragment& frag, SourceCode& result)
+void FragmentCompiler::compileFunction(const Fragment& frag, SourceCode& result) const
 {
     if (result.isDefined(frag.getFunctionName()))
     {
@@ -221,7 +284,7 @@ void FragmentCompiler::compileFunction(const Fragment& frag, SourceCode& result)
         {
             result.addString(delim);
             const Fragment::Output* output = graph.getOutput(i);
-            result.addString(_syntax.getOutputQualifier());
+            result.addString(_context.getSyntax().getOutputQualifier());
             declareVariable(*output, false, result);
             delim = ", ";
         }
@@ -256,32 +319,19 @@ void FragmentCompiler::compileFunction(const Fragment& frag, SourceCode& result)
     }
 }
 
-void FragmentCompiler::compileShader(const Fragment& frag, SourceCode& result)
+void FragmentCompiler::declareVariable(const Fragment::Port& port, bool assignDefault, SourceCode& result) const
 {
-    compileFunction(frag, result);
-}
-
-void FragmentCompiler::declareVariable(const Fragment::Input& input, bool assignDefault, SourceCode& result)
-{
-    result.addString(_syntax.getTypeName(input.type) + " " + input.variable.str());
+    const Syntax& syntax = _context.getSyntax();
+    result.addString(syntax.getTypeName(port.type) + " " + port.variable.str());
     if (assignDefault)
     {
-        result.addString(" = " + _syntax.getDefaultValue(input.type));
+        result.addString(" = " + syntax.getDefaultValue(port.type));
     }
 }
 
-void FragmentCompiler::declareVariable(const Fragment::Output& output, bool assignDefault, SourceCode& result)
+void FragmentCompiler::emitBlock(const string& block, SourceCode& result) const
 {
-    result.addString(_syntax.getTypeName(output.type) + " " + output.variable.str());
-    if (assignDefault)
-    {
-        result.addString(" = " + _syntax.getDefaultValue(output.type));
-    }
-}
-
-void FragmentCompiler::emitBlock(const string& block, SourceCode& result)
-{
-    const string& INCLUDE = _syntax.getIncludeStatement();
+    const string& INCLUDE = _context.getSyntax().getIncludeStatement();
 
     // Add each line in the block seperatelly
     // to get correct indentation
@@ -310,7 +360,7 @@ void FragmentCompiler::emitBlock(const string& block, SourceCode& result)
     }
 }
 
-void FragmentCompiler::emitInclude(const FilePath& file, SourceCode& result)
+void FragmentCompiler::emitInclude(const FilePath& file, SourceCode& result) const
 {
     const RtToken f(file);
     if (!result.isIncluded(f))
@@ -328,7 +378,7 @@ void FragmentCompiler::emitInclude(const FilePath& file, SourceCode& result)
     }
 }
 
-void FragmentCompiler::emitVariable(const Fragment::Input& input, SourceCode& result)
+void FragmentCompiler::emitVariable(const Fragment::Input& input, SourceCode& result) const
 {
     if (input.connection)
     {
@@ -336,9 +386,26 @@ void FragmentCompiler::emitVariable(const Fragment::Input& input, SourceCode& re
     }
     else
     {
-        result.addString(_syntax.getValue(input.type, input.value));
+        result.addString(_context.getSyntax().getValue(input.type, input.value));
     }
 }
+
+void FragmentCompiler::emitTypeDefinitions(SourceCode& result) const
+{
+    for (const auto& syntax : _context.getSyntax().getTypeSyntaxes())
+    {
+        if (!syntax->getTypeAlias().empty())
+        {
+            result.addLine("#define " + syntax->getTypeName() + " " + syntax->getTypeAlias(), false);
+        }
+        if (!syntax->getTypeDefinition().empty())
+        {
+            result.addLine(syntax->getTypeDefinition(), false);
+        }
+    }
+    result.newLine();
+}
+
 
 } // namespace Codegen
 } // namespace MaterialX

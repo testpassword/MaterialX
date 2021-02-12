@@ -97,6 +97,39 @@ enum FragmentType
     FRAGMENT_TYPE_LAST
 };
 
+/// Flags for classifying fragments into different categories.
+class FragmentClass
+{
+public:
+    // Node classes
+    static const uint32_t TEXTURE = 1 << 0;  /// Any node that outputs floats, colors, vectors, etc.
+    static const uint32_t CLOSURE = 1 << 1;  /// Any node that represents light integration
+    static const uint32_t SHADER = 1 << 2;  /// Any node that outputs a shader
+    // Specific texture node types
+    static const uint32_t FILETEXTURE = 1 << 3;  /// A file texture node
+    static const uint32_t CONDITIONAL = 1 << 4;  /// A conditional node
+    static const uint32_t CONSTANT = 1 << 5;  /// A constant node
+    // Specific closure types
+    static const uint32_t BSDF = 1 << 6;  /// A BSDF node
+    static const uint32_t BSDF_R = 1 << 7;  /// A BSDF node only for reflection
+    static const uint32_t BSDF_T = 1 << 8;  /// A BSDF node only for transmission
+    static const uint32_t EDF = 1 << 9;  /// A EDF node
+    static const uint32_t VDF = 1 << 10; /// A VDF node
+    static const uint32_t LAYER = 1 << 11; /// A node for vertical layering of other closure nodes
+    static const uint32_t THINFILM = 1 << 12; /// A node for adding thin-film over microfacet BSDF nodes
+    // Specific shader types
+    static const uint32_t SURFACE = 1 << 13; /// A surface shader node
+    static const uint32_t VOLUME = 1 << 14; /// A volume shader node
+    static const uint32_t LIGHT = 1 << 15; /// A light shader node
+    // Specific conditional types
+    static const uint32_t IFELSE = 1 << 16; /// An if-else statement
+    static const uint32_t SWITCH = 1 << 17; /// A switch statement
+    // Types based on nodegroup
+    static const uint32_t SAMPLE2D = 1 << 18; /// Can be sampled in 2D (uv space)
+    static const uint32_t SAMPLE3D = 1 << 19; /// Can be sampled in 3D (position)
+};
+
+
 /// @class Fragment
 /// Class holding a fragment of code.
 class Fragment : public RtSharedBase<Fragment>
@@ -108,6 +141,11 @@ class Fragment : public RtSharedBase<Fragment>
         RtToken type;
         RtToken name;
         RtToken variable;
+
+        string getLongName() const
+        {
+            return parent->getName().str() + "_" + name.str();
+        }
     };
 
     struct Output;
@@ -143,6 +181,33 @@ class Fragment : public RtSharedBase<Fragment>
     virtual FragmentType getType() const
     {
         return _functionName != EMPTY_TOKEN ? FRAGMENT_TYPE_FUNCTION : FRAGMENT_TYPE_INLINE;
+    }
+
+    bool isClass(uint32_t mask) const
+    {
+        return (_class & mask) != 0;
+    }
+
+    uint32_t getClassMask() const
+    {
+        return _class;
+    }
+
+    void setClass(uint32_t mask, bool value = true)
+    {
+        _class = value ? _class | mask : _class & ~mask;
+    }
+
+    template<class T>
+    T* asA()
+    {
+        return static_cast<T*>(this);
+    }
+
+    template<class T>
+    const T* asA() const
+    {
+        return static_cast<T*>(this);
     }
 
     virtual Input* createInput(const RtToken& type, const RtToken& name);
@@ -207,6 +272,9 @@ class Fragment : public RtSharedBase<Fragment>
     /// Fragment name.
     const RtToken _name;
 
+    /// Fragment class flags.
+    uint32_t _class;
+
     /// Fragment function name.
     RtToken _functionName;
 
@@ -216,6 +284,7 @@ class Fragment : public RtSharedBase<Fragment>
     /// Allocator for large values.
     RtAllocator _allocator;
 
+    /// Fragment ports.
     ObjectList<Input> _inputs;
     ObjectList<Output> _outputs;
 };
@@ -280,8 +349,11 @@ public:
         return _outputSockets.get(name);
     }
 
-    /// Prepare the graph for compilation.
-    void finalize();
+    /// Finalize the graph construction.
+    void finalize(const Context& context, bool publishAllInputs = false);
+
+    /// Compile the graph and cache the resulting source code.
+    void precompile(const FragmentCompiler& compiler);
 
 protected:
     ObjectList<Fragment> _fragments;

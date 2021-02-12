@@ -252,13 +252,6 @@ RtToken Syntax::createIdentifier(const string& name, RtTokenMap<size_t>& identif
     return id;
 }
 
-RtToken Syntax::createVariable(const string& name, const RtToken& /*type*/, RtTokenMap<size_t>& identifiers) const
-{
-    // Default implementation just create an identifier fomr the name, 
-    // but derived classes can override this for custom variable naming.
-    return createIdentifier(name, identifiers);
-}
-
 /*
 bool Syntax::remapEnumeration(const string&, const RtToken&, const string&, std::pair<const RtToken&, ValuePtr>&) const
 {

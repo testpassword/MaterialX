@@ -12,7 +12,8 @@ namespace Codegen
 {
 
 Options::Options() :
-    fileTextureVerticalFlip(false)
+    fileTextureVerticalFlip(false),
+    directionalAlbedoMethod(DIRECTIONAL_ALBEDO_CURVE_FIT)
 {}
 
 OptionsPtr Options::create()
@@ -20,8 +21,8 @@ OptionsPtr Options::create()
     return OptionsPtr(new Options());
 }
 
-Context::Context(FragmentGeneratorPtr generator) :
-    _generator(generator)
+Context::Context(const OptionsPtr& options) :
+    _options(options)
 {}
 
 Context::~Context()

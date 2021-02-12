@@ -19,6 +19,19 @@ namespace MaterialX
 namespace Codegen
 {
 
+/// Method to use for directional albedo evaluation
+enum DirectionalAlbedoMethod
+{
+    /// Use a curve fit approximation for directional albedo.
+    DIRECTIONAL_ALBEDO_CURVE_FIT,
+
+    /// Use a table look-up for directional albedo.
+    DIRECTIONAL_ALBEDO_TABLE,
+
+    /// Use importance sampling for directional albedo.
+    DIRECTIONAL_ALBEDO_IS
+};
+
 /// @class CodegenOptions
 /// Base class for options used by a code generator.
 class Options : public RtSharedBase<Options>
@@ -34,52 +47,47 @@ public:
     /// file textures need to be flipped vertically to match the target's
     /// texture space convention. By default this option is false.
     bool fileTextureVerticalFlip = false;
+
+    /// Sets the method to use for directional albedo evaluation
+    /// for HW shader targets.
+    DirectionalAlbedoMethod directionalAlbedoMethod;
 };
 
 /// @class Context
-/// Base class for context data needed by fragment generators.
-/// Derived generators can derive from this class to hold
-/// custom context data and needed by the generator.
+/// Base class for context data needed for codegen to a specific target.
 class Context : public RtSharedBase<Context>
 {
 public:
     /// Destructor.
     virtual ~Context();
 
-    /// Return an instance to the code generator that created this context.
-    const FragmentGenerator& getGenerator() const
-    {
-        return *_generator;
-    }
+    /// Return the target identifier.
+    virtual const RtToken& getTarget() const = 0;
 
-    /// Return an instance to the code generator that created this context.
-    const Syntax& getSyntax() const
-    {
-        return _generator->getSyntax();
-    }
+    /// Return the syntax object for this target.
+    virtual const Syntax& getSyntax() const = 0;
+
+    /// Create a fragment generator for this target.
+    virtual FragmentGeneratorPtr createGenerator() const = 0;
+
+    /// Create a fragment compiler for this target.
+    virtual FragmentCompilerPtr createCompiler() const = 0;
 
     /// Return the options instance.
     const Options& getOptions() const
     {
-        return _generator->getOptions();
+        return *_options;
     }
 
     /// Return the options instance.
     Options& getOptions()
     {
-        return _generator->getOptions();
-    }
-
-    /// Add reserved words that should not be used as
-    /// identifiers during code generation.
-    void addReservedWords(const StringSet& names)
-    {
-        _reservedWords.insert(names.begin(), names.end());
+        return *_options;
     }
 
     /// Return the set of reserved words that should not be used
     /// as identifiers during code generation.
-    const StringSet& getReservedWords() const
+    const RtTokenSet& getReservedWords() const
     {
         return _reservedWords;
     }
@@ -92,13 +100,13 @@ public:
 
 protected:
     /// Constructor.
-    Context(FragmentGeneratorPtr generator);
+    Context(const OptionsPtr& options);
 
-    // Fragment generator.
-    FragmentGeneratorPtr _generator;
+    // Options.
+    OptionsPtr _options;
 
     // Set of globally reserved words.
-    StringSet _reservedWords;
+    RtTokenSet _reservedWords;
 
     // Map of string substitutions used by codegen.
     StringMap _substitutions;

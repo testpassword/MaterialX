@@ -26,24 +26,6 @@ class FragmentGenerator : public RtSharedBase<FragmentGenerator>
     /// Destructor.
     virtual ~FragmentGenerator() {}
 
-    /// Return the target identifier for this generator.
-    virtual const RtToken& getTarget() const = 0;
-
-    /// Return the syntax object for this generator.
-    virtual const Syntax& getSyntax() const = 0;
-
-    /// Return the options object for this generator.
-    const Options& getOptions() const
-    {
-        return *_options;
-    };
-
-    /// Return the options object for this generator.
-    Options& getOptions()
-    {
-        return *_options;
-    };
-
     /// Create an empty fragment.
     virtual FragmentPtr createFragment(const RtToken& name) const;
 
@@ -56,13 +38,15 @@ class FragmentGenerator : public RtSharedBase<FragmentGenerator>
     /// Create a fragment graph from the given node or nodegraph.
     /// If a node is given a graph will be created by traversing 
     /// all upstream dependencies.
-    virtual FragmentGraphPtr createFragmentGraph(const RtNode& node) const;
+    virtual FragmentGraphPtr createFragmentGraph(const RtNode& node, bool publishAllInputs = false) const;
 
   protected:
     /// Constructor.
-    FragmentGenerator(OptionsPtr options);
+    FragmentGenerator(const Context& context);
 
-    OptionsPtr _options;
+    virtual uint32_t getClassMask(const RtNode& node) const;
+
+    const Context& _context;
 };
 
 } // namespace Codegen

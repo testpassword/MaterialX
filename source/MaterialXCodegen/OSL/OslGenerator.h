@@ -10,6 +10,7 @@
 /// TODO: Docs
 
 #include <MaterialXCodegen/FragmentGenerator.h>
+#include <MaterialXCodegen/FragmentCompiler.h>
 
 namespace MaterialX
 {
@@ -21,30 +22,11 @@ namespace Codegen
 class OslGenerator : public FragmentGenerator
 {
   public:
-    /// Target identifier constant for this generator.
-    static const RtToken TARGET;
-
-  public:
     /// Constructor.
-    OslGenerator(OptionsPtr options);
-      
-    /// Create a new instance of this code generator.
-    static FragmentGeneratorPtr create(OptionsPtr options);
+    OslGenerator(const Context& context);
 
-    /// Return the target identifier for this generator.
-    const RtToken& getTarget() const override;
-
-    /// Return the syntax object for this generator.
-    const Codegen::Syntax& getSyntax() const override;
-
-    /// Create a fragment from the given node or nodegraph.
-//    FragmentPtr createFragment(const RtNode& node) const override;
-
-    /// Create a fragment graph from the given node or nodegraph.
-//    FragmentPtr createFragmentGraph(const RtNode& node) const override;
-
-  protected:
-    SyntaxPtr _syntax;
+    /// Create a new instance of this generator.
+    static FragmentGeneratorPtr create(const Context& context);
 };
 
 } // namespace Codegen

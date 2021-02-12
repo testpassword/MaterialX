@@ -36,7 +36,7 @@ namespace MaterialX
 namespace
 {
     // Lists of known metadata which are handled explicitly by import/export.
-    static const RtTokenSet nodedefMetadata     = { RtToken("name"), RtToken("type"), RtToken("node"), RtToken("version"), RtToken("isdefaultversion") };
+    static const RtTokenSet nodedefMetadata     = { RtToken("name"), RtToken("type"), RtToken("node"), RtToken("nodegroup"), RtToken("version"), RtToken("isdefaultversion"), RtToken("bsdf") };
     static const RtTokenSet attrMetadata        = { RtToken("name"), RtToken("type"), RtToken("value"), RtToken("nodename"), RtToken("output"), RtToken("channels") };
     static const RtTokenSet inputMetadata       = { RtToken("name"), RtToken("type"), RtToken("value"), RtToken("nodename"), RtToken("output"), RtToken("channels"), 
                                                     RtToken("nodegraph"), RtToken("interfacename") };
@@ -280,6 +280,19 @@ namespace
             {
                 nodedef.setIsDefaultVersion(true);
             }
+        }
+
+        const string& nodeGroup = src->getNodeGroup();
+        if (!nodeGroup.empty())
+        {
+            nodedef.setNodeGroup(RtToken(nodeGroup));
+        }
+
+        const string& bsdf = src->getAttribute(Tokens::BSDF.str());
+        if (!bsdf.empty())
+        {
+            RtTypedValue* val = nodedef.addMetadata(Tokens::BSDF, RtType::TOKEN);
+            val->getValue().asToken() = RtToken(bsdf);
         }
 
         readMetadata(src, prim, nodedefMetadata);

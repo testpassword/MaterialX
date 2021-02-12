@@ -5,6 +5,7 @@
 
 #include <MaterialXCodegen/Fragment.h>
 #include <MaterialXCodegen/FragmentGenerator.h>
+#include <MaterialXCodegen/FragmentCompiler.h>
 #include <MaterialXCodegen/Context.h>
 
 #include <MaterialXRuntime/RtApi.h>
@@ -21,6 +22,7 @@ namespace Codegen
 
 Fragment::Fragment(const RtToken& name) :
     _name(name),
+    _class(FragmentClass::TEXTURE),
     _functionName(name)
 {
 }
@@ -162,46 +164,72 @@ Fragment::Output* FragmentGraph::createOutput(const RtToken& type, const RtToken
     return output;
 }
 
-void FragmentGraph::finalize()
+void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
 {
+    //
+    // Prepare the graph for compilation
+    //
     const size_t numFragments = _fragments.size();
 
-    // Create graph inputs for unconnected inputs inside the graph.
-    for (size_t i = 0; i < numFragments; ++i)
+    if (publishAllInputs)
     {
-        Fragment* fragment = _fragments.get(i);
-        for (size_t j = 0; j < fragment->numInputs(); ++j)
+        // Create graph inputs for unconnected inputs inside the graph.
+        for (size_t i = 0; i < numFragments; ++i)
         {
-            Input* input = fragment->getInput(j);
-            if (!input->connection)
+            Fragment* fragment = _fragments.get(i);
+            for (size_t j = 0; j < fragment->numInputs(); ++j)
             {
-                // Use a consistent naming convention: <fragmentname>_<inputname>
-                // so application side can figure out what uniforms to set
-                // when node inputs change on application side.
-                const string validName = fragment->getName().str() + "_" + input->name.str();
-                const RtToken name(validName);
-                Input* external = createInput(input->type, name);
-                Output* socket = getInputSocket(external->name);
-                connect(socket, input);
+                Input* input = fragment->getInput(j);
+                if (!input->connection)
+                {
+                    // Use a consistent naming convention: <fragmentname>_<inputname>
+                    // so application side can figure out what uniforms to set
+                    // when node inputs change on application side.
+                    const string validName = fragment->getName().str() + "_" + input->name.str();
+                    const RtToken name(validName);
+                    Input* external = createInput(input->type, name);
+                    Output* socket = getInputSocket(external->name);
+                    connect(socket, input);
+                }
             }
         }
     }
 
-    // Make unique valid variable names.
+    const Syntax& syntax = context.getSyntax();
+
+    // Add all reserved words as taken identifiers
+    RtTokenMap<size_t> identifiers;
+    for (const RtToken& t : context.getReservedWords())
+    {
+        identifiers[t] = 1;
+    }
+
+    // Make sure the function name is a valid identifier.
+    _functionName = syntax.createIdentifier(_functionName.str(), identifiers);
+
+    // Create valid identifiers for all inputs and outputs.
+    for (size_t i = 0; i < numInputs(); ++i)
+    {
+        Port* port = getInputSocket(i);
+        port->variable = syntax.createIdentifier(port->name.str(), identifiers);
+    }
+    for (size_t i = 0; i < numOutputs(); ++i)
+    {
+        Port* port = getOutputSocket(i);
+        port->variable = syntax.createIdentifier(port->name.str(), identifiers);
+    }
     for (size_t i = 0; i < numFragments; ++i)
     {
         Fragment* fragment = _fragments.get(i);
         for (size_t j = 0; j < fragment->numInputs(); ++j)
         {
             Port* port = fragment->getInput(j);
-            string validName = fragment->getName().str() + "_" + port->name.str();
-            port->variable = RtToken(validName);
+            port->variable = syntax.createIdentifier(port->getLongName(), identifiers);
         }
         for (size_t j = 0; j < fragment->numOutputs(); ++j)
         {
             Port* port = fragment->getOutput(j);
-            string validName = fragment->getName().str() + "_" + port->name.str();
-            port->variable = RtToken(validName);
+            port->variable = syntax.createIdentifier(port->getLongName(), identifiers);
         }
     }
 
@@ -269,6 +297,17 @@ void FragmentGraph::finalize()
     {
         throw ExceptionRuntimeError("Encountered a cycle in fragment graph '" + getName().str() + "'");
     }
+
+    // Set classification based on the root fragment.
+    Fragment* rootFragment = sortedFragments[count - 1];
+    _class = rootFragment->getClassMask();
+}
+
+void FragmentGraph::precompile(const FragmentCompiler& compiler)
+{
+    SourceCode result;
+    compiler.compileFunction(*this, result);
+    setSourceCode(result.asString());
 }
 
 } // namespace Codegen

@@ -244,14 +244,10 @@ class Syntax
     virtual void makeValidName(string& name) const;
 
     /// Create a unique identifier from the given name.
-    virtual RtToken createIdentifier(const string& name, RtTokenMap<size_t>& identifiers) const;
-
-    /// Create a unique variable name for the given name and type.
-    /// The method is used for naming variables (inputs and outputs) in generated code.
     /// Derived classes can override this method to have a custom naming strategy.
     /// Default implementation adds a number suffix, or increases an existing number suffix, 
     /// on the name string if there is a name collision.
-    virtual RtToken createVariable(const string& name, const RtToken& type, RtTokenMap<size_t>& identifiers) const;
+    virtual RtToken createIdentifier(const string& name, RtTokenMap<size_t>& identifiers) const;
 
     /// Given an input specification attempt to remap this to an enumeration which is accepted by
     /// the shader generator. The enumeration may be converted to a different type than the input.

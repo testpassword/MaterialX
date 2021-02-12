@@ -59,8 +59,11 @@ public:
     /// Return true if the given file is set as included in this source code.
     bool isIncluded(const RtToken& file) const;
 
-    /// Return the resulting source code.
+    /// Return the source code.
     const string& asString() const;
+
+    /// Return the source code.
+    string& asString();
 
 private:
     int _indentations;
@@ -75,23 +78,21 @@ private:
 class FragmentCompiler : public RtSharedBase<FragmentCompiler>
 {
 public:
-    FragmentCompiler(Context& context);
+    FragmentCompiler(const Context& context);
     virtual ~FragmentCompiler() {}
 
-    virtual void compileFragments(const Fragment::Output* output, SourceCode& result);
-    virtual void compileFunction(const Fragment& frag, SourceCode& result);
-    virtual void compileShader(const Fragment& frag, SourceCode& result);
+    virtual void compileShader(const Fragment::Output& output, SourceCode& result) const = 0;
 
-    virtual void declareVariable(const Fragment::Input& input, bool assignDefault, SourceCode& result);
-    virtual void declareVariable(const Fragment::Output& output, bool assignDefault, SourceCode& result);
-    virtual void emitBlock(const string& block, SourceCode& result);
-    virtual void emitInclude(const FilePath& file, SourceCode& result);
-    virtual void emitVariable(const Fragment::Input& input, SourceCode& result);
-    virtual void emitFunctionCall(const Fragment& frag, SourceCode& result);
+    virtual void compileFunction(const Fragment& frag, SourceCode& result) const;
+    virtual void declareVariable(const Fragment::Port& port, bool assignDefault, SourceCode& result) const;
+    virtual void emitBlock(const string& block, SourceCode& result) const;
+    virtual void emitInclude(const FilePath& file, SourceCode& result) const;
+    virtual void emitVariable(const Fragment::Input& input, SourceCode& result) const;
+    virtual void emitFunctionCall(const Fragment& frag, SourceCode& result) const;
+    virtual void emitTypeDefinitions(SourceCode& result) const;
 
 protected:
-    Context& _context;
-    const Syntax& _syntax;
+    const Context& _context;
 };
 
 } // namespace Codegen

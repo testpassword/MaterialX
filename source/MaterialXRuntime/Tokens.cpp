@@ -10,7 +10,7 @@ namespace MaterialX
 
 namespace Tokens
 {
-    const RtToken INHERIT("inherit");
+    const RtToken BSDF("bsdf");
     const RtToken MATERIAL("material");
     const RtToken COLLECTION("collection");
     const RtToken GEOM("geom");
@@ -29,6 +29,7 @@ namespace Tokens
     const RtToken WIDTH("width");
     const RtToken HEIGHT("height");
     const RtToken IMPLNAME("implname");
+    const RtToken INHERIT("inherit");
     const RtToken IS_DEFAULT_VERSION("isdefaultversion");
     const RtToken KIND("kind");
     const RtToken NAMESPACE("namespace");
@@ -43,6 +44,17 @@ namespace Tokens
     const RtToken VERSION("version");
     const RtToken UIFOLDER("uifolder");
     const RtToken UNKNOWN("unknown");
+    const RtToken CONSTANT("constant");
+    const RtToken IMAGE("image");
+    const RtToken COMPARE("compare");
+    const RtToken SWITCH("switch");
+    const RtToken SCATTER_MODE("scatter_mode");
+    const RtToken BSDF_R("R");
+    const RtToken BSDF_T("T");
+    const RtToken TEXTURE2D_GROUPNAME("texture2d");
+    const RtToken TEXTURE3D_GROUPNAME("texture3d");
+    const RtToken PROCEDURAL2D_GROUPNAME("procedural2d");
+    const RtToken PROCEDURAL3D_GROUPNAME("procedural3d");
 }
 
 }

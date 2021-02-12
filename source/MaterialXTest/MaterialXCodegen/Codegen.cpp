@@ -39,9 +39,13 @@ namespace
 
 TEST_CASE("Codegen: Fragments from source", "[codegen]")
 {
+    mx::RtScopedApiHandle api;
+    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+    api->setSearchPath(searchPath);
+
     mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
     mx::Codegen::ContextPtr contex = mx::Codegen::OslContext::create(options);
-    const mx::Codegen::FragmentGenerator& generator = contex->getGenerator();
+    mx::Codegen::FragmentGeneratorPtr generator = contex->createGenerator();
 
     const std::string addSource =
         "void add(float a, float b, output float result)\n"  \
@@ -54,28 +58,28 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
         "   result = a * b;\n"                                    \
         "}\n";
 
-    mx::Codegen::FragmentPtr multiply1 = generator.createFragment(mx::RtToken("mult1"));
+    mx::Codegen::FragmentPtr multiply1 = generator->createFragment(mx::RtToken("mult1"));
     multiply1->createInput(mx::RtType::FLOAT, IN1);
     multiply1->createInput(mx::RtType::FLOAT, IN2);
     multiply1->createOutput(mx::RtType::FLOAT, OUT);
     multiply1->setFunctionName(MULTIPLY);
     multiply1->setSourceCode(multiplySource);
 
-    mx::Codegen::FragmentPtr multiply2 = generator.createFragment(mx::RtToken("mult2"));
+    mx::Codegen::FragmentPtr multiply2 = generator->createFragment(mx::RtToken("mult2"));
     multiply2->createInput(mx::RtType::FLOAT, IN1);
     multiply2->createInput(mx::RtType::FLOAT, IN2);
     multiply2->createOutput(mx::RtType::FLOAT, OUT);
     multiply2->setFunctionName(MULTIPLY);
     multiply2->setSourceCode(multiplySource);
 
-    mx::Codegen::FragmentPtr add1 = generator.createFragment(mx::RtToken("add1"));
+    mx::Codegen::FragmentPtr add1 = generator->createFragment(mx::RtToken("add1"));
     add1->createInput(mx::RtType::FLOAT, IN1);
     add1->createInput(mx::RtType::FLOAT, IN2);
     add1->createOutput(mx::RtType::FLOAT, OUT);
     add1->setFunctionName(ADD);
     add1->setSourceCode(addSource);
 
-    mx::Codegen::FragmentGraphPtr graph = generator.createFragmentGraph(mx::RtToken("testgraph"));
+    mx::Codegen::FragmentGraphPtr graph = generator->createFragmentGraph(mx::RtToken("testgraph"));
     graph->addFragment(add1);
     graph->addFragment(multiply1);
     graph->addFragment(multiply2);
@@ -90,24 +94,19 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
     graph->createOutput(mx::RtType::FLOAT, OUT);
     graph->connect(add1->getOutput(), graph->getOutputSocket(OUT));
 
-    graph->finalize();
+    mx::Codegen::FragmentCompilerPtr compiler = contex->createCompiler();
+    graph->precompile(*compiler);
 
-    mx::Codegen::FragmentCompiler compiler(*contex);
-
-    mx::Codegen::SourceCode sourceCode;
-    compiler.compileFunction(*graph, sourceCode);
-
-    std::cout << sourceCode.asString() << std::endl;
+    std::cout << graph->getSourceCode() << std::endl;
 }
 
 TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
 {
-    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
-
     mx::RtScopedApiHandle api;
+    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+    api->setSearchPath(searchPath);
 
     // Load in standard libraries.
-    api->setSearchPath(searchPath);
     mx::RtReadOptions readOptions;
     api->loadLibrary(TARGETS, readOptions);
     api->loadLibrary(STDLIB, readOptions);
@@ -120,16 +119,14 @@ TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
     mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
     mx::Codegen::ContextPtr contex = mx::Codegen::OslContext::create(options);
 
-    const mx::Codegen::FragmentGenerator& generator = contex->getGenerator();
-    mx::Codegen::FragmentPtr frag = generator.createFragment(graph);
+    mx::Codegen::FragmentGeneratorPtr generator = contex->createGenerator();
+    mx::Codegen::FragmentCompilerPtr compiler = contex->createCompiler();
+
+    mx::Codegen::FragmentPtr frag = generator->createFragment(graph);
     REQUIRE(frag);
 
-    mx::Codegen::FragmentCompiler compiler(*contex);
-
     mx::Codegen::SourceCode sourceCode;
-    compiler.compileFunction(*frag, sourceCode);
-    sourceCode.newLine();
-    compiler.emitFunctionCall(*frag, sourceCode);
+    compiler->compileShader(*frag->getOutput(0), sourceCode);
 
     std::cout << sourceCode.asString() << std::endl;
 }

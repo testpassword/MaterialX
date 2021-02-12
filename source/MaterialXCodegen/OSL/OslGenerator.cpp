@@ -7,32 +7,21 @@
 #include <MaterialXCodegen/OSL/OslSyntax.h>
 #include <MaterialXCodegen/OSL/OslContext.h>
 
+#include <MaterialXRuntime/RtApi.h>
+
 namespace MaterialX
 {
 namespace Codegen
 {
 
-const RtToken OslGenerator::TARGET("genosl");
-
-OslGenerator::OslGenerator(OptionsPtr options) :
-    FragmentGenerator(options),
-    _syntax(OslSyntax::create())
+OslGenerator::OslGenerator(const Context& context) :
+    FragmentGenerator(context)
 {
 }
 
-FragmentGeneratorPtr OslGenerator::create(OptionsPtr options)
+FragmentGeneratorPtr OslGenerator::create(const Context& context)
 {
-    return FragmentGeneratorPtr(new OslGenerator(options));
-}
-
-const RtToken& OslGenerator::getTarget() const
-{
-    return TARGET;
-}
-
-const Syntax& OslGenerator::getSyntax() const
-{
-    return *_syntax;
+    return FragmentGeneratorPtr(new OslGenerator(context));
 }
 
 } // namespace Codegen

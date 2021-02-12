@@ -17,6 +17,7 @@ namespace MaterialX
 /// Namespace of commonly used tokens.
 namespace Tokens
 {
+    extern const RtToken BSDF;
     extern const RtToken MATERIAL;
     extern const RtToken COLLECTION;
     extern const RtToken GEOM;
@@ -51,6 +52,17 @@ namespace Tokens
     extern const RtToken UIFOLDER;
     extern const RtToken VERSION;
     extern const RtToken UNKNOWN;
+    extern const RtToken CONSTANT;
+    extern const RtToken IMAGE;
+    extern const RtToken COMPARE;
+    extern const RtToken SWITCH;
+    extern const RtToken SCATTER_MODE;
+    extern const RtToken BSDF_R;
+    extern const RtToken BSDF_T;
+    extern const RtToken TEXTURE2D_GROUPNAME;
+    extern const RtToken TEXTURE3D_GROUPNAME;
+    extern const RtToken PROCEDURAL2D_GROUPNAME;
+    extern const RtToken PROCEDURAL3D_GROUPNAME;
 };
 
 }
