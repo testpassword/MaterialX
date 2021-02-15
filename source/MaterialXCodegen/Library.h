@@ -21,19 +21,21 @@ class Syntax;
 class TypeSyntax;
 class Options;
 class Context;
-class Fragment;
-class FragmentGraph;
 class FragmentGenerator;
 class FragmentCompiler;
+class Fragment;
+class FragmentGraph;
+class SourceFragment;
 
 using SyntaxPtr = RtSharedPtr<Syntax>;
 using TypeSyntaxPtr = RtSharedPtr<TypeSyntax>;
-using FragmentPtr = RtSharedPtr<Fragment>;
-using FragmentGraphPtr = RtSharedPtr<FragmentGraph>;
 using OptionsPtr = RtSharedPtr<Options>;
 using ContextPtr = RtSharedPtr<Context>;
 using FragmentGeneratorPtr = RtSharedPtr<FragmentGenerator>;
 using FragmentCompilerPtr = RtSharedPtr<FragmentCompiler>;
+using FragmentPtr = RtSharedPtr<Fragment>;
+using FragmentGraphPtr = RtSharedPtr<FragmentGraph>;
+using SourceFragmentPtr = RtSharedPtr<SourceFragment>;
 
 } // namespace Codegen
 } // namespace MaterialX

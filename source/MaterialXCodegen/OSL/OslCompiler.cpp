@@ -48,6 +48,13 @@ void OslCompiler::compileShader(const Fragment::Output& output, SourceCode& resu
     result.addLine("#define GGX_DIRECTIONAL_ALBEDO_TABLE \"" + albedoTableFile.asString(FilePath::FormatPosix) + "\"", false);
     result.newLine();
 
+    // Emit all function definitions.
+    for (size_t i = 0; i < graph->numFragments(); ++i)
+    {
+        const Fragment* child = graph->getFragment(i);
+        child->emitFunctionDefinitions(_context, result);
+    }
+
     // Begin shader signature.
     if (output.type == RtType::SURFACESHADER)
     {
@@ -92,7 +99,7 @@ void OslCompiler::compileShader(const Fragment::Output& output, SourceCode& resu
     for (size_t i = 0; i < graph->numFragments(); ++i)
     {
         const Fragment* child = graph->getFragment(i);
-        emitFunctionCall(*child, result);
+        child->emitFunctionCall(_context, result);
     }
 
     // Emit final results

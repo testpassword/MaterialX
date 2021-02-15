@@ -31,11 +31,6 @@ FragmentGenerator::FragmentGenerator(const Context& context) :
 {
 }
 
-FragmentPtr FragmentGenerator::createFragment(const RtToken& name) const
-{
-    return FragmentPtr(new Fragment(name));
-}
-
 FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
 {
     const RtToken& target = _context.getTarget();
@@ -61,7 +56,7 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
 
     RtNodeImpl nodeimpl(nodeImplPrim);
 
-    FragmentPtr frag = createFragment(node.getName());
+    FragmentPtr frag = SourceFragment::create(node.getName());
     for (RtAttribute attr : nodedef.getInputs())
     {
         Fragment::Input* input = frag->createInput(attr.getType(), attr.getName());
@@ -72,45 +67,42 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
         frag->createOutput(attr.getType(), attr.getName());
     }
 
-    string source = nodeimpl.getSourceCode();
-    if (source.empty())
+    const RtToken& function = nodeimpl.getFunction();
+    frag->setFunctionName(function);
+    frag->setClass(getClassMask(node));
+
+    RtTypedValue* sourceCodeData = nodeimpl.addMetadata(Tokens::SOURCECODE, RtType::STRING);
+    string* contentPtr = &sourceCodeData->getValue().asString();
+    if (contentPtr->empty())
     {
-        // TODO: Don't read the file for every new fragment. Store source string in the nodeimpl instead?
         const FilePath path = RtApi::get().getSearchPath().find(nodeimpl.getFile());
-        source = readFile(path);
-        if (source.empty())
+        *contentPtr = readFile(path);
+        if (contentPtr->empty())
         {
             throw ExceptionRuntimeError("Failed to get source code from file '" + path.asString() +
                 "' used by implementation '" + nodeimpl.getName().str() + "'");
         }
+
+        // Remove newline if it's an inline expression.
+        if (function == EMPTY_TOKEN)
+        {
+            contentPtr->erase(std::remove(contentPtr->begin(), contentPtr->end(), '\n'), contentPtr->end());
+        }
     }
 
-    const RtToken& function = nodeimpl.getFunction();
-    if (function == EMPTY_TOKEN)
-    {
-        // Remove any newlines from inline expression.
-        source.erase(std::remove(source.begin(), source.end(), '\n'), source.end());
-    }
-
-    frag->setFunctionName(function);
-    frag->setSourceCode(source);
-    frag->setClass(getClassMask(node));
+    frag->asA<SourceFragment>()->setSourceCode(contentPtr);
 
     return frag;
 }
 
-FragmentGraphPtr FragmentGenerator::createFragmentGraph(const RtToken& name) const
-{
-    return FragmentGraphPtr(new FragmentGraph(name));
-}
-
-FragmentGraphPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool publishAllInputs) const
+FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool publishAllInputs) const
 {
     if (node.getPrim().hasApi<RtNodeGraph>())
     {
         RtNodeGraph nodegraph(node.getPrim());
 
-        FragmentGraphPtr graph = createFragmentGraph(nodegraph.getName());
+        FragmentPtr graphFragment = FragmentGraph::create(nodegraph.getName());
+        FragmentGraph* graph = graphFragment->asA<FragmentGraph>();
         for (RtAttribute attr : nodegraph.getInputs())
         {
             Fragment::Input* input = graph->createInput(attr.getType(), attr.getName());
@@ -169,7 +161,7 @@ FragmentGraphPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool
 
         graph->finalize(_context, publishAllInputs);
 
-        return graph;
+        return graphFragment;
     }
 
     return nullptr;

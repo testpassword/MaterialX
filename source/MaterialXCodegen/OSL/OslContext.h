@@ -37,14 +37,16 @@ class OslContext : public Context
     /// Return the syntax object for this target.
     const Syntax& getSyntax() const override;
 
-    /// Create a fragment generator for this target.
-    FragmentGeneratorPtr createGenerator() const override;
+    /// Get the fragment generator for this target.
+    const FragmentGenerator& getGenerator() const override;
 
-    /// Create a fragment compiler for this target.
-    FragmentCompilerPtr createCompiler() const override;
+    /// Get the fragment compiler for this target.
+    const FragmentCompiler& getCompiler() const override;
 
   protected:
     SyntaxPtr _syntax;
+    FragmentGeneratorPtr _generator;
+    FragmentCompilerPtr _compiler;
 };
 
 } // namespace Codegen

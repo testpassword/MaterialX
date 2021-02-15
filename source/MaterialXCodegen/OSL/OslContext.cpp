@@ -17,7 +17,9 @@ const RtToken OslContext::TARGET("genosl");
 
 OslContext::OslContext(OptionsPtr options) :
     Context(options),
-    _syntax(OslSyntax::create())
+    _syntax(OslSyntax::create()),
+    _generator(OslGenerator::create(*this)),
+    _compiler(OslCompiler::create(*this))
 {
     static const string T_FILE_TRANSFORM_UV = "$fileTransformUv";
 
@@ -31,6 +33,7 @@ OslContext::OslContext(OptionsPtr options) :
     {
         _substitutions[T_FILE_TRANSFORM_UV] = "stdlib/" + TARGET.str() + "/lib/mx_transform_uv.osl";
     }
+
 }
 
 ContextPtr OslContext::create(OptionsPtr options)
@@ -48,14 +51,14 @@ const Syntax& OslContext::getSyntax() const
     return *_syntax;
 }
 
-FragmentGeneratorPtr OslContext::createGenerator() const
+const FragmentGenerator& OslContext::getGenerator() const
 {
-    return OslGenerator::create(*this);
+    return *_generator;
 }
 
-FragmentCompilerPtr OslContext::createCompiler() const
+const FragmentCompiler& OslContext::getCompiler() const
 {
-    return OslCompiler::create(*this);
+    return *_compiler;
 }
 
 } // namespace Codegen

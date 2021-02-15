@@ -67,11 +67,11 @@ public:
     /// Return the syntax object for this target.
     virtual const Syntax& getSyntax() const = 0;
 
-    /// Create a fragment generator for this target.
-    virtual FragmentGeneratorPtr createGenerator() const = 0;
+    /// Get the fragment generator for this target.
+    virtual const FragmentGenerator& getGenerator() const = 0;
 
-    /// Create a fragment compiler for this target.
-    virtual FragmentCompilerPtr createCompiler() const = 0;
+    /// Get the fragment compiler for this target.
+    virtual const FragmentCompiler& getCompiler() const = 0;
 
     /// Return the options instance.
     const Options& getOptions() const

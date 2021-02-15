@@ -73,6 +73,11 @@ FragmentGraph::FragmentGraph(const RtToken& name) :
 {
 }
 
+FragmentPtr FragmentGraph::create(const RtToken& name)
+{
+    return FragmentPtr(new FragmentGraph(name));
+}
+
 void FragmentGraph::addFragment(const FragmentPtr& fragment)
 {
     if (getFragment(fragment->getName()))
@@ -182,11 +187,7 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
                 Input* input = fragment->getInput(j);
                 if (!input->connection)
                 {
-                    // Use a consistent naming convention: <fragmentname>_<inputname>
-                    // so application side can figure out what uniforms to set
-                    // when node inputs change on application side.
-                    const string validName = fragment->getName().str() + "_" + input->name.str();
-                    const RtToken name(validName);
+                    const RtToken name(input->getLongName());
                     Input* external = createInput(input->type, name);
                     Output* socket = getInputSocket(external->name);
                     connect(socket, input);
@@ -247,7 +248,7 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
         for (size_t j = 0; j < fragment->numInputs(); ++j)
         {
             const Input* input = fragment->getInput(j);
-            if (input->connection && input->connection->parent->getType() != FRAGMENT_TYPE_GRAPH)
+            if (input->connection && input->connection->parent != this)
             {
                 ++connectionCount;
             }
@@ -280,7 +281,7 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
             const Output* output = fragment->getOutput(i);
             for (const Input* downstream : output->connections)
             {
-                if (downstream->parent->getType() != FRAGMENT_TYPE_GRAPH)
+                if (downstream->parent != this)
                 {
                     Fragment* downstreamFragment = downstream->parent;
                     if (--inDegree[downstreamFragment] <= 0)
@@ -303,12 +304,236 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
     _class = rootFragment->getClassMask();
 }
 
-void FragmentGraph::precompile(const FragmentCompiler& compiler)
+void FragmentGraph::emitFunctionDefinitions(const Context& context, SourceCode& result) const
 {
-    SourceCode result;
-    compiler.compileFunction(*this, result);
-    setSourceCode(result.asString());
+    // Make sure it's not defined already.
+    if (result.isDefined(_functionName))
+    {
+        return;
+    }
+    result.setDefined(_functionName);
+
+    const FragmentCompiler& compiler = context.getCompiler();
+
+    for (size_t i = 0; i < numFragments(); ++i)
+    {
+        const Fragment* child = getFragment(i);
+        child->emitFunctionDefinitions(context, result);
+    }
+
+    result.beginLine();
+    result.addString("void " + _functionName.str() + "(");
+
+    string delim = "";
+
+    // Add all inputs
+    for (size_t i = 0; i < numInputs(); ++i)
+    {
+        result.addString(delim);
+        const Fragment::Input* input = getInput(i);
+        compiler.declareVariable(*input, false, result);
+        delim = ", ";
+    }
+
+    // Add all outputs
+    for (size_t i = 0; i < numOutputs(); ++i)
+    {
+        result.addString(delim);
+        const Fragment::Output* output = getOutput(i);
+        result.addString(context.getSyntax().getOutputQualifier());
+        compiler.declareVariable(*output, false, result);
+        delim = ", ";
+    }
+    result.addString(")");
+    result.endLine(false);
+
+    result.beginScope();
+
+    for (size_t i = 0; i < numFragments(); ++i)
+    {
+        const Fragment* child = getFragment(i);
+        child->emitFunctionCall(context, result);
+    }
+
+    // Emit final results
+    for (size_t i = 0; i < numOutputs(); ++i)
+    {
+        const Fragment::Input* outputSocket = getOutputSocket(i);
+        result.beginLine();
+        result.addString(outputSocket->variable.str() + " = ");
+        compiler.emitVariable(*outputSocket, result);
+        result.endLine();
+    }
+
+    result.endScope();
+    result.newLine();
 }
+
+void FragmentGraph::emitFunctionCall(const Context& context, SourceCode& result) const
+{
+    const FragmentCompiler& compiler = context.getCompiler();
+
+    // Declare all outputs.
+    for (size_t i = 0; i < numOutputs(); ++i)
+    {
+        const Fragment::Output* output = getOutput(i);
+        result.beginLine();
+        compiler.declareVariable(*output, true, result);
+        result.endLine();
+    }
+
+    result.beginLine();
+    result.addString(_functionName.str() + "(");
+
+    string delim = "";
+
+    // Add all inputs
+    for (size_t i = 0; i < numInputs(); ++i)
+    {
+        const Fragment::Input* input = getInput(i);
+        result.addString(delim);
+        compiler.emitVariable(*input, result);
+        delim = ", ";
+    }
+
+    // Add all outputs
+    for (size_t i = 0; i < numOutputs(); ++i)
+    {
+        const Fragment::Output* output = getOutput(i);
+        result.addString(delim + output->variable.str());
+        delim = ", ";
+    }
+    result.addString(")");
+    result.endLine();
+}
+
+
+SourceFragment::SourceFragment(const RtToken& name) :
+    Fragment(name),
+    _sourceCode(nullptr)
+{
+}
+
+FragmentPtr SourceFragment::create(const RtToken& name)
+{
+    return SourceFragmentPtr(new SourceFragment(name));
+}
+
+void SourceFragment::emitFunctionDefinitions(const Context& context, SourceCode& result) const
+{
+    if (!isInline() && !result.isDefined(_functionName))
+    {
+        // Emit the source code definition.
+        context.getCompiler().emitBlock(*_sourceCode, result);
+        result.newLine();
+
+        // Mark this function as defined in the source code.
+        result.setDefined(_functionName);
+    }
+}
+
+void SourceFragment::emitFunctionCall(const Context& context, SourceCode& result) const
+{
+    const FragmentCompiler& compiler = context.getCompiler();
+
+    if (isInline())
+    {
+        // An inline expression.
+        const string& source = *_sourceCode;
+        const Syntax& syntax = context.getSyntax();
+
+        static const string prefix("{{");
+        static const string postfix("}}");
+
+        size_t pos = 0;
+        size_t i = source.find_first_of(prefix);
+        StringSet localVariableNames;
+        SourceCode inlineResult;
+        while (i != string::npos)
+        {
+            inlineResult.addString(source.substr(pos, i - pos));
+            size_t j = source.find_first_of(postfix, i + 2);
+            if (j == string::npos)
+            {
+                throw ExceptionRuntimeError("Malformed inline expression in source code for fragment " + getName().str());
+            }
+
+            const RtToken variable(source.substr(i + 2, j - i - 2));
+            const Fragment::Input* input = getInput(variable);
+            if (!input)
+            {
+                throw ExceptionRuntimeError("Could not find an input named '" + variable.str() + "' on fragment '" + getName().str() + "'");
+            }
+
+            if (input->connection)
+            {
+                compiler.emitVariable(*input, inlineResult);
+            }
+            else
+            {
+                // Declare a local variable with this value.
+                // TODO: We should make a valid unique identifier name.
+                const string variableName = input->getLongName() + "_tmp";
+                if (!localVariableNames.count(variableName))
+                {
+                    result.beginLine();
+                    const string& qualifier = syntax.getConstantQualifier();
+                    result.addString(qualifier.empty() ? EMPTY_STRING : qualifier + " ");
+                    result.addString(syntax.getTypeName(input->type) + " " + input->variable.str() + " = " + syntax.getValue(input->type, input->value));
+                    result.endLine();
+                    localVariableNames.insert(variableName);
+                }
+                inlineResult.addString(variableName);
+            }
+
+            pos = j + 2;
+            i = source.find_first_of(prefix, pos);
+        }
+        inlineResult.addString(source.substr(pos));
+
+        result.beginLine();
+        compiler.declareVariable(*getOutput(), false, result);
+        result.addString(" = " + inlineResult.asString());
+        result.endLine();
+
+    }
+    else
+    {
+        // Declare all outputs.
+        for (size_t i = 0; i < numOutputs(); ++i)
+        {
+            const Fragment::Output* output = getOutput(i);
+            result.beginLine();
+            compiler.declareVariable(*output, true, result);
+            result.endLine();
+        }
+
+        result.beginLine();
+        result.addString(_functionName.str() + "(");
+
+        string delim = "";
+
+        // Add all inputs
+        for (size_t i = 0; i < numInputs(); ++i)
+        {
+            const Fragment::Input* input = getInput(i);
+            result.addString(delim);
+            compiler.emitVariable(*input, result);
+            delim = ", ";
+        }
+
+        // Add all outputs
+        for (size_t i = 0; i < numOutputs(); ++i)
+        {
+            const Fragment::Output* output = getOutput(i);
+            result.addString(delim + output->variable.str());
+            delim = ", ";
+        }
+        result.addString(")");
+        result.endLine();
+    }
+}
+
 
 } // namespace Codegen
 } // namespace MaterialX
