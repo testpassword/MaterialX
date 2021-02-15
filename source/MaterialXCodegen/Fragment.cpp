@@ -178,7 +178,7 @@ Fragment::Output* FragmentGraph::createOutput(const RtToken& type, const RtToken
 void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
 {
     //
-    // Prepare the graph for compilation
+    // Finalize the graph construction.
     //
     const size_t numFragments = _fragments.size();
 

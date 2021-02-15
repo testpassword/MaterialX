@@ -38,7 +38,7 @@ void OslCompiler::compileShader(const Fragment::Output& output, SourceCode& resu
     const FilePath albedoTableFile = RtApi::get().getSearchPath().find("resources/Lights/AlbedoTable.exr");
     
     // Add include files.
-    result.addLine("#include \"" + includeFile.asString(FilePath::FormatPosix) + "\"");
+    result.addLine("#include \"" + includeFile.asString(FilePath::FormatPosix) + "\"", false);
 
     // Add global constants and type definitions.
     emitTypeDefinitions(result);

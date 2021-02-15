@@ -40,15 +40,18 @@ namespace
 
 TEST_CASE("Codegen: Fragments from source", "[codegen]")
 {
+    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath());
+    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries/stdlib/osl"));
+
     mx::RtScopedApiHandle api;
-    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
 
     mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
     mx::Codegen::ContextPtr context = mx::Codegen::OslContext::create(options);
 
     const std::string addSource =
-        "void add(float a, float b, output float result)\n"  \
+        "void add(float a, float b, output float result)\n"       \
         "{\n"                                                     \
         "   result = a + b;\n"                                    \
         "}\n";
@@ -135,8 +138,11 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
 
 TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
 {
+    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath());
+    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries/stdlib/osl"));
+
     mx::RtScopedApiHandle api;
-    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
 
     // Load in standard libraries.
