@@ -91,7 +91,7 @@ void OslCompiler::compileShader(const Fragment::Output& output, SourceCode& resu
     // Emit shader body.
     result.beginScope();
 
-    if (graph->isClass(FragmentClass::CLOSURE))
+    if (graph->hasClassification(FragmentClassification::CLOSURE))
     {
         result.addLine("closure color null_closure = 0");
     }

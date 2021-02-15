@@ -10,6 +10,7 @@
 /// TODO: Docs
 
 #include <MaterialXCodegen/Library.h>
+#include <MaterialXCodegen/Fragment.h>
 
 #include <MaterialXRuntime/RtToken.h>
 
@@ -26,6 +27,9 @@ class FragmentGenerator : public RtSharedBase<FragmentGenerator>
     /// Destructor.
     virtual ~FragmentGenerator() {}
 
+    /// Create a fragment instance of the given class with the given name.
+    virtual FragmentPtr createFragment(const RtToken& className, const RtToken& instanceName) const;
+
     /// Create a fragment from the given node or nodegraph.
     virtual FragmentPtr createFragment(const RtNode& node) const;
 
@@ -34,13 +38,21 @@ class FragmentGenerator : public RtSharedBase<FragmentGenerator>
     /// all upstream dependencies.
     virtual FragmentPtr createFragmentGraph(const RtNode& node, bool publishAllInputs = false) const;
 
+    /// Register a creator function for a fragment class.
+    void registerFragmentClass(const RtToken& className, FragmentCreatorFunction creator);
+
   protected:
     /// Constructor.
     FragmentGenerator(const Context& context);
 
-    virtual uint32_t getClassMask(const RtNode& node) const;
+    /// Create a mask with classifications matcking the given node.
+    virtual uint32_t getClassificationMask(const RtNode& node) const;
 
+  protected:
     const Context& _context;
+
+    /// Creator functions for registered fragment classes.
+    RtTokenMap<FragmentCreatorFunction> _creatorFunctions;
 };
 
 } // namespace Codegen

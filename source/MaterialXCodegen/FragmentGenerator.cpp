@@ -29,12 +29,18 @@ namespace Codegen
 FragmentGenerator::FragmentGenerator(const Context& context) :
     _context(context)
 {
+    registerFragmentClass(FragmentGraph::className(), FragmentGraph::create);
+    registerFragmentClass(SourceFragment::className(), SourceFragment::create);
+}
+
+FragmentPtr FragmentGenerator::createFragment(const RtToken& className, const RtToken& instanceName) const
+{
+    auto it = _creatorFunctions.find(className);
+    return it != _creatorFunctions.end() ? it->second(instanceName) : nullptr;
 }
 
 FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
 {
-    const RtToken& target = _context.getTarget();
-
     if (node.getPrim().hasApi<RtNodeGraph>())
     {
         return createFragmentGraph(node);
@@ -46,6 +52,8 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
         throw ExceptionRuntimeError("No valid nodedef found for node '" + node.getName().str() + "'");
     }
 
+    const RtToken& target = _context.getTarget();
+
     RtNodeDef nodedef(nodedefPrim);
     RtPrim nodeImplPrim = nodedef.getNodeImpl(target);
     if (!(nodeImplPrim && nodeImplPrim.hasApi<RtNodeImpl>()))
@@ -56,7 +64,16 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
 
     RtNodeImpl nodeimpl(nodeImplPrim);
 
-    FragmentPtr frag = SourceFragment::create(node.getName());
+    // Try creation from the nodeimpl name (fragment class name).
+    FragmentPtr frag = createFragment(nodeimpl.getName(), node.getName());
+    if (!frag)
+    {
+        // No fragment of this class has been registerd so
+        // fallback to a source fragment as default class.
+        frag = SourceFragment::create(node.getName());
+    }
+
+    // Create fragment ports according to the nodedef.
     for (RtAttribute attr : nodedef.getInputs())
     {
         Fragment::Input* input = frag->createInput(attr.getType(), attr.getName());
@@ -69,28 +86,36 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
 
     const RtToken& function = nodeimpl.getFunction();
     frag->setFunctionName(function);
-    frag->setClass(getClassMask(node));
+    frag->setClassification(getClassificationMask(node));
 
-    RtTypedValue* sourceCodeData = nodeimpl.addMetadata(Tokens::SOURCECODE, RtType::STRING);
-    string* contentPtr = &sourceCodeData->getValue().asString();
-    if (contentPtr->empty())
+    if (frag->getType() == FRAGMENT_TYPE_SOURCE_CODE)
     {
-        const FilePath path = RtApi::get().getSearchPath().find(nodeimpl.getFile());
-        *contentPtr = readFile(path);
+        SourceFragment* sourceFragment = frag->asA<SourceFragment>();
+
+        // Get the source code from metadata on the nodeimpl.
+        RtTypedValue* sourceCodeData = nodeimpl.addMetadata(Tokens::SOURCECODE, RtType::STRING);
+        string* contentPtr = &sourceCodeData->getValue().asString();
         if (contentPtr->empty())
         {
-            throw ExceptionRuntimeError("Failed to get source code from file '" + path.asString() +
-                "' used by implementation '" + nodeimpl.getName().str() + "'");
+            // No source given so try loading it from file.
+            const FilePath path = RtApi::get().getSearchPath().find(nodeimpl.getFile());
+            *contentPtr = readFile(path);
+            if (contentPtr->empty())
+            {
+                throw ExceptionRuntimeError("Failed to get source code from file '" + path.asString() +
+                    "' used by implementation '" + nodeimpl.getName().str() + "'");
+            }
+
+            // Remove newline if it's an inline expression.
+            if (sourceFragment->isInline())
+            {
+                contentPtr->erase(std::remove(contentPtr->begin(), contentPtr->end(), '\n'), contentPtr->end());
+            }
         }
 
-        // Remove newline if it's an inline expression.
-        if (function == EMPTY_TOKEN)
-        {
-            contentPtr->erase(std::remove(contentPtr->begin(), contentPtr->end(), '\n'), contentPtr->end());
-        }
+        // Assign this source code to the fragment.
+        sourceFragment->setSourceCode(contentPtr);
     }
-
-    frag->asA<SourceFragment>()->setSourceCode(contentPtr);
 
     return frag;
 }
@@ -167,7 +192,14 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool publ
     return nullptr;
 }
 
-uint32_t FragmentGenerator::getClassMask(const RtNode& node) const
+void FragmentGenerator::registerFragmentClass(const RtToken& className, FragmentCreatorFunction creator)
+{
+    // NOTE: Allow overwriting any previously registered creators
+    // in order for derived generators to override a class creator function.
+    _creatorFunctions[className] = creator;
+}
+
+uint32_t FragmentGenerator::getClassificationMask(const RtNode& node) const
 {
     RtNodeDef nodedef = node.getNodeDef();
     if (!nodedef)
@@ -179,21 +211,21 @@ uint32_t FragmentGenerator::getClassMask(const RtNode& node) const
     const RtToken nodeGroup = nodedef.getNodeGroup();
 
     // Defaulting to texture node
-    uint32_t mask = FragmentClass::TEXTURE;
+    uint32_t mask = FragmentClassification::TEXTURE;
 
     // First, check for specific output types
     const RtToken primaryOutputType = node.getOutput().getType();
     if (primaryOutputType == RtType::SURFACESHADER)
     {
-        mask = FragmentClass::SURFACE | FragmentClass::SHADER;
+        mask = FragmentClassification::SURFACE | FragmentClassification::SHADER;
     }
     else if (primaryOutputType == RtType::LIGHTSHADER)
     {
-        mask = FragmentClass::LIGHT | FragmentClass::SHADER;
+        mask = FragmentClassification::LIGHT | FragmentClassification::SHADER;
     }
     else if (primaryOutputType == RtType::BSDF)
     {
-        mask = FragmentClass::BSDF | FragmentClass::CLOSURE;
+        mask = FragmentClassification::BSDF | FragmentClassification::CLOSURE;
 
         // Add additional classifications if the BSDF is restricted to
         // only reflection or transmission
@@ -204,11 +236,11 @@ uint32_t FragmentGenerator::getClassMask(const RtNode& node) const
             const RtToken val = bsdf->getValue().asToken();
             if (val == Tokens::BSDF_R)
             {
-                mask |= FragmentClass::BSDF_R;
+                mask |= FragmentClassification::BSDF_R;
             }
             else if (val == Tokens::BSDF_T)
             {
-                mask |= FragmentClass::BSDF_T;
+                mask |= FragmentClassification::BSDF_T;
             }
         }
 
@@ -217,49 +249,49 @@ uint32_t FragmentGenerator::getClassMask(const RtNode& node) const
         static const RtToken ND_thin_film_bsdf("ND_thin_film_bsdf");
         if (nodedef.getName() == ND_layer_bsdf)
         {
-            mask |= FragmentClass::LAYER;
+            mask |= FragmentClassification::LAYER;
         }
         // Check specifically for the thin-film node
         else if (nodedef.getName() == ND_thin_film_bsdf)
         {
-            mask |= FragmentClass::THINFILM;
+            mask |= FragmentClassification::THINFILM;
         }
     }
     else if (primaryOutputType == RtType::EDF)
     {
-        mask = FragmentClass::EDF | FragmentClass::CLOSURE;
+        mask = FragmentClassification::EDF | FragmentClassification::CLOSURE;
     }
     else if (primaryOutputType == RtType::VDF)
     {
-        mask = FragmentClass::VDF | FragmentClass::CLOSURE;
+        mask = FragmentClassification::VDF | FragmentClassification::CLOSURE;
     }
     // Second, check for specific nodes types
     else if (nodeType == Tokens::CONSTANT)
     {
-        mask = FragmentClass::TEXTURE | FragmentClass::CONSTANT;
+        mask = FragmentClassification::TEXTURE | FragmentClassification::CONSTANT;
     }
     else if (nodeType == Tokens::COMPARE)
     {
-        mask = FragmentClass::TEXTURE | FragmentClass::CONDITIONAL | FragmentClass::IFELSE;
+        mask = FragmentClassification::TEXTURE | FragmentClassification::CONDITIONAL | FragmentClassification::IFELSE;
     }
     else if (nodeType == Tokens::SWITCH)
     {
-        mask = FragmentClass::TEXTURE | FragmentClass::CONDITIONAL | FragmentClass::SWITCH;
+        mask = FragmentClassification::TEXTURE | FragmentClassification::CONDITIONAL | FragmentClassification::SWITCH;
     }
     // Third, check for file texture classification by group name
     else if (nodeGroup == Tokens::TEXTURE2D_GROUPNAME || nodeGroup == Tokens::TEXTURE3D_GROUPNAME)
     {
-        mask = FragmentClass::TEXTURE | FragmentClass::FILETEXTURE;
+        mask = FragmentClassification::TEXTURE | FragmentClassification::FILETEXTURE;
     }
 
     // Add in group classification
     if (nodeGroup == Tokens::TEXTURE2D_GROUPNAME || nodeGroup == Tokens::PROCEDURAL2D_GROUPNAME)
     {
-        mask |= FragmentClass::SAMPLE2D;
+        mask |= FragmentClassification::SAMPLE2D;
     }
     else if (nodeGroup == Tokens::TEXTURE3D_GROUPNAME || nodeGroup == Tokens::PROCEDURAL3D_GROUPNAME)
     {
-        mask |= FragmentClass::SAMPLE3D;
+        mask |= FragmentClassification::SAMPLE3D;
     }
 
     return mask;

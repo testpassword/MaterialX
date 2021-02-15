@@ -34,8 +34,6 @@ using ContextPtr = RtSharedPtr<Context>;
 using FragmentGeneratorPtr = RtSharedPtr<FragmentGenerator>;
 using FragmentCompilerPtr = RtSharedPtr<FragmentCompiler>;
 using FragmentPtr = RtSharedPtr<Fragment>;
-using FragmentGraphPtr = RtSharedPtr<FragmentGraph>;
-using SourceFragmentPtr = RtSharedPtr<SourceFragment>;
 
 } // namespace Codegen
 } // namespace MaterialX

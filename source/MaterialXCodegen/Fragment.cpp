@@ -22,7 +22,7 @@ namespace Codegen
 
 Fragment::Fragment(const RtToken& name) :
     _name(name),
-    _class(FragmentClass::TEXTURE),
+    _classification(FragmentClassification::TEXTURE),
     _functionName(name)
 {
 }
@@ -76,6 +76,12 @@ FragmentGraph::FragmentGraph(const RtToken& name) :
 FragmentPtr FragmentGraph::create(const RtToken& name)
 {
     return FragmentPtr(new FragmentGraph(name));
+}
+
+const RtToken& FragmentGraph::className()
+{
+    static const RtToken CLASS_NAME("FragmentGraph");
+    return CLASS_NAME;
 }
 
 void FragmentGraph::addFragment(const FragmentPtr& fragment)
@@ -301,7 +307,7 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
 
     // Set classification based on the root fragment.
     Fragment* rootFragment = sortedFragments[count - 1];
-    _class = rootFragment->getClassMask();
+    _classification = rootFragment->getClassificationMask();
 }
 
 void FragmentGraph::emitFunctionDefinitions(const Context& context, SourceCode& result) const
@@ -416,7 +422,13 @@ SourceFragment::SourceFragment(const RtToken& name) :
 
 FragmentPtr SourceFragment::create(const RtToken& name)
 {
-    return SourceFragmentPtr(new SourceFragment(name));
+    return FragmentPtr(new SourceFragment(name));
+}
+
+const RtToken& SourceFragment::className()
+{
+    static const RtToken CLASS_NAME("SourceFragment");
+    return CLASS_NAME;
 }
 
 void SourceFragment::emitFunctionDefinitions(const Context& context, SourceCode& result) const

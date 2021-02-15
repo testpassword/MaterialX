@@ -58,6 +58,7 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
         "   result = a * b;\n"                                    \
         "}\n";
 
+    // Test explicit fragment creation.
     mx::Codegen::FragmentPtr subgraphFragment = mx::Codegen::FragmentGraph::create(mx::RtToken("subgraph"));
     mx::Codegen::FragmentGraph* subgraph = subgraphFragment->asA<mx::Codegen::FragmentGraph>();
     subgraph->createInput(mx::RtType::FLOAT, IN);
@@ -99,12 +100,14 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
         subgraph->finalize(*context);
     }
 
-    mx::Codegen::FragmentPtr maingraphFragment = mx::Codegen::FragmentGraph::create(mx::RtToken("maingraph"));
+    // Test fragment factory creation.
+    const mx::Codegen::FragmentGenerator& generator = context->getGenerator();
+    mx::Codegen::FragmentPtr maingraphFragment = generator.createFragment(mx::Codegen::FragmentGraph::className(), mx::RtToken("maingraph"));
     mx::Codegen::FragmentGraph* maingraph = maingraphFragment->asA<mx::Codegen::FragmentGraph>();
     maingraph->createInput(mx::RtType::FLOAT, IN);
     maingraph->createOutput(mx::RtType::FLOAT, OUT);
     {
-        mx::Codegen::FragmentPtr multiply = mx::Codegen::SourceFragment::create(mx::RtToken("mult"));
+        mx::Codegen::FragmentPtr multiply = generator.createFragment(mx::Codegen::SourceFragment::className(), mx::RtToken("mult"));
         multiply->createInput(mx::RtType::FLOAT, IN1);
         multiply->createInput(mx::RtType::FLOAT, IN2);
         multiply->createOutput(mx::RtType::FLOAT, OUT);
@@ -159,5 +162,5 @@ TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
     mx::Codegen::SourceCode sourceCode;
     compiler.compileShader(*frag->getOutput(), sourceCode);
 
-//    std::cout << sourceCode.asString() << std::endl;
+    std::cout << sourceCode.asString() << std::endl;
 }

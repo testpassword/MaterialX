@@ -148,7 +148,6 @@ private:
 enum FragmentType
 {
     FRAGMENT_TYPE_SOURCE_CODE,
-    FRAGMENT_TYPE_SOURCE_CODE_INLINE,
     FRAGMENT_TYPE_GRAPH,
     FRAGMENT_TYPE_BSDF,
     FRAGMENT_TYPE_SHADER,
@@ -156,7 +155,7 @@ enum FragmentType
 };
 
 /// Flags for classifying fragments into different categories.
-class FragmentClass
+class FragmentClassification
 {
 public:
     // Node classes
@@ -187,6 +186,8 @@ public:
     static const uint32_t SAMPLE3D = 1 << 19; /// Can be sampled in 3D (position)
 };
 
+/// A fragment creator function type.
+using FragmentCreatorFunction = std::function<FragmentPtr(const RtToken&)>;
 
 /// @class Fragment
 /// Class holding a fragment of code.
@@ -229,28 +230,31 @@ class Fragment : public RtSharedBase<Fragment>
     /// Destructor.
     virtual ~Fragment() {}
 
-    /// Return the fragment name.
+    /// Return the fragment type.
+    virtual FragmentType getType() const = 0;
+
+    /// Return the fragment class name.
+    virtual const RtToken& getClassName() const = 0;
+
+    /// Return the name of the fragment instance.
     const RtToken& getName() const
     {
         return _name;
     }
 
-    /// Return the fragment type.
-    virtual FragmentType getType() const = 0;
-
-    bool isClass(uint32_t mask) const
+    bool hasClassification(uint32_t mask) const
     {
-        return (_class & mask) != 0;
+        return (_classification & mask) != 0;
     }
 
-    uint32_t getClassMask() const
+    void setClassification(uint32_t mask, bool value = true)
     {
-        return _class;
+        _classification = value ? _classification | mask : _classification & ~mask;
     }
 
-    void setClass(uint32_t mask, bool value = true)
+    uint32_t getClassificationMask() const
     {
-        _class = value ? _class | mask : _class & ~mask;
+        return _classification;
     }
 
     template<class T>
@@ -319,8 +323,8 @@ class Fragment : public RtSharedBase<Fragment>
     /// Fragment name.
     const RtToken _name;
 
-    /// Fragment class mask.
-    uint32_t _class;
+    /// Fragment classification mask.
+    uint32_t _classification;
 
     /// Fragment function name.
     RtToken _functionName;
@@ -344,10 +348,19 @@ public:
     /// Create a new instance of this class.
     static FragmentPtr create(const RtToken& name);
 
+    /// Return the class name for this fragment.
+    static const RtToken& className();
+
     /// Return the fragment type.
     FragmentType getType() const override
     {
         return FRAGMENT_TYPE_GRAPH;
+    }
+
+    /// Return the fragment class name.
+    const RtToken& getClassName() const override
+    {
+        return className();
     }
 
     /// Add a fragment to the graph.
@@ -420,10 +433,19 @@ public:
     /// Create a new instance of this class.
     static FragmentPtr create(const RtToken& name);
 
+    /// Return the class name for this fragment.
+    static const RtToken& className();
+
     /// Return the fragment type.
     FragmentType getType() const override
     {
-        return isInline() ? FRAGMENT_TYPE_SOURCE_CODE_INLINE : FRAGMENT_TYPE_SOURCE_CODE;
+        return FRAGMENT_TYPE_SOURCE_CODE;
+    }
+
+    /// Return the fragment class name.
+    const RtToken& getClassName() const override
+    {
+        return className();
     }
 
     /// Set fragment source code.
