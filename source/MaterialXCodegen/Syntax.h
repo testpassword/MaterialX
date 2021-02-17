@@ -135,7 +135,7 @@ class Syntax
     void registerInvalidTokens(const StringMap& tokens);
 
     /// Returns a set of names that are reserved words for this language syntax.
-    const StringSet& getReservedWords() const { return _reservedWords; }
+    const RtTokenSet& getReservedWords() const { return _reservedWords; }
 
     /// Returns a mapping from disallowed tokens to replacement strings for this language syntax.
     const StringMap& getInvalidTokens() const { return _invalidTokens; }
@@ -266,7 +266,7 @@ class Syntax
     vector<TypeSyntaxPtr> _typeSyntaxes;
     RtTokenMap<size_t> _typeSyntaxByType;
 
-    StringSet _reservedWords;
+    RtTokenSet _reservedWords;
     StringMap _invalidTokens;
 
     static const string INCLUDE_STATEMENT;

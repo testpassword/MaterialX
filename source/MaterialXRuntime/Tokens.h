@@ -35,6 +35,7 @@ namespace Tokens
     extern const RtToken CONTAINS;
     extern const RtToken WIDTH;
     extern const RtToken HEIGHT;
+    extern const RtToken IN;
     extern const RtToken IMPLNAME;
     extern const RtToken INHERIT;
     extern const RtToken IS_DEFAULT_VERSION;
@@ -46,6 +47,7 @@ namespace Tokens
     extern const RtToken NODEGROUP;
     extern const RtToken NODEIMPL;
     extern const RtToken NOTE;
+    extern const RtToken OUT;
     extern const RtToken SHADER;
     extern const RtToken SOURCECODE;
     extern const RtToken TARGET;

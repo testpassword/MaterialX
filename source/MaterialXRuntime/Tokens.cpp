@@ -28,6 +28,7 @@ namespace Tokens
     const RtToken CONTAINS("contains");
     const RtToken WIDTH("width");
     const RtToken HEIGHT("height");
+    const RtToken IN("in");
     const RtToken IMPLNAME("implname");
     const RtToken INHERIT("inherit");
     const RtToken IS_DEFAULT_VERSION("isdefaultversion");
@@ -38,6 +39,7 @@ namespace Tokens
     const RtToken NODEGROUP("nodegroup");
     const RtToken NODEIMPL("nodeimpl");
     const RtToken NOTE("note");
+    const RtToken OUT("out");
     const RtToken SHADER("shader");
     const RtToken SOURCECODE("sourcecode");
     const RtToken TARGET("target");

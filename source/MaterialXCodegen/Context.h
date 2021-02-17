@@ -11,6 +11,7 @@
 
 #include <MaterialXCodegen/Library.h>
 #include <MaterialXCodegen/FragmentGenerator.h>
+#include <MaterialXCodegen/ColorManagement.h>
 
 #include <MaterialXRuntime/RtToken.h>
 
@@ -47,6 +48,11 @@ public:
     /// file textures need to be flipped vertically to match the target's
     /// texture space convention. By default this option is false.
     bool fileTextureVerticalFlip = false;
+
+    /// An optional override for the target color space.
+    /// Shader fragments will be generated to transform
+    /// input values and textures into this color space.
+    RtToken targetColorSpaceOverride;
 
     /// Sets the method to use for directional albedo evaluation
     /// for HW shader targets.
@@ -85,17 +91,14 @@ public:
         return *_options;
     }
 
-    /// Return the set of reserved words that should not be used
-    /// as identifiers during code generation.
-    const RtTokenSet& getReservedWords() const
+    void setColorManagementSystem(ColorManagementSystemPtr cms)
     {
-        return _reservedWords;
+        _cms = cms;
     }
 
-    /// Return the map of string substitutions used in codegen.
-    const StringMap& getSubstitutions() const
+    const ColorManagementSystem* getColorManagementSystem() const
     {
-        return _substitutions;
+        return _cms.get();
     }
 
 protected:
@@ -105,11 +108,8 @@ protected:
     // Options.
     OptionsPtr _options;
 
-    // Set of globally reserved words.
-    RtTokenSet _reservedWords;
-
-    // Map of string substitutions used by codegen.
-    StringMap _substitutions;
+    // Color management system.
+    ColorManagementSystemPtr _cms;
 };
 
 } // namespace Codegen

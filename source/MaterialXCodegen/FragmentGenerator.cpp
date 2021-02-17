@@ -39,11 +39,13 @@ FragmentPtr FragmentGenerator::createFragment(const RtToken& className, const Rt
     return it != _creatorFunctions.end() ? it->second(instanceName) : nullptr;
 }
 
-FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
+FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph& parent) const
 {
     if (node.getPrim().hasApi<RtNodeGraph>())
     {
-        return createFragmentGraph(node);
+        FragmentPtr frag = createFragmentGraph(node);
+        parent.addFragment(frag);
+        return frag;
     }
 
     RtPrim nodedefPrim = node.getNodeDef();
@@ -73,11 +75,17 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
         frag = SourceFragment::create(node.getName());
     }
 
+    // Let the parent take ownership.
+    parent.addFragment(frag);
+
     // Create fragment ports according to the nodedef.
     for (RtAttribute attr : nodedef.getInputs())
     {
         Fragment::Input* input = frag->createInput(attr.getType(), attr.getName());
-        RtValue::copy(input->type, attr.getValue(), input->value);
+
+        // Get the value from the node instance.
+        RtInput nodeInput = node.getInput(attr.getName());
+        RtValue::copy(input->type, nodeInput ? nodeInput.getValue() : attr.getValue(), input->value);
     }
     for (RtAttribute attr : nodedef.getOutputs())
     {
@@ -117,7 +125,8 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node) const
         sourceFragment->setSourceCode(contentPtr);
     }
 
-    return frag;
+    // Create any sub-fragments needed for this node.
+    return createSubFragments(node, *frag);
 }
 
 FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool publishAllInputs) const
@@ -140,8 +149,7 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool publ
 
         for (RtPrim child : nodegraph.getNodes())
         {
-            FragmentPtr childFrag = createFragment(child);
-            graph->addFragment(childFrag);
+            createFragment(child, *graph);
         }
 
         for (RtPrim child : nodegraph.getNodes())
@@ -192,11 +200,87 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool publ
     return nullptr;
 }
 
-void FragmentGenerator::registerFragmentClass(const RtToken& className, FragmentCreatorFunction creator)
+FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& fragment) const
 {
-    // NOTE: Allow overwriting any previously registered creators
-    // in order for derived generators to override a class creator function.
-    _creatorFunctions[className] = creator;
+    const ColorManagementSystem* cms = _context.getColorManagementSystem();
+    const RtToken targetSpace = _context.getOptions().targetColorSpaceOverride;
+
+    if (cms && targetSpace != EMPTY_TOKEN)
+    {
+        std::unordered_map<Fragment::Output*, ColorSpaceTransform> outputColorSpaceTransforms;
+
+        Fragment::Output* output = fragment.getOutput();
+        if (output->type == RtType::COLOR3 || output->type == RtType::COLOR4)
+        {
+            for (RtAttribute attr : node.getInputs())
+            {
+                if (attr.getType() == RtType::FILENAME)
+                {
+                    const RtToken& colorspace = attr.getColorSpace();
+                    if (colorspace != EMPTY_TOKEN)
+                    {
+                        outputColorSpaceTransforms[output] = ColorSpaceTransform(output->type, colorspace, targetSpace);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (outputColorSpaceTransforms.size())
+        {
+            FragmentGraph* parent = fragment.getParent();
+
+            FragmentPtr containerFragment = FragmentGraph::create(fragment.getName());
+            FragmentGraph* container = containerFragment->asA<FragmentGraph>();
+            for (size_t i = 0; i < fragment.numInputs(); ++i)
+            {
+                const Fragment::Input* port = fragment.getInput(i);
+                container->createInput(port->type, port->name);
+            }
+            for (size_t i = 0; i < fragment.numOutputs(); ++i)
+            {
+                const Fragment::Output* port = fragment.getOutput(i);
+                container->createOutput(port->type, port->name);
+            }
+
+            // Move the main fragment from the parent into the container.
+            FragmentPtr mainFragment = parent->removeFragment(fragment.getName());
+            container->addFragment(mainFragment);
+
+            for (size_t i = 0; i < mainFragment->numInputs(); ++i)
+            {
+                container->connect(container->getInputSocket(i), mainFragment->getInput(i));
+            }
+            for (size_t i = 0; i < mainFragment->numOutputs(); ++i)
+            {
+                FragmentPtr transformFragment = nullptr;
+                Fragment::Output* port = mainFragment->getOutput(i);
+                auto it = outputColorSpaceTransforms.find(port);
+                if (it != outputColorSpaceTransforms.end())
+                {
+                    transformFragment = cms->createFragment(it->second);
+                }
+
+                if (transformFragment)
+                {
+                    container->addFragment(transformFragment);
+                    container->connect(port, transformFragment->getInput(0));
+                    container->connect(transformFragment->getOutput(0), container->getOutputSocket(i));
+                }
+                else
+                {
+                    container->connect(port, container->getOutputSocket(i));
+                }
+            }
+
+            container->finalize(_context);
+            parent->addFragment(containerFragment);
+
+            return containerFragment;
+        }
+    }
+
+    return fragment.shared_from_this();
 }
 
 uint32_t FragmentGenerator::getClassificationMask(const RtNode& node) const
@@ -295,6 +379,13 @@ uint32_t FragmentGenerator::getClassificationMask(const RtNode& node) const
     }
 
     return mask;
+}
+
+void FragmentGenerator::registerFragmentClass(const RtToken& className, FragmentCreatorFunction creator)
+{
+    // NOTE: Allow overwriting any previously registered creators
+    // in order for derived generators to override a class creator function.
+    _creatorFunctions[className] = creator;
 }
 
 } // namespace Codegen

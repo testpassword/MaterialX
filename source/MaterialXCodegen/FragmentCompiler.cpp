@@ -202,7 +202,7 @@ void FragmentCompiler::emitInclude(const FilePath& file, SourceCode& result) con
     if (!result.isIncluded(f))
     {
         string modifiedFile = file;
-        tokenSubstitution(_context.getSubstitutions(), modifiedFile);
+        tokenSubstitution(_substitutions, modifiedFile);
         const FilePath resolvedFile = RtApi::get().getSearchPath().find(modifiedFile);
         const string content = readFile(resolvedFile);
         if (content.empty())

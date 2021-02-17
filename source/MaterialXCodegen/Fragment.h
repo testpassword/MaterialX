@@ -28,63 +28,53 @@ public:
 
     size_t size() const
     {
-        return _order.size();
+        return _objects.size();
+    }
+
+    size_t index(const RtToken& name) const
+    {
+        auto it = _indexByName.find(name);
+        return it != _indexByName.end() ? it->second : size_t(-1);
     }
 
     T* get(const RtToken& name) const
     {
-        auto it = _objects.find(name);
-        return it != _objects.end() ? it->second.get() : nullptr;
+        return get(index(name));
     }
 
-    T* get(size_t index) const
+    T* get(size_t i) const
     {
-        return index < _order.size() ? _order[index] : nullptr;
-    }
-
-    T** order()
-    {
-        return _order.data();
-    }
-
-    const T** order() const
-    {
-        return _order.data();
+        return i < _objects.size() ? _objects[i].get() : nullptr;
     }
 
     void add(const RtToken& name, const ObjectPtr& obj)
     {
-        _objects[name] = obj;
-        _order.push_back(obj.get());
+        _objects.push_back(obj);
+        _indexByName[name] = _objects.size() - 1;
     }
 
-    void remove(const RtToken& name)
+    ObjectPtr remove(const RtToken& name)
     {
-        auto i = _objects.find(name);
-        if (i != _objects.end())
+        auto it = _indexByName.find(name);
+        if (it != _indexByName.end())
         {
-            const T* ptr = i->second.get();
-            for (auto j = _order.begin(); j != _order.end(); ++j)
-            {
-                if ((*j) == ptr)
-                {
-                    _order.erase(j);
-                    break;
-                }
-            }
-            _objects.erase(i);
+            ObjectPtr obj = _objects[it->second];
+            _objects.erase(_objects.begin() + it->second);
+            _indexByName.erase(it);
+            return obj;
         }
+        return nullptr;
     }
 
     void clear()
     {
         _objects.clear();
-        _order.clear();
+        _indexByName.clear();
     }
 
 private:
-    RtTokenMap<ObjectPtr> _objects;
-    vector<T*> _order;
+    vector<ObjectPtr> _objects;
+    RtTokenMap<size_t> _indexByName;
 };
 
 
@@ -142,7 +132,6 @@ private:
     RtTokenSet _includes;
     string _code;
 };
-
 
 
 enum FragmentType
@@ -236,10 +225,32 @@ class Fragment : public RtSharedBase<Fragment>
     /// Return the fragment class name.
     virtual const RtToken& getClassName() const = 0;
 
+    /// Create a copy of this fragment.
+    virtual FragmentPtr clone() const = 0;
+
+    /// Copy data from this fragment to another.
+    /// Given fragment must be of the same type.
+    virtual void copy(Fragment& other) const;
+
     /// Return the name of the fragment instance.
     const RtToken& getName() const
     {
         return _name;
+    }
+
+    FragmentGraph* getParent()
+    {
+        return _parent;
+    }
+
+    const FragmentGraph* getParent() const
+    {
+        return _parent;
+    }
+
+    void setParent(FragmentGraph* parent)
+    {
+        _parent = parent;
     }
 
     bool hasClassification(uint32_t mask) const
@@ -321,7 +332,10 @@ class Fragment : public RtSharedBase<Fragment>
 
   protected:
     /// Fragment name.
-    const RtToken _name;
+    FragmentGraph* _parent;
+
+    /// Fragment name.
+    RtToken _name;
 
     /// Fragment classification mask.
     uint32_t _classification;
@@ -351,6 +365,13 @@ public:
     /// Return the class name for this fragment.
     static const RtToken& className();
 
+    /// Create a copy of this fragment.
+    FragmentPtr clone() const override;
+
+    /// Copy data from this fragment to another.
+    /// Given fragment must be of the same type.
+    void copy(Fragment& other) const override;
+
     /// Return the fragment type.
     FragmentType getType() const override
     {
@@ -363,11 +384,12 @@ public:
         return className();
     }
 
-    /// Add a fragment to the graph.
-    void addFragment(const FragmentPtr& fragment);
+    /// Add a fragment to the graph and make
+    /// this graph parent of the fragment.
+    void addFragment(FragmentPtr fragment);
 
-    /// Remove a fragment from the results.
-    void removeFragment(const RtToken& name);
+    /// Remove a fragment from the graph and return it.
+    FragmentPtr removeFragment(const RtToken& name);
 
     /// Return the number of fragments contained in this graph.
     size_t numFragments() const;
@@ -435,6 +457,13 @@ public:
 
     /// Return the class name for this fragment.
     static const RtToken& className();
+
+    /// Create a copy of this fragment.
+    FragmentPtr clone() const override;
+
+    /// Copy data from this fragment to another.
+    /// Given fragment must be of the same type.
+    void copy(Fragment& other) const override;
 
     /// Return the fragment type.
     FragmentType getType() const override

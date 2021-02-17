@@ -34,8 +34,21 @@ public:
     virtual void emitVariable(const Fragment::Input& input, SourceCode& result) const;
     virtual void emitTypeDefinitions(SourceCode& result) const;
 
+    /// Return the set of reserved words that should not be used
+    /// as identifiers during code generation.
+    const RtTokenSet& getReservedWords() const
+    {
+        return _reservedWords;
+    }
+
 protected:
     const Context& _context;
+
+    // Set of globally reserved words.
+    RtTokenSet _reservedWords;
+
+    // Map of string substitutions used by the compiler.
+    StringMap _substitutions;
 };
 
 } // namespace Codegen

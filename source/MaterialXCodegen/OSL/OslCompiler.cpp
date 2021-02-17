@@ -17,6 +17,29 @@ namespace Codegen
 OslCompiler::OslCompiler(const Context& context) :
     FragmentCompiler(context)
 {
+    // Add reserved words from the syntax
+    _reservedWords = context.getSyntax().getReservedWords();
+
+    // Add token substitution identifiers
+    for (const auto& it : _substitutions)
+    {
+        if (!it.second.empty())
+        {
+            _reservedWords.insert(RtToken(it.second));
+        }
+    }
+
+    // Set the include file to use for uv transformations,
+    // depending on the vertical flip flag.
+    static const string T_FILE_TRANSFORM_UV = "$fileTransformUv";
+    if (context.getOptions().fileTextureVerticalFlip)
+    {
+        _substitutions[T_FILE_TRANSFORM_UV] = "stdlib/" + OslContext::TARGET.str() + "/lib/mx_transform_uv_vflip.osl";
+    }
+    else
+    {
+        _substitutions[T_FILE_TRANSFORM_UV] = "stdlib/" + OslContext::TARGET.str() + "/lib/mx_transform_uv.osl";
+    }
 }
 
 FragmentCompilerPtr OslCompiler::create(const Context& context)

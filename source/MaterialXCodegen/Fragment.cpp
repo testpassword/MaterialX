@@ -21,10 +21,35 @@ namespace Codegen
 {
 
 Fragment::Fragment(const RtToken& name) :
+    _parent(nullptr),
     _name(name),
     _classification(FragmentClassification::TEXTURE),
     _functionName(name)
 {
+}
+
+void Fragment::copy(Fragment& other) const
+{
+    other._name = _name;
+    other._classification = _classification;
+    other._functionName = _functionName;
+
+    other._inputs.clear();
+    other._outputs.clear();
+
+    for (size_t i = 0; i < numInputs(); ++i)
+    {
+        const Input* port = getInput(i);
+        Input* otherPort = other.createInput(port->type, port->name);
+        otherPort->variable = port->variable;
+        RtValue::copy(port->type, port->value, otherPort->value);
+    }
+    for (size_t i = 0; i < numOutputs(); ++i)
+    {
+        const Output* port = getOutput(i);
+        Output* otherPort = other.createOutput(port->type, port->name);
+        otherPort->variable = port->variable;
+    }
 }
 
 Fragment::Input* Fragment::createInput(const RtToken& type, const RtToken& name)
@@ -84,7 +109,36 @@ const RtToken& FragmentGraph::className()
     return CLASS_NAME;
 }
 
-void FragmentGraph::addFragment(const FragmentPtr& fragment)
+FragmentPtr FragmentGraph::clone() const
+{
+    FragmentPtr other = FragmentGraph::create(_name);
+    copy(*other);
+    return other;
+}
+
+void FragmentGraph::copy(Fragment& /*other*/) const
+{
+    throw ExceptionRuntimeError("FragmentGraph::copy: Not implemented yet!");
+/*
+    Fragment::copy(other);
+
+    FragmentGraph* otherGraph = other.asA<FragmentGraph>();
+    otherGraph->_fragments.clear();
+    for (size_t i = 0; i < _fragments.size(); ++i)
+    {
+        Fragment* fragment = _fragments.get(i);
+        otherGraph->addFragment(fragment->clone());
+    }
+
+    for (size_t i = 0; i < _fragments.size(); ++i)
+    {
+        Fragment* fragment = _fragments.get(i);
+        
+    }
+*/
+}
+
+void FragmentGraph::addFragment(FragmentPtr fragment)
 {
     if (getFragment(fragment->getName()))
     {
@@ -92,12 +146,18 @@ void FragmentGraph::addFragment(const FragmentPtr& fragment)
             "' already exists in fragment graph '" + getName().str() + "'");
     }
 
+    fragment->setParent(this);
     _fragments.add(fragment->getName(), fragment);
 }
 
-void FragmentGraph::removeFragment(const RtToken& name)
+FragmentPtr FragmentGraph::removeFragment(const RtToken& name)
 {
-    _fragments.remove(name);
+    FragmentPtr frag = _fragments.remove(name);
+    if (frag)
+    {
+        frag->setParent(nullptr);
+    }
+    return frag;
 }
 
 size_t FragmentGraph::numFragments() const
@@ -206,9 +266,9 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
 
     // Add all reserved words as taken identifiers
     RtTokenMap<size_t> identifiers;
-    for (const RtToken& t : context.getReservedWords())
+    for (const RtToken& word : context.getCompiler().getReservedWords())
     {
-        identifiers[t] = 1;
+        identifiers[word] = 1;
     }
 
     // Make sure the function name is a valid identifier.
@@ -217,13 +277,17 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
     // Create valid identifiers for all inputs and outputs.
     for (size_t i = 0; i < numInputs(); ++i)
     {
-        Port* port = getInputSocket(i);
+        Port* port = getInput(i);
+        Port* socket = getInputSocket(i);
         port->variable = syntax.createIdentifier(port->name.str(), identifiers);
+        socket->variable = port->variable;
     }
     for (size_t i = 0; i < numOutputs(); ++i)
     {
-        Port* port = getOutputSocket(i);
+        Port* port = getOutput(i);
+        Port* socket = getOutputSocket(i);
         port->variable = syntax.createIdentifier(port->name.str(), identifiers);
+        socket->variable = port->variable;
     }
     for (size_t i = 0; i < numFragments; ++i)
     {
@@ -268,17 +332,14 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
         }
     }
 
-    Fragment** sortedFragments = _fragments.order();
-    memset(sortedFragments, 0, numFragments * sizeof(Fragment*));
-    size_t count = 0;
-
+    ObjectList<Fragment> orderedFragments;
     while (!fragmentQueue.empty())
     {
         // Pop the queue and add to topological order.
         Fragment* fragment = fragmentQueue.front();
         fragmentQueue.pop_front();
 
-        sortedFragments[count++] = fragment;
+        orderedFragments.add(fragment->getName(), fragment->shared_from_this());
 
         // Find connected nodes and decrease their in-degree,
         // adding node to the queue if in-degrees becomes 0.
@@ -300,13 +361,15 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
     }
 
     // Check if there was a cycle.
-    if (count != _fragments.size())
+    if (orderedFragments.size() != _fragments.size())
     {
         throw ExceptionRuntimeError("Encountered a cycle in fragment graph '" + getName().str() + "'");
     }
 
+    _fragments = orderedFragments;
+
     // Set classification based on the root fragment.
-    Fragment* rootFragment = sortedFragments[count - 1];
+    Fragment* rootFragment = orderedFragments.get(orderedFragments.size() - 1);
     _classification = rootFragment->getClassificationMask();
 }
 
@@ -332,22 +395,22 @@ void FragmentGraph::emitFunctionDefinitions(const Context& context, SourceCode& 
 
     string delim = "";
 
-    // Add all inputs
+    // Add all input sockets
     for (size_t i = 0; i < numInputs(); ++i)
     {
         result.addString(delim);
-        const Fragment::Input* input = getInput(i);
-        compiler.declareVariable(*input, false, result);
+        const Fragment::Output* socket = getInputSocket(i);
+        compiler.declareVariable(*socket, false, result);
         delim = ", ";
     }
 
-    // Add all outputs
+    // Add all output sockets
     for (size_t i = 0; i < numOutputs(); ++i)
     {
         result.addString(delim);
-        const Fragment::Output* output = getOutput(i);
+        const Fragment::Input* socket = getOutputSocket(i);
         result.addString(context.getSyntax().getOutputQualifier());
-        compiler.declareVariable(*output, false, result);
+        compiler.declareVariable(*socket, false, result);
         delim = ", ";
     }
     result.addString(")");
@@ -429,6 +492,20 @@ const RtToken& SourceFragment::className()
 {
     static const RtToken CLASS_NAME("SourceFragment");
     return CLASS_NAME;
+}
+
+FragmentPtr SourceFragment::clone() const
+{
+    FragmentPtr other = SourceFragment::create(_name);
+    copy(*other);
+    return other;
+}
+
+void SourceFragment::copy(Fragment& other) const
+{
+    Fragment::copy(other);
+    SourceFragment* otherFragment = other.asA<SourceFragment>();
+    otherFragment->_sourceCode = _sourceCode;
 }
 
 void SourceFragment::emitFunctionDefinitions(const Context& context, SourceCode& result) const

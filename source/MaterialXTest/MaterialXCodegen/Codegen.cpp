@@ -11,6 +11,7 @@
 #include <MaterialXRuntime/RtNodeDef.h>
 #include <MaterialXRuntime/RtNode.h>
 #include <MaterialXRuntime/RtNodeGraph.h>
+#include <MaterialXRuntime/Tokens.h>
 
 #include <MaterialXCodegen/Fragment.h>
 #include <MaterialXCodegen/FragmentCompiler.h>
@@ -153,16 +154,32 @@ TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
     api->loadLibrary(BXDFLIB, readOptions);
 
 //    mx::RtPrim graph = api->getLibrary()->getPrimAtPath("/IMPL_standard_surface_surfaceshader");
-    mx::RtPrim graph = api->getLibrary()->getPrimAtPath("/NG_tiledimage_float");
-    REQUIRE(graph);
+    mx::RtPrim prim = api->getLibrary()->getPrimAtPath("/NG_tiledimage_color3");
+    REQUIRE(prim);
+
+    mx::RtToken targetColorSpace("lin_rec709");
+    mx::RtToken sourceColorSpace("srgb_texture");
+
+    mx::RtNodeGraph nodegraph(prim);
+    mx::RtNode image = nodegraph.getNode(mx::RtToken("N_img_color3"));
+    mx::RtInput file = image.getInput(mx::Tokens::FILE);
+    file.setColorSpace(sourceColorSpace);
 
     mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
-    mx::Codegen::ContextPtr contex = mx::Codegen::OslContext::create(options);
+    mx::Codegen::ContextPtr context = mx::Codegen::OslContext::create(options);
 
-    const mx::Codegen::FragmentGenerator& generator = contex->getGenerator();
-    const mx::Codegen::FragmentCompiler& compiler = contex->getCompiler();
+    options->targetColorSpaceOverride = targetColorSpace;
 
-    mx::Codegen::FragmentPtr frag = generator.createFragment(graph);
+    mx::Codegen::ColorManagementSystemPtr cms = mx::Codegen::DefaultColorManagementSystem::create(mx::RtToken("genosl"));
+
+    const mx::FilePath cmsImplFile = searchPath.find("stdlib/genosl/stdlib_genosl_cm_impl.mtlx");
+    cms->asA<mx::Codegen::DefaultColorManagementSystem>()->loadImplementations(cmsImplFile);
+    context->setColorManagementSystem(cms);
+
+    const mx::Codegen::FragmentGenerator& generator = context->getGenerator();
+    const mx::Codegen::FragmentCompiler& compiler = context->getCompiler();
+
+    mx::Codegen::FragmentPtr frag = generator.createFragmentGraph(nodegraph);
     REQUIRE(frag);
 
     mx::Codegen::SourceCode sourceCode;

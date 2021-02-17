@@ -17,23 +17,10 @@ const RtToken OslContext::TARGET("genosl");
 
 OslContext::OslContext(OptionsPtr options) :
     Context(options),
-    _syntax(OslSyntax::create()),
-    _generator(OslGenerator::create(*this)),
-    _compiler(OslCompiler::create(*this))
+    _syntax(OslSyntax::create())
 {
-    static const string T_FILE_TRANSFORM_UV = "$fileTransformUv";
-
-    // Set the include file to use for uv transformations,
-    // depending on the vertical flip flag.
-    if (options->fileTextureVerticalFlip)
-    {
-        _substitutions[T_FILE_TRANSFORM_UV] = "stdlib/" + TARGET.str() + "/lib/mx_transform_uv_vflip.osl";
-    }
-    else
-    {
-        _substitutions[T_FILE_TRANSFORM_UV] = "stdlib/" + TARGET.str() + "/lib/mx_transform_uv.osl";
-    }
-
+    _generator = OslGenerator::create(*this);
+    _compiler = OslCompiler::create(*this);
 }
 
 ContextPtr OslContext::create(OptionsPtr options)
