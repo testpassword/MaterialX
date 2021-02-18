@@ -65,27 +65,27 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
     // Test explicit fragment creation.
     mx::Codegen::FragmentPtr subgraphFragment = mx::Codegen::FragmentGraph::create(mx::RtToken("subgraph"));
     mx::Codegen::FragmentGraph* subgraph = subgraphFragment->asA<mx::Codegen::FragmentGraph>();
-    subgraph->createInput(mx::RtType::FLOAT, IN);
-    subgraph->createOutput(mx::RtType::FLOAT, OUT);
+    subgraph->createInput(IN, mx::RtType::FLOAT);
+    subgraph->createOutput(OUT, mx::RtType::FLOAT);
     {
         mx::Codegen::FragmentPtr multiply1 = mx::Codegen::SourceFragment::create(mx::RtToken("mult1"));
-        multiply1->createInput(mx::RtType::FLOAT, IN1);
-        multiply1->createInput(mx::RtType::FLOAT, IN2);
-        multiply1->createOutput(mx::RtType::FLOAT, OUT);
+        multiply1->createInput(IN1, mx::RtType::FLOAT);
+        multiply1->createInput(IN2, mx::RtType::FLOAT);
+        multiply1->createOutput(OUT, mx::RtType::FLOAT);
         multiply1->setFunctionName(MULTIPLY);
         multiply1->asA<mx::Codegen::SourceFragment>()->setSourceCode(&multiplySource);
 
         mx::Codegen::FragmentPtr multiply2 = mx::Codegen::SourceFragment::create(mx::RtToken("mult2"));
-        multiply2->createInput(mx::RtType::FLOAT, IN1);
-        multiply2->createInput(mx::RtType::FLOAT, IN2);
-        multiply2->createOutput(mx::RtType::FLOAT, OUT);
+        multiply2->createInput(IN1, mx::RtType::FLOAT);
+        multiply2->createInput(IN2, mx::RtType::FLOAT);
+        multiply2->createOutput(OUT, mx::RtType::FLOAT);
         multiply2->setFunctionName(MULTIPLY);
         multiply2->asA<mx::Codegen::SourceFragment>()->setSourceCode(&multiplySource);
 
         mx::Codegen::FragmentPtr add1 = mx::Codegen::SourceFragment::create(mx::RtToken("add1"));
-        add1->createInput(mx::RtType::FLOAT, IN1);
-        add1->createInput(mx::RtType::FLOAT, IN2);
-        add1->createOutput(mx::RtType::FLOAT, OUT);
+        add1->createInput(IN1, mx::RtType::FLOAT);
+        add1->createInput(IN2, mx::RtType::FLOAT);
+        add1->createOutput(OUT, mx::RtType::FLOAT);
         add1->setFunctionName(ADD);
         add1->asA<mx::Codegen::SourceFragment>()->setSourceCode(&addSource);
 
@@ -93,7 +93,7 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
         subgraph->addFragment(multiply1);
         subgraph->addFragment(multiply2);
 
-        multiply1->getInput(IN1)->value.asFloat() = 7.0f;
+        multiply1->getInput(IN1)->getValue().asFloat() = 7.0f;
         subgraph->connect(subgraph->getInputSocket(IN), multiply1->getInput(IN2));
         subgraph->connect(multiply1->getOutput(), multiply2->getInput(IN1));
         subgraph->connect(multiply1->getOutput(), multiply2->getInput(IN2));
@@ -108,13 +108,13 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
     const mx::Codegen::FragmentGenerator& generator = context->getGenerator();
     mx::Codegen::FragmentPtr maingraphFragment = generator.createFragment(mx::Codegen::FragmentGraph::className(), mx::RtToken("maingraph"));
     mx::Codegen::FragmentGraph* maingraph = maingraphFragment->asA<mx::Codegen::FragmentGraph>();
-    maingraph->createInput(mx::RtType::FLOAT, IN);
-    maingraph->createOutput(mx::RtType::FLOAT, OUT);
+    maingraph->createInput(IN, mx::RtType::FLOAT);
+    maingraph->createOutput(OUT, mx::RtType::FLOAT);
     {
         mx::Codegen::FragmentPtr multiply = generator.createFragment(mx::Codegen::SourceFragment::className(), mx::RtToken("mult"));
-        multiply->createInput(mx::RtType::FLOAT, IN1);
-        multiply->createInput(mx::RtType::FLOAT, IN2);
-        multiply->createOutput(mx::RtType::FLOAT, OUT);
+        multiply->createInput(IN1, mx::RtType::FLOAT);
+        multiply->createInput(IN2, mx::RtType::FLOAT);
+        multiply->createOutput(OUT, mx::RtType::FLOAT);
         multiply->setFunctionName(MULTIPLY);
         multiply->asA<mx::Codegen::SourceFragment>()->setSourceCode(&multiplySource);
 

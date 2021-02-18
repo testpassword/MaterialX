@@ -26,12 +26,12 @@ public:
     FragmentCompiler(const Context& context);
     virtual ~FragmentCompiler() {}
 
-    virtual void compileShader(const Fragment::Output& output, SourceCode& result) const = 0;
+    virtual void compileShader(const Output& output, SourceCode& result) const = 0;
 
-    virtual void declareVariable(const Fragment::Port& port, bool assignDefault, SourceCode& result) const;
+    virtual void declareVariable(const Attribute& attr, bool assignDefault, SourceCode& result) const;
     virtual void emitBlock(const string& block, SourceCode& result) const;
     virtual void emitInclude(const FilePath& file, SourceCode& result) const;
-    virtual void emitVariable(const Fragment::Input& input, SourceCode& result) const;
+    virtual void emitVariable(const Input& input, SourceCode& result) const;
     virtual void emitTypeDefinitions(SourceCode& result) const;
 
     /// Return the set of reserved words that should not be used

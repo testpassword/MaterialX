@@ -21,8 +21,8 @@ namespace Codegen
 {
 
 Fragment::Fragment(const RtToken& name) :
+    NamedObject(name),
     _parent(nullptr),
-    _name(name),
     _classification(FragmentClassification::TEXTURE),
     _functionName(name)
 {
@@ -40,19 +40,19 @@ void Fragment::copy(Fragment& other) const
     for (size_t i = 0; i < numInputs(); ++i)
     {
         const Input* port = getInput(i);
-        Input* otherPort = other.createInput(port->type, port->name);
-        otherPort->variable = port->variable;
-        RtValue::copy(port->type, port->value, otherPort->value);
+        Input* otherPort = other.createInput(port->getName(), port->getType());
+        otherPort->setVariable(port->getVariable());
+        RtValue::copy(port->getType(), port->getValue(), otherPort->getValue());
     }
     for (size_t i = 0; i < numOutputs(); ++i)
     {
         const Output* port = getOutput(i);
-        Output* otherPort = other.createOutput(port->type, port->name);
-        otherPort->variable = port->variable;
+        Output* otherPort = other.createOutput(port->getName(), port->getType());
+        otherPort->setVariable(port->getVariable());
     }
 }
 
-Fragment::Input* Fragment::createInput(const RtToken& type, const RtToken& name)
+Input* Fragment::createInput(const RtToken& name, const RtToken& type)
 {
     if (getInput(name))
     {
@@ -60,20 +60,16 @@ Fragment::Input* Fragment::createInput(const RtToken& type, const RtToken& name)
             "' already exists in fragment '" + getName().str() + "'");
     }
 
-    InputPtr input(new Input());
-    input->parent = this;
-    input->type = type;
-    input->name = name;
-    input->variable = name;
-    input->value = RtValue::createNew(type, _allocator);
-    input->connection = nullptr;
+    InputPtr input(new Input(name, type));
+    input->setParent(this);
+    input->getValue() = RtValue::createNew(type, _allocator);
 
-    _inputs.add(name, input);
+    _inputs.add(input);
 
     return input.get();
 }
 
-Fragment::Output* Fragment::createOutput(const RtToken& type, const RtToken& name)
+Output* Fragment::createOutput(const RtToken& name, const RtToken& type)
 {
     if (getOutput(name))
     {
@@ -81,13 +77,11 @@ Fragment::Output* Fragment::createOutput(const RtToken& type, const RtToken& nam
             "' already exists in fragment '" + getName().str() + "'");
     }
 
-    OutputPtr output(new Output());
-    output->parent = this;
-    output->type = type;
-    output->name = name;
-    output->variable = name;
+    OutputPtr output(new Output(name, type));
+    output->setParent(this);
+    output->setVariable(name);
 
-    _outputs.add(name, output);
+    _outputs.add(output);
 
     return output.get();
 }
@@ -145,9 +139,8 @@ void FragmentGraph::addFragment(FragmentPtr fragment)
         throw ExceptionRuntimeError("A fragment named '" + fragment->getName().str() + 
             "' already exists in fragment graph '" + getName().str() + "'");
     }
-
     fragment->setParent(this);
-    _fragments.add(fragment->getName(), fragment);
+    _fragments.add(fragment);
 }
 
 FragmentPtr FragmentGraph::removeFragment(const RtToken& name)
@@ -175,10 +168,10 @@ Fragment* FragmentGraph::getFragment(const RtToken& name) const
     return _fragments.get(name);
 }
 
-void FragmentGraph::connect(Fragment::Output* src, Fragment::Input* dst)
+void FragmentGraph::connect(Output* src, Input* dst)
 {
-    dst->connection = src;
-    src->connections.insert(dst);
+    dst->_connection = src;
+    src->_connections.insert(dst);
 }
 
 void FragmentGraph::connect(const RtToken& srcFragment, const RtToken& srcOutput,
@@ -191,8 +184,8 @@ void FragmentGraph::connect(const RtToken& srcFragment, const RtToken& srcOutput
         throw ExceptionRuntimeError("Failed to create connection '" + srcFragment.str() + "' -> '" + dstFragment.str() + "'");
     }
 
-    Fragment::Output* output = src->getOutput(srcOutput);
-    Fragment::Input* input = src->getInput(dstOutput);
+    Output* output = src->getOutput(srcOutput);
+    Input* input = src->getInput(dstOutput);
     if (!(output && input))
     {
         throw ExceptionRuntimeError("Failed to create connection '" + srcFragment.str() + "' -> '" + dstFragment.str() + "'");
@@ -201,36 +194,29 @@ void FragmentGraph::connect(const RtToken& srcFragment, const RtToken& srcOutput
     connect(output, input);
 }
 
-Fragment::Input* FragmentGraph::createInput(const RtToken& type, const RtToken& name)
+Input* FragmentGraph::createInput(const RtToken& name, const RtToken& type)
 {
     // Create the external input.
-    Fragment::Input* input = Fragment::createInput(type, name);
+    Input* input = Fragment::createInput(name, type);
 
     // Create the internal socket.
-    OutputPtr socket(new Output());
-    socket->parent = this;
-    socket->type = type;
-    socket->name = input->name;
-    socket->variable = input->variable;
-    _inputSockets.add(socket->name, socket);
+    OutputPtr socket(new Output(name, type));
+    socket->setParent(this);
+    _inputSockets.add(socket);
 
     return input;
 }
 
-Fragment::Output* FragmentGraph::createOutput(const RtToken& type, const RtToken& name)
+Output* FragmentGraph::createOutput(const RtToken& name, const RtToken& type)
 {
     // Create the external output.
-    Fragment::Output* output = Fragment::createOutput(type, name);
+    Output* output = Fragment::createOutput(name, type);
 
     // Create the internal socket.
-    InputPtr socket(new Input());
-    socket->parent = this;
-    socket->type = type;
-    socket->name = output->name;
-    socket->variable = output->variable;
-    socket->value = RtValue::createNew(type, _allocator);
-    socket->connection = nullptr;
-    _outputSockets.add(socket->name, socket);
+    InputPtr socket(new Input(name, type));
+    socket->setParent(this);
+    socket->getValue() = RtValue::createNew(type, _allocator);
+    _outputSockets.add(socket);
 
     return output;
 }
@@ -251,11 +237,11 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
             for (size_t j = 0; j < fragment->numInputs(); ++j)
             {
                 Input* input = fragment->getInput(j);
-                if (!input->connection)
+                if (!input->isConnected())
                 {
                     const RtToken name(input->getLongName());
-                    Input* external = createInput(input->type, name);
-                    Output* socket = getInputSocket(external->name);
+                    Input* external = createInput(name, input->getType());
+                    Output* socket = getInputSocket(external->getName());
                     connect(socket, input);
                 }
             }
@@ -277,35 +263,37 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
     // Create valid identifiers for all inputs and outputs.
     for (size_t i = 0; i < numInputs(); ++i)
     {
-        Port* port = getInput(i);
-        Port* socket = getInputSocket(i);
-        port->variable = syntax.createIdentifier(port->name.str(), identifiers);
-        socket->variable = port->variable;
+        Input* input = getInput(i);
+        Output* socket = getInputSocket(i);
+        input->setVariable(syntax.createIdentifier(input->getName().str(), identifiers));
+        socket->setVariable(input->getVariable());
     }
     for (size_t i = 0; i < numOutputs(); ++i)
     {
-        Port* port = getOutput(i);
-        Port* socket = getOutputSocket(i);
-        port->variable = syntax.createIdentifier(port->name.str(), identifiers);
-        socket->variable = port->variable;
+        Output* output = getOutput(i);
+        Input* socket = getOutputSocket(i);
+        output->setVariable(syntax.createIdentifier(output->getName().str(), identifiers));
+        socket->setVariable(output->getVariable());
     }
     for (size_t i = 0; i < numFragments; ++i)
     {
         Fragment* fragment = _fragments.get(i);
         for (size_t j = 0; j < fragment->numInputs(); ++j)
         {
-            Port* port = fragment->getInput(j);
-            port->variable = syntax.createIdentifier(port->getLongName(), identifiers);
+            Input* input = fragment->getInput(j);
+            input->setVariable(syntax.createIdentifier(input->getLongName(), identifiers));
         }
         for (size_t j = 0; j < fragment->numOutputs(); ++j)
         {
-            Port* port = fragment->getOutput(j);
-            port->variable = syntax.createIdentifier(port->getLongName(), identifiers);
+            Output* output = fragment->getOutput(j);
+            output->setVariable(syntax.createIdentifier(output->getLongName(), identifiers));
         }
     }
 
+    //
     // Sort the fragments in topological order, using Kahn's algorithm
     // to avoid recursion.
+    //
 
     // Calculate in-degrees for all fragments, and enqueue those with degree 0.
     std::unordered_map<Fragment*, int> inDegree(numFragments);
@@ -318,7 +306,7 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
         for (size_t j = 0; j < fragment->numInputs(); ++j)
         {
             const Input* input = fragment->getInput(j);
-            if (input->connection && input->connection->parent != this)
+            if (input->isConnected() && input->getConnection()->getParent() != this)
             {
                 ++connectionCount;
             }
@@ -339,18 +327,18 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
         Fragment* fragment = fragmentQueue.front();
         fragmentQueue.pop_front();
 
-        orderedFragments.add(fragment->getName(), fragment->shared_from_this());
+        orderedFragments.add(fragment->shared_from_this());
 
         // Find connected nodes and decrease their in-degree,
         // adding node to the queue if in-degrees becomes 0.
         for (size_t i = 0; i<fragment->numOutputs(); ++i)
         {
             const Output* output = fragment->getOutput(i);
-            for (const Input* downstream : output->connections)
+            for (const Input* downstream : output->getConnections())
             {
-                if (downstream->parent != this)
+                Fragment* downstreamFragment = downstream->getParent();
+                if (downstreamFragment != this)
                 {
-                    Fragment* downstreamFragment = downstream->parent;
                     if (--inDegree[downstreamFragment] <= 0)
                     {
                         fragmentQueue.push_back(downstreamFragment);
@@ -399,7 +387,7 @@ void FragmentGraph::emitFunctionDefinitions(const Context& context, SourceCode& 
     for (size_t i = 0; i < numInputs(); ++i)
     {
         result.addString(delim);
-        const Fragment::Output* socket = getInputSocket(i);
+        const Output* socket = getInputSocket(i);
         compiler.declareVariable(*socket, false, result);
         delim = ", ";
     }
@@ -408,7 +396,7 @@ void FragmentGraph::emitFunctionDefinitions(const Context& context, SourceCode& 
     for (size_t i = 0; i < numOutputs(); ++i)
     {
         result.addString(delim);
-        const Fragment::Input* socket = getOutputSocket(i);
+        const Input* socket = getOutputSocket(i);
         result.addString(context.getSyntax().getOutputQualifier());
         compiler.declareVariable(*socket, false, result);
         delim = ", ";
@@ -427,9 +415,9 @@ void FragmentGraph::emitFunctionDefinitions(const Context& context, SourceCode& 
     // Emit final results
     for (size_t i = 0; i < numOutputs(); ++i)
     {
-        const Fragment::Input* outputSocket = getOutputSocket(i);
+        const Input* outputSocket = getOutputSocket(i);
         result.beginLine();
-        result.addString(outputSocket->variable.str() + " = ");
+        result.addString(outputSocket->getVariable().str() + " = ");
         compiler.emitVariable(*outputSocket, result);
         result.endLine();
     }
@@ -445,7 +433,7 @@ void FragmentGraph::emitFunctionCall(const Context& context, SourceCode& result)
     // Declare all outputs.
     for (size_t i = 0; i < numOutputs(); ++i)
     {
-        const Fragment::Output* output = getOutput(i);
+        const Output* output = getOutput(i);
         result.beginLine();
         compiler.declareVariable(*output, true, result);
         result.endLine();
@@ -459,7 +447,7 @@ void FragmentGraph::emitFunctionCall(const Context& context, SourceCode& result)
     // Add all inputs
     for (size_t i = 0; i < numInputs(); ++i)
     {
-        const Fragment::Input* input = getInput(i);
+        const Input* input = getInput(i);
         result.addString(delim);
         compiler.emitVariable(*input, result);
         delim = ", ";
@@ -468,8 +456,8 @@ void FragmentGraph::emitFunctionCall(const Context& context, SourceCode& result)
     // Add all outputs
     for (size_t i = 0; i < numOutputs(); ++i)
     {
-        const Fragment::Output* output = getOutput(i);
-        result.addString(delim + output->variable.str());
+        const Output* output = getOutput(i);
+        result.addString(delim + output->getVariable().str());
         delim = ", ";
     }
     result.addString(")");
@@ -548,13 +536,13 @@ void SourceFragment::emitFunctionCall(const Context& context, SourceCode& result
             }
 
             const RtToken variable(source.substr(i + 2, j - i - 2));
-            const Fragment::Input* input = getInput(variable);
+            const Input* input = getInput(variable);
             if (!input)
             {
                 throw ExceptionRuntimeError("Could not find an input named '" + variable.str() + "' on fragment '" + getName().str() + "'");
             }
 
-            if (input->connection)
+            if (input->isConnected())
             {
                 compiler.emitVariable(*input, inlineResult);
             }
@@ -568,7 +556,7 @@ void SourceFragment::emitFunctionCall(const Context& context, SourceCode& result
                     result.beginLine();
                     const string& qualifier = syntax.getConstantQualifier();
                     result.addString(qualifier.empty() ? EMPTY_STRING : qualifier + " ");
-                    result.addString(syntax.getTypeName(input->type) + " " + input->variable.str() + " = " + syntax.getValue(input->type, input->value));
+                    result.addString(syntax.getTypeName(input->getType()) + " " + input->getVariable().str() + " = " + syntax.getValue(input->getType(), input->getValue()));
                     result.endLine();
                     localVariableNames.insert(variableName);
                 }
@@ -591,7 +579,7 @@ void SourceFragment::emitFunctionCall(const Context& context, SourceCode& result
         // Declare all outputs.
         for (size_t i = 0; i < numOutputs(); ++i)
         {
-            const Fragment::Output* output = getOutput(i);
+            const Output* output = getOutput(i);
             result.beginLine();
             compiler.declareVariable(*output, true, result);
             result.endLine();
@@ -605,7 +593,7 @@ void SourceFragment::emitFunctionCall(const Context& context, SourceCode& result
         // Add all inputs
         for (size_t i = 0; i < numInputs(); ++i)
         {
-            const Fragment::Input* input = getInput(i);
+            const Input* input = getInput(i);
             result.addString(delim);
             compiler.emitVariable(*input, result);
             delim = ", ";
@@ -614,8 +602,8 @@ void SourceFragment::emitFunctionCall(const Context& context, SourceCode& result
         // Add all outputs
         for (size_t i = 0; i < numOutputs(); ++i)
         {
-            const Fragment::Output* output = getOutput(i);
-            result.addString(delim + output->variable.str());
+            const Output* output = getOutput(i);
+            result.addString(delim + output->getVariable().str());
             delim = ", ";
         }
         result.addString(")");

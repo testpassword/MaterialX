@@ -47,15 +47,15 @@ FragmentCompilerPtr OslCompiler::create(const Context& context)
     return FragmentCompilerPtr(new OslCompiler(context));
 }
 
-void OslCompiler::compileShader(const Fragment::Output& output, SourceCode& result) const
+void OslCompiler::compileShader(const Output& output, SourceCode& result) const
 {
-    if (output.parent->getType() != FRAGMENT_TYPE_GRAPH)
+    if (output.getParent()->getType() != FRAGMENT_TYPE_GRAPH)
     {
-        throw ExceptionRuntimeError("Given output is not a fragment graph output '" + output.name.str() + "'");
+        throw ExceptionRuntimeError("Given output is not a fragment graph output '" + output.getName().str() + "'");
     }
 
     const Syntax& syntax = _context.getSyntax();
-    const FragmentGraph* graph = output.parent->asA<FragmentGraph>();
+    const FragmentGraph* graph = output.getParent()->asA<FragmentGraph>();
 
     const FilePath includeFile = RtApi::get().getSearchPath().find("mx_funcs.h");
     const FilePath albedoTableFile = RtApi::get().getSearchPath().find("resources/Lights/AlbedoTable.exr");
@@ -79,11 +79,11 @@ void OslCompiler::compileShader(const Fragment::Output& output, SourceCode& resu
     }
 
     // Begin shader signature.
-    if (output.type == RtType::SURFACESHADER)
+    if (output.getType() == RtType::SURFACESHADER)
     {
         result.addString("surface ");
     }
-    else if (output.type == RtType::VOLUMESHADER)
+    else if (output.getType() == RtType::VOLUMESHADER)
     {
         result.addString("volume ");
     }
@@ -98,16 +98,16 @@ void OslCompiler::compileShader(const Fragment::Output& output, SourceCode& resu
     result.beginScope(Syntax::PARENTHESES);
     for (size_t i = 0; i < graph->numInputs(); ++i)
     {
-        const Fragment::Input* port = graph->getInput(i);
-        result.addLine(syntax.getTypeName(port->type) + " " + port->variable.str() + " = " +
-            syntax.getValue(port->type, port->value) + ',', false);
+        const Input* port = graph->getInput(i);
+        result.addLine(syntax.getTypeName(port->getType()) + " " + port->getVariable().str() + " = " +
+            syntax.getValue(port->getType(), port->getValue()) + ',', false);
     }
     for (size_t i = 0; i < graph->numOutputs(); ++i)
     {
-        const Fragment::Output* port = graph->getOutput(i);
+        const Output* port = graph->getOutput(i);
         const string delim = (i == graph->numOutputs() - 1) ? EMPTY_STRING : ",";
-        result.addLine(syntax.getOutputQualifier() + syntax.getTypeName(port->type) + " " + 
-            port->variable.str() + " = " + syntax.getDefaultValue(port->type) + delim, false);
+        result.addLine(syntax.getOutputQualifier() + syntax.getTypeName(port->getType()) + " " + 
+            port->getVariable().str() + " = " + syntax.getDefaultValue(port->getType()) + delim, false);
     }
     result.endScope();
 
@@ -126,9 +126,9 @@ void OslCompiler::compileShader(const Fragment::Output& output, SourceCode& resu
     }
 
     // Emit final results
-    const Fragment::Input* outputSocket = graph->getOutputSocket(output.name);
+    const Input* outputSocket = graph->getOutputSocket(output.getName());
     result.beginLine();
-    result.addString(outputSocket->variable.str() + " = ");
+    result.addString(outputSocket->getVariable().str() + " = ");
     emitVariable(*outputSocket, result);
     result.endLine();
 

@@ -24,7 +24,7 @@ public:
     /// Create a new instance of this compiler.
     static FragmentCompilerPtr create(const Context& context);
 
-    void compileShader(const Fragment::Output& output, SourceCode& result) const override;
+    void compileShader(const Output& output, SourceCode& result) const override;
 };
 
 } // namespace Codegen

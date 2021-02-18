@@ -105,8 +105,8 @@ void DefaultColorManagementSystem::loadImplementations(const FilePath& file)
 
             FragmentPtr frag = SourceFragment::create(RtToken(name));
             SourceFragment* sourceFragment = frag->asA<SourceFragment>();
-            sourceFragment->createInput(type, Tokens::IN);
-            sourceFragment->createOutput(type, Tokens::OUT);
+            sourceFragment->createInput(Tokens::IN, type);
+            sourceFragment->createOutput(Tokens::OUT, type);
             sourceFragment->setSourceCode(sourceCode);
             sourceFragment->setFunctionName(RtToken(function));
 

@@ -81,15 +81,15 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
     // Create fragment ports according to the nodedef.
     for (RtAttribute attr : nodedef.getInputs())
     {
-        Fragment::Input* input = frag->createInput(attr.getType(), attr.getName());
+        Input* input = frag->createInput(attr.getName(), attr.getType());
 
         // Get the value from the node instance.
         RtInput nodeInput = node.getInput(attr.getName());
-        RtValue::copy(input->type, nodeInput ? nodeInput.getValue() : attr.getValue(), input->value);
+        RtValue::copy(input->getType(), nodeInput ? nodeInput.getValue() : attr.getValue(), input->getValue());
     }
     for (RtAttribute attr : nodedef.getOutputs())
     {
-        frag->createOutput(attr.getType(), attr.getName());
+        frag->createOutput(attr.getName(), attr.getType());
     }
 
     const RtToken& function = nodeimpl.getFunction();
@@ -139,12 +139,12 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool publ
         FragmentGraph* graph = graphFragment->asA<FragmentGraph>();
         for (RtAttribute attr : nodegraph.getInputs())
         {
-            Fragment::Input* input = graph->createInput(attr.getType(), attr.getName());
-            RtValue::copy(input->type, attr.getValue(), input->value);
+            Input* input = graph->createInput(attr.getName(), attr.getType());
+            RtValue::copy(input->getType(), attr.getValue(), input->getValue());
         }
         for (RtAttribute attr : nodegraph.getOutputs())
         {
-            graph->createOutput(attr.getType(), attr.getName());
+            graph->createOutput(attr.getName(), attr.getType());
         }
 
         for (RtPrim child : nodegraph.getNodes())
@@ -163,16 +163,16 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool publ
                 RtOutput upstream = input.getConnection();
                 if (upstream)
                 {
-                    Fragment::Input* fragmentInput = childFragment->getInput(input.getName());
+                    Input* fragmentInput = childFragment->getInput(input.getName());
                     if (upstream.isSocket())
                     {
-                        Fragment::Output* graphSocket = graph->getInputSocket(upstream.getName());
+                        Output* graphSocket = graph->getInputSocket(upstream.getName());
                         graph->connect(graphSocket, fragmentInput);
                     }
                     else
                     {
                         Fragment* upstreamChildFragment = graph->getFragment(upstream.getParent().getName());
-                        Fragment::Output* upstreamChildOutput = upstreamChildFragment->getOutput(upstream.getName());
+                        Output* upstreamChildOutput = upstreamChildFragment->getOutput(upstream.getName());
                         graph->connect(upstreamChildOutput, fragmentInput);
                     }
                 }
@@ -186,8 +186,8 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool publ
             if (upstream)
             {
                 Fragment* upstreamChildFragment = graph->getFragment(upstream.getParent().getName());
-                Fragment::Output* upstreamChildOutput = upstreamChildFragment->getOutput(upstream.getName());
-                Fragment::Input* fragmentSocket = graph->getOutputSocket(attr.getName());
+                Output* upstreamChildOutput = upstreamChildFragment->getOutput(upstream.getName());
+                Input* fragmentSocket = graph->getOutputSocket(attr.getName());
                 graph->connect(upstreamChildOutput, fragmentSocket);
             }
         }
@@ -207,11 +207,11 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
 
     if (cms && targetSpace != EMPTY_TOKEN)
     {
-        std::unordered_map<Fragment::Input*, ColorSpaceTransform> inputColorSpaceTransforms;
-        std::unordered_map<Fragment::Output*, ColorSpaceTransform> outputColorSpaceTransforms;
+        std::unordered_map<Input*, ColorSpaceTransform> inputColorSpaceTransforms;
+        std::unordered_map<Output*, ColorSpaceTransform> outputColorSpaceTransforms;
 
-        Fragment::Output* output = fragment.getOutput();
-        const bool isColorOutput = output->type == RtType::COLOR3 || output->type == RtType::COLOR4;
+        Output* output = fragment.getOutput();
+        const bool isColorOutput = output->getType() == RtType::COLOR3 || output->getType() == RtType::COLOR4;
 
         for (RtAttribute port : node.getInputs())
         {
@@ -221,7 +221,7 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
                 const RtToken portType = port.getType();
                 if (portType == RtType::FILENAME && isColorOutput)
                 {
-                    outputColorSpaceTransforms[output] = ColorSpaceTransform(output->type, sourceSpace, targetSpace);
+                    outputColorSpaceTransforms[output] = ColorSpaceTransform(output->getType(), sourceSpace, targetSpace);
                 }
                 else if (portType == RtType::COLOR3 || portType == RtType::COLOR4)
                 {
@@ -229,7 +229,7 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
                     RtOutput upstream = inputPort.getConnection();
                     if (!inputPort.getConnection())
                     {
-                        Fragment::Input* input = fragment.getInput(port.getName());
+                        Input* input = fragment.getInput(port.getName());
                         inputColorSpaceTransforms[input] = ColorSpaceTransform(portType, sourceSpace, targetSpace);
                     }
                 }
@@ -244,13 +244,13 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
             FragmentGraph* container = containerFragment->asA<FragmentGraph>();
             for (size_t i = 0; i < fragment.numInputs(); ++i)
             {
-                const Fragment::Input* port = fragment.getInput(i);
-                container->createInput(port->type, port->name);
+                const Input* port = fragment.getInput(i);
+                container->createInput(port->getName(), port->getType());
             }
             for (size_t i = 0; i < fragment.numOutputs(); ++i)
             {
-                const Fragment::Output* port = fragment.getOutput(i);
-                container->createOutput(port->type, port->name);
+                const Output* port = fragment.getOutput(i);
+                container->createOutput(port->getName(), port->getType());
             }
 
             // Move the main fragment from the parent into the container.
@@ -260,7 +260,7 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
             for (size_t i = 0; i < mainFragment->numInputs(); ++i)
             {
                 FragmentPtr transformFragment = nullptr;
-                Fragment::Input* port = mainFragment->getInput(i);
+                Input* port = mainFragment->getInput(i);
                 auto it = inputColorSpaceTransforms.find(port);
                 if (it != inputColorSpaceTransforms.end())
                 {
@@ -280,7 +280,7 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
             for (size_t i = 0; i < mainFragment->numOutputs(); ++i)
             {
                 FragmentPtr transformFragment = nullptr;
-                Fragment::Output* port = mainFragment->getOutput(i);
+                Output* port = mainFragment->getOutput(i);
                 auto it = outputColorSpaceTransforms.find(port);
                 if (it != outputColorSpaceTransforms.end())
                 {
