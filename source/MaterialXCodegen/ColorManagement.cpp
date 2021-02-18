@@ -36,6 +36,14 @@ DefaultColorManagementSystem::DefaultColorManagementSystem(const RtToken& target
     _target(target)
 {}
 
+DefaultColorManagementSystem::~DefaultColorManagementSystem()
+{
+    for (string* s : _sourceCode)
+    {
+        delete s;
+    }
+}
+
 ColorManagementSystemPtr DefaultColorManagementSystem::create(const RtToken& target)
 {
     return ColorManagementSystemPtr(new DefaultColorManagementSystem(target));
@@ -68,10 +76,11 @@ void DefaultColorManagementSystem::loadImplementations(const FilePath& file)
             const string& name = impl->getName();
             const string& function = impl->getFunction();
             const string& sourceFile = impl->getFile();
-
             const FilePath path = RtApi::get().getSearchPath().find(sourceFile);
-            string content = readFile(path);
-            if (content.empty())
+
+            string* sourceCode = new string();
+            *sourceCode = readFile(path);
+            if (sourceCode->empty())
             {
                 throw ExceptionRuntimeError("Failed to get source code from file '" + path.asString() +
                     "' used by implementation '" + name + "'");
@@ -79,12 +88,8 @@ void DefaultColorManagementSystem::loadImplementations(const FilePath& file)
             // Remove newline if it's an inline expression.
             if (function.empty())
             {
-                content.erase(std::remove(content.begin(), content.end(), '\n'), content.end());
+                sourceCode->erase(std::remove(sourceCode->begin(), sourceCode->end(), '\n'), sourceCode->end());
             }
-
-            // Take ownership of the source code so we can reference it
-            // in our source fragment below.
-            _sourceCode.push_back(content);
 
             // Find the data type from the impl name.
             RtToken type = EMPTY_TOKEN;
@@ -102,10 +107,11 @@ void DefaultColorManagementSystem::loadImplementations(const FilePath& file)
             SourceFragment* sourceFragment = frag->asA<SourceFragment>();
             sourceFragment->createInput(type, Tokens::IN);
             sourceFragment->createOutput(type, Tokens::OUT);
-            sourceFragment->setSourceCode(&_sourceCode.back());
+            sourceFragment->setSourceCode(sourceCode);
             sourceFragment->setFunctionName(RtToken(function));
 
             _fragments[frag->getName()] = frag;
+            _sourceCode.push_back(sourceCode);
         }
     }
 }

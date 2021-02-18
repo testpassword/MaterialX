@@ -207,26 +207,36 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
 
     if (cms && targetSpace != EMPTY_TOKEN)
     {
+        std::unordered_map<Fragment::Input*, ColorSpaceTransform> inputColorSpaceTransforms;
         std::unordered_map<Fragment::Output*, ColorSpaceTransform> outputColorSpaceTransforms;
 
         Fragment::Output* output = fragment.getOutput();
-        if (output->type == RtType::COLOR3 || output->type == RtType::COLOR4)
+        const bool isColorOutput = output->type == RtType::COLOR3 || output->type == RtType::COLOR4;
+
+        for (RtAttribute port : node.getInputs())
         {
-            for (RtAttribute attr : node.getInputs())
+            const RtToken& sourceSpace = port.getColorSpace();
+            if (sourceSpace != EMPTY_TOKEN && sourceSpace != targetSpace)
             {
-                if (attr.getType() == RtType::FILENAME)
+                const RtToken portType = port.getType();
+                if (portType == RtType::FILENAME && isColorOutput)
                 {
-                    const RtToken& colorspace = attr.getColorSpace();
-                    if (colorspace != EMPTY_TOKEN)
+                    outputColorSpaceTransforms[output] = ColorSpaceTransform(output->type, sourceSpace, targetSpace);
+                }
+                else if (portType == RtType::COLOR3 || portType == RtType::COLOR4)
+                {
+                    RtInput inputPort = port.asA<RtInput>();
+                    RtOutput upstream = inputPort.getConnection();
+                    if (!inputPort.getConnection())
                     {
-                        outputColorSpaceTransforms[output] = ColorSpaceTransform(output->type, colorspace, targetSpace);
-                        break;
+                        Fragment::Input* input = fragment.getInput(port.getName());
+                        inputColorSpaceTransforms[input] = ColorSpaceTransform(portType, sourceSpace, targetSpace);
                     }
                 }
             }
         }
 
-        if (outputColorSpaceTransforms.size())
+        if (inputColorSpaceTransforms.size() || outputColorSpaceTransforms.size())
         {
             FragmentGraph* parent = fragment.getParent();
 
@@ -249,7 +259,23 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
 
             for (size_t i = 0; i < mainFragment->numInputs(); ++i)
             {
-                container->connect(container->getInputSocket(i), mainFragment->getInput(i));
+                FragmentPtr transformFragment = nullptr;
+                Fragment::Input* port = mainFragment->getInput(i);
+                auto it = inputColorSpaceTransforms.find(port);
+                if (it != inputColorSpaceTransforms.end())
+                {
+                    transformFragment = cms->createFragment(it->second);
+                }
+                if (transformFragment)
+                {
+                    container->addFragment(transformFragment);
+                    container->connect(container->getInputSocket(i), transformFragment->getInput(0));
+                    container->connect(transformFragment->getOutput(), port);
+                }
+                else
+                {
+                    container->connect(container->getInputSocket(i), mainFragment->getInput(i));
+                }
             }
             for (size_t i = 0; i < mainFragment->numOutputs(); ++i)
             {
@@ -260,12 +286,11 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
                 {
                     transformFragment = cms->createFragment(it->second);
                 }
-
                 if (transformFragment)
                 {
                     container->addFragment(transformFragment);
                     container->connect(port, transformFragment->getInput(0));
-                    container->connect(transformFragment->getOutput(0), container->getOutputSocket(i));
+                    container->connect(transformFragment->getOutput(), container->getOutputSocket(i));
                 }
                 else
                 {

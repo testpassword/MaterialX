@@ -157,18 +157,20 @@ TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
     mx::RtPrim prim = api->getLibrary()->getPrimAtPath("/NG_tiledimage_color3");
     REQUIRE(prim);
 
-    mx::RtToken targetColorSpace("lin_rec709");
-    mx::RtToken sourceColorSpace("srgb_texture");
+    
 
     mx::RtNodeGraph nodegraph(prim);
     mx::RtNode image = nodegraph.getNode(mx::RtToken("N_img_color3"));
     mx::RtInput file = image.getInput(mx::Tokens::FILE);
-    file.setColorSpace(sourceColorSpace);
+    file.setColorSpace(mx::RtToken("srgb_texture"));
+    mx::RtInput default = image.getInput(mx::RtToken("default"));
+    default.setColorSpace(mx::RtToken("gamma22"));
+    default.clearConnection();
 
     mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
     mx::Codegen::ContextPtr context = mx::Codegen::OslContext::create(options);
 
-    options->targetColorSpaceOverride = targetColorSpace;
+    options->targetColorSpaceOverride = mx::RtToken("lin_rec709");
 
     mx::Codegen::ColorManagementSystemPtr cms = mx::Codegen::DefaultColorManagementSystem::create(mx::RtToken("genosl"));
 

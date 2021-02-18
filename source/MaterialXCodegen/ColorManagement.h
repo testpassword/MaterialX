@@ -75,7 +75,7 @@ using ColorManagementSystemPtr = RtSharedPtr<class ColorManagementSystem>;
 class DefaultColorManagementSystem : public ColorManagementSystem
 {
 public:
-    virtual ~DefaultColorManagementSystem() { }
+    virtual ~DefaultColorManagementSystem();
 
     /// Create a new DefaultColorManagementSystem for the given target.
     static ColorManagementSystemPtr create(const RtToken& target);
@@ -96,7 +96,7 @@ protected:
 private:
     RtToken _target;
     RtTokenMap<FragmentPtr> _fragments;
-    StringVec _sourceCode;
+    vector<string*> _sourceCode;
 };
 
 } // namespace Codegen
