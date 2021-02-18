@@ -96,7 +96,7 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
     frag->setFunctionName(function);
     frag->setClassification(getClassificationMask(node));
 
-    if (frag->getType() == FRAGMENT_TYPE_SOURCE_CODE)
+    if (frag->getClassName() == SourceFragment::className())
     {
         SourceFragment* sourceFragment = frag->asA<SourceFragment>();
 

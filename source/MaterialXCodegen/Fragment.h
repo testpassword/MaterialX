@@ -21,46 +21,36 @@ namespace MaterialX
 namespace Codegen
 {
 
-/// Fragment types.
-enum FragmentType
-{
-    FRAGMENT_TYPE_SOURCE_CODE,
-    FRAGMENT_TYPE_GRAPH,
-    FRAGMENT_TYPE_BSDF,
-    FRAGMENT_TYPE_SHADER,
-    FRAGMENT_TYPE_LAST
-};
-
 /// Flags for classifying fragments into different categories.
 class FragmentClassification
 {
 public:
     // Node classes
-    static const uint32_t TEXTURE = 1 << 0;  /// Any node that outputs floats, colors, vectors, etc.
-    static const uint32_t CLOSURE = 1 << 1;  /// Any node that represents light integration
-    static const uint32_t SHADER = 1 << 2;  /// Any node that outputs a shader
+    static const uint32_t TEXTURE = 1 << 0;  /// A fragment that outputs floats, colors, vectors, etc.
+    static const uint32_t CLOSURE = 1 << 1;  /// A fragment that represents light integration
+    static const uint32_t SHADER = 1 << 2;  /// A fragment that outputs a shader
     // Specific texture node types
-    static const uint32_t FILETEXTURE = 1 << 3;  /// A file texture node
-    static const uint32_t CONDITIONAL = 1 << 4;  /// A conditional node
-    static const uint32_t CONSTANT = 1 << 5;  /// A constant node
+    static const uint32_t FILETEXTURE = 1 << 3;  /// A file texture
+    static const uint32_t CONDITIONAL = 1 << 4;  /// A conditional
+    static const uint32_t CONSTANT = 1 << 5;  /// A constant
     // Specific closure types
-    static const uint32_t BSDF = 1 << 6;  /// A BSDF node
-    static const uint32_t BSDF_R = 1 << 7;  /// A BSDF node only for reflection
-    static const uint32_t BSDF_T = 1 << 8;  /// A BSDF node only for transmission
-    static const uint32_t EDF = 1 << 9;  /// A EDF node
-    static const uint32_t VDF = 1 << 10; /// A VDF node
-    static const uint32_t LAYER = 1 << 11; /// A node for vertical layering of other closure nodes
-    static const uint32_t THINFILM = 1 << 12; /// A node for adding thin-film over microfacet BSDF nodes
+    static const uint32_t BSDF = 1 << 6;  /// A BSDF
+    static const uint32_t BSDF_R = 1 << 7;  /// A BSDF only for reflection
+    static const uint32_t BSDF_T = 1 << 8;  /// A BSDF only for transmission
+    static const uint32_t EDF = 1 << 9;  /// An EDF
+    static const uint32_t VDF = 1 << 10; /// A VDF
+    static const uint32_t LAYER = 1 << 11; /// A fragment for vertical layering of other closure fragments
+    static const uint32_t THINFILM = 1 << 12; /// A fragment for adding thin-film over microfacet BSDFs
     // Specific shader types
-    static const uint32_t SURFACE = 1 << 13; /// A surface shader node
-    static const uint32_t VOLUME = 1 << 14; /// A volume shader node
-    static const uint32_t LIGHT = 1 << 15; /// A light shader node
+    static const uint32_t SURFACE = 1 << 13; /// A surface shader fragment
+    static const uint32_t VOLUME = 1 << 14; /// A volume shader fragment
+    static const uint32_t LIGHT = 1 << 15; /// A light shader fragment
     // Specific conditional types
     static const uint32_t IFELSE = 1 << 16; /// An if-else statement
     static const uint32_t SWITCH = 1 << 17; /// A switch statement
     // Types based on nodegroup
-    static const uint32_t SAMPLE2D = 1 << 18; /// Can be sampled in 2D (uv space)
-    static const uint32_t SAMPLE3D = 1 << 19; /// Can be sampled in 3D (position)
+    static const uint32_t SAMPLE2D = 1 << 18; /// A function that can be sampled in 2D (uv space)
+    static const uint32_t SAMPLE3D = 1 << 19; /// A function that can be sampled in 3D (position)
 };
 
 /// A fragment creator function type.
@@ -76,9 +66,6 @@ class Fragment : public RtSharedBase<Fragment>, public NamedObject
 
     /// Destructor.
     virtual ~Fragment() {}
-
-    /// Return the fragment type.
-    virtual FragmentType getType() const = 0;
 
     /// Return the fragment class name.
     virtual const RtToken& getClassName() const = 0;
@@ -227,12 +214,6 @@ public:
     /// Given fragment must be of the same type.
     void copy(Fragment& other) const override;
 
-    /// Return the fragment type.
-    FragmentType getType() const override
-    {
-        return FRAGMENT_TYPE_GRAPH;
-    }
-
     /// Return the fragment class name.
     const RtToken& getClassName() const override
     {
@@ -255,7 +236,7 @@ public:
     /// Return a fragment by name.
     Fragment* getFragment(const RtToken& name) const;
 
-    /// Create a connections between two fragments.
+    /// Create a connection between two fragments.
     void connect(Output* src, Input* dst);
 
     /// Create a connections between two fragments.
@@ -324,12 +305,6 @@ public:
     /// Copy data from this fragment to another.
     /// Given fragment must be of the same type.
     void copy(Fragment& other) const override;
-
-    /// Return the fragment type.
-    FragmentType getType() const override
-    {
-        return FRAGMENT_TYPE_SOURCE_CODE;
-    }
 
     /// Return the fragment class name.
     const RtToken& getClassName() const override

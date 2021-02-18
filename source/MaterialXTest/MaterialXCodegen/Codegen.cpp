@@ -19,6 +19,7 @@
 #include <MaterialXCodegen/OSL/OslGenerator.h>
 
 #include <iostream>
+#include <fstream>
 
 namespace mx = MaterialX;
 
@@ -134,7 +135,10 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
     mx::Codegen::SourceCode sourceCode;
     compiler.compileShader(*maingraph->getOutput(), sourceCode);
 
-    std::cout << sourceCode.asString() << std::endl;
+    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("codegen_test1.osl");
+    std::ofstream shaderFile;
+    shaderFile.open(filepath);
+    shaderFile << sourceCode.asString();
 }
 
 TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
@@ -153,11 +157,47 @@ TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
     api->loadLibrary(PBRLIB, readOptions);
     api->loadLibrary(BXDFLIB, readOptions);
 
-//    mx::RtPrim graph = api->getLibrary()->getPrimAtPath("/IMPL_standard_surface_surfaceshader");
-    mx::RtPrim prim = api->getLibrary()->getPrimAtPath("/NG_tiledimage_color3");
+    mx::RtPrim prim = api->getLibrary()->getPrimAtPath("/IMPL_standard_surface_surfaceshader");
     REQUIRE(prim);
 
-    
+    mx::RtNodeGraph nodegraph(prim);
+
+    mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
+    mx::Codegen::ContextPtr context = mx::Codegen::OslContext::create(options);
+
+    const mx::Codegen::FragmentGenerator& generator = context->getGenerator();
+    const mx::Codegen::FragmentCompiler& compiler = context->getCompiler();
+
+    mx::Codegen::FragmentPtr frag = generator.createFragmentGraph(nodegraph);
+    REQUIRE(frag);
+
+    mx::Codegen::SourceCode sourceCode;
+    compiler.compileShader(*frag->getOutput(), sourceCode);
+
+    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("codegen_test2.osl");
+    std::ofstream shaderFile;
+    shaderFile.open(filepath);
+    shaderFile << sourceCode.asString();
+}
+
+TEST_CASE("Codegen: Color Management", "[codegen]")
+{
+    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath());
+    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries/stdlib/osl"));
+
+    mx::RtScopedApiHandle api;
+    api->setSearchPath(searchPath);
+
+    // Load in standard libraries.
+    mx::RtReadOptions readOptions;
+    api->loadLibrary(TARGETS, readOptions);
+    api->loadLibrary(STDLIB, readOptions);
+    api->loadLibrary(PBRLIB, readOptions);
+    api->loadLibrary(BXDFLIB, readOptions);
+
+    mx::RtPrim prim = api->getLibrary()->getPrimAtPath("/NG_tiledimage_color3");
+    REQUIRE(prim);
 
     mx::RtNodeGraph nodegraph(prim);
     mx::RtNode image = nodegraph.getNode(mx::RtToken("N_img_color3"));
@@ -170,10 +210,11 @@ TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
     mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
     mx::Codegen::ContextPtr context = mx::Codegen::OslContext::create(options);
 
+    // Set target color space.
     options->targetColorSpaceOverride = mx::RtToken("lin_rec709");
 
-    mx::Codegen::ColorManagementSystemPtr cms = mx::Codegen::DefaultColorManagementSystem::create(mx::RtToken("genosl"));
-
+    // Setup a color managment system.
+    mx::Codegen::ColorManagementSystemPtr cms = mx::Codegen::DefaultColorManagementSystem::create(mx::Codegen::OslContext::TARGET);
     const mx::FilePath cmsImplFile = searchPath.find("stdlib/genosl/stdlib_genosl_cm_impl.mtlx");
     cms->asA<mx::Codegen::DefaultColorManagementSystem>()->loadImplementations(cmsImplFile);
     context->setColorManagementSystem(cms);
@@ -187,5 +228,8 @@ TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
     mx::Codegen::SourceCode sourceCode;
     compiler.compileShader(*frag->getOutput(), sourceCode);
 
-    std::cout << sourceCode.asString() << std::endl;
+    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("codegen_test3.osl");
+    std::ofstream shaderFile;
+    shaderFile.open(filepath);
+    shaderFile << sourceCode.asString();
 }

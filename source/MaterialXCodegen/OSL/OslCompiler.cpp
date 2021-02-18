@@ -49,7 +49,7 @@ FragmentCompilerPtr OslCompiler::create(const Context& context)
 
 void OslCompiler::compileShader(const Output& output, SourceCode& result) const
 {
-    if (output.getParent()->getType() != FRAGMENT_TYPE_GRAPH)
+    if (output.getParent()->getClassName() != FragmentGraph::className())
     {
         throw ExceptionRuntimeError("Given output is not a fragment graph output '" + output.getName().str() + "'");
     }
