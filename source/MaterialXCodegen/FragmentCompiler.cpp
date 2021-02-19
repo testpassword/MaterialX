@@ -83,16 +83,10 @@ void FragmentCompiler::emitInclude(const FilePath& file, SourceCode& result) con
     }
 }
 
-void FragmentCompiler::emitVariable(const Input& input, SourceCode& result) const
+string FragmentCompiler::getResult(const Input& input) const
 {
-    if (input.isConnected())
-    {
-        result.addString(input.getConnection()->getVariable().str());
-    }
-    else
-    {
-        result.addString(_context.getSyntax().getValue(input.getType(), input.getValue()));
-    }
+    return input.isConnected() ? input.getConnection()->getVariable().str() :
+        _context.getSyntax().getValue(input.getType(), input.getValue());
 }
 
 void FragmentCompiler::emitTypeDefinitions(SourceCode& result) const

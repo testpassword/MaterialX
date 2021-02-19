@@ -73,9 +73,9 @@ class Fragment : public RtSharedBase<Fragment>, public NamedObject
     /// Create a copy of this fragment.
     virtual FragmentPtr clone() const = 0;
 
-    /// Copy data from this fragment to another.
+    /// Copy data from another fragment.
     /// Given fragment must be of the same type.
-    virtual void copy(Fragment& other) const;
+    virtual void copy(const Fragment& other);
 
     FragmentGraph* getParent()
     {
@@ -165,9 +165,9 @@ class Fragment : public RtSharedBase<Fragment>, public NamedObject
         return _functionName;
     }
 
-    virtual void emitFunctionDefinitions(const Context& context, SourceCode& result) const = 0;
+    virtual void emitFunctionDefinitions(const Context& context, SourceCode& result) const;
 
-    virtual void emitFunctionCall(const Context& context, SourceCode& result) const = 0;
+    virtual void emitFunctionCall(const Context& context, SourceCode& result) const;
 
   protected:
     // Parent fragment graph.
@@ -212,7 +212,7 @@ public:
 
     /// Copy data from this fragment to another.
     /// Given fragment must be of the same type.
-    void copy(Fragment& other) const override;
+    void copy(const Fragment& other) override;
 
     /// Return the fragment class name.
     const RtToken& getClassName() const override
@@ -302,9 +302,9 @@ public:
     /// Create a copy of this fragment.
     FragmentPtr clone() const override;
 
-    /// Copy data from this fragment to another.
+    /// Copy data from another fragment.
     /// Given fragment must be of the same type.
-    void copy(Fragment& other) const override;
+    void copy(const Fragment& other) override;
 
     /// Return the fragment class name.
     const RtToken& getClassName() const override

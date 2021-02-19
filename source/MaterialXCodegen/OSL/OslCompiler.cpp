@@ -129,7 +129,7 @@ void OslCompiler::compileShader(const Output& output, SourceCode& result) const
     const Input* outputSocket = graph->getOutputSocket(output.getName());
     result.beginLine();
     result.addString(outputSocket->getVariable().str() + " = ");
-    emitVariable(*outputSocket, result);
+    result.addString(getResult(*outputSocket));
     result.endLine();
 
     result.endScope();

@@ -29,6 +29,11 @@ public:
     {
         return value.asBool() ? "1" : "0";
     }
+
+    string getValue(const StringVec& values) const override
+    {
+        return values.size() && values[0] == "true" ? "1" : "0";
+    }
 };
 
 // In OSL vector2, vector4 and color4 are custom struct types and require a different
@@ -48,6 +53,34 @@ class OslStructTypeSyntax : public AggregateTypeSyntax
         RtValue::toString(_type, value, result);
         return getTypeName() + "{" + result + "}";
     }
+
+    string getValue(const StringVec& values) const override
+    {
+        return getValue(values, false);
+    }
+
+    string getInterfaceValue(const StringVec& values) const override
+    {
+        return getValue(values, true);
+    }
+
+private:
+    string getValue(const StringVec& values, bool curlyBrackets) const
+    {
+        if (values.empty())
+        {
+            throw ExceptionRuntimeError("No values given to construct a value");
+        }
+        std::stringstream ss;
+        ss << (curlyBrackets ? "{" : getTypeName() + "(" ) << values[0];
+        for (size_t i = 1; i < values.size(); ++i)
+        {
+            ss << ", " << values[i];
+        }
+        ss << (curlyBrackets ? "}" : ")");
+        return ss.str();
+    }
+
 };
 
 // For the color4 type we need even more specialization since it's a struct of a struct:
@@ -68,10 +101,8 @@ class OslColor4TypeSyntax : public OslStructTypeSyntax
     {
         std::stringstream ss;
         RtApi::get().setStreamFloatFormat(ss);
-
         const Color4& c = value.asColor4();
         ss << "color4(color(" << c[0] << ", " << c[1] << ", " << c[2] << "), " << c[3] << ")";
-
         return ss.str();
     }
 
@@ -79,10 +110,30 @@ class OslColor4TypeSyntax : public OslStructTypeSyntax
     {
         std::stringstream ss;
         RtApi::get().setStreamFloatFormat(ss);
-
         const Color4& c = value.asColor4();
         ss << "{color(" << c[0] << ", " << c[1] << ", " << c[2] << "), " << c[3] << "}";
+        return ss.str();
+    }
 
+    string getValue(const StringVec& values) const override
+    {
+        if (values.size() < 4)
+        {
+            throw ExceptionRuntimeError("Too few values given to construct a color4 value");
+        }
+        std::stringstream ss;
+        ss << "color4(color(" << values[0] << ", " << values[1] << ", " << values[2] << "), " << values[3] << ")";
+        return ss.str();
+    }
+
+    string getInterfaceValue(const StringVec& values) const override
+    {
+        if (values.size() < 4)
+        {
+            throw ExceptionRuntimeError("Too few values given to construct a color4 value");
+        }
+        std::stringstream ss;
+        ss << "{color(" << values[0] << ", " << values[1] << ", " << values[2] << "), " << values[3] << "}";
         return ss.str();
     }
 };

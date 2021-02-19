@@ -75,9 +75,6 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
         frag = SourceFragment::create(node.getName());
     }
 
-    // Let the parent take ownership.
-    parent.addFragment(frag);
-
     // Create fragment ports according to the nodedef.
     for (RtAttribute attr : nodedef.getInputs())
     {
@@ -95,6 +92,9 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
     const RtToken& function = nodeimpl.getFunction();
     frag->setFunctionName(function);
     frag->setClassification(getClassificationMask(node));
+
+    // Let the parent take ownership.
+    parent.addFragment(frag);
 
     if (frag->getClassName() == SourceFragment::className())
     {

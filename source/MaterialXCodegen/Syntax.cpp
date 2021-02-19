@@ -5,6 +5,8 @@
 
 #include <MaterialXCodegen/Syntax.h>
 
+#include <MaterialXRuntime/RtTypeDef.h>
+
 namespace MaterialX
 {
 namespace Codegen
@@ -63,16 +65,17 @@ const TypeSyntax& Syntax::getTypeSyntax(const RtToken& type) const
     return *_typeSyntaxes[it->second];
 }
 
-/*
-string Syntax::getSwizzledVariable(const string& srcName, const RtToken& srcType, const string& channels, const RtToken& dstType) const
-{
-    const TypeSyntax& srcSyntax = getTypeSyntax(srcType);
-    const TypeSyntax& dstSyntax = getTypeSyntax(dstType);
 
-    const StringVec& srcMembers = srcSyntax.getMembers();
+string Syntax::getSwizzledVariable(const string& variable, const RtToken& type, const RtToken& dstType, const string& channels) const
+{
+    const RtTypeDef* typeDef = RtTypeDef::findType(type);
+    const TypeSyntax& typeSyntax = getTypeSyntax(type);
+    const TypeSyntax& dstTypeSyntax = getTypeSyntax(dstType);
+    const StringVec& typeMembers = typeSyntax.getMembers();
 
     StringVec membersSwizzled;
 
+    string tmp;
     for (size_t i = 0; i < channels.size(); ++i)
     {
         const char ch = channels[i];
@@ -88,24 +91,26 @@ string Syntax::getSwizzledVariable(const string& srcName, const RtToken& srcType
             throw ExceptionRuntimeError("Invalid channel pattern '" + channels + "'.");
         }
 
-        if (srcMembers.empty())
+        if (typeMembers.empty())
         {
-            membersSwizzled.push_back(srcName);
+            membersSwizzled.push_back(variable);
         }
         else
         {
-            int channelIndex = srcType->getChannelIndex(ch);
-            if (channelIndex < 0 || channelIndex >= static_cast<int>(srcMembers.size()))
+            tmp = ch;
+            const size_t channelIndex = typeDef->getComponentIndex(RtToken(tmp));
+            if (channelIndex >= typeMembers.size())
             {
-                throw ExceptionRuntimeError("Given channel index: '" + string(1,ch) + "' in channels pattern is incorrect for type '" + srcType->getName() + "'.");
+                throw ExceptionRuntimeError("Given channel index: '" + tmp + "' in channels pattern is incorrect for type '" + type.str() + "'.");
             }
-            membersSwizzled.push_back(srcName + srcMembers[channelIndex]);
+            membersSwizzled.push_back(variable + typeMembers[channelIndex]);
         }
     }
 
-    return dstSyntax.getValue(membersSwizzled, false);
+    return dstTypeSyntax.getValue(membersSwizzled);
 }
 
+/*
 ValuePtr Syntax::getSwizzledValue(ValuePtr value, const RtToken& srcType, const string& channels, const RtToken& dstType) const
 {
     const TypeSyntax& srcSyntax = getTypeSyntax(srcType);
@@ -289,6 +294,15 @@ string ScalarTypeSyntax::getValue(const RtValue& value) const
     return result;
 }
 
+string ScalarTypeSyntax::getValue(const StringVec& values) const
+{
+    if (values.empty())
+    {
+        throw ExceptionRuntimeError("No values given to construct a value");
+    }
+    return values[0];
+}
+
 
 StringTypeSyntax::StringTypeSyntax(const RtToken& type, const string& typeName, const string& defaultValue, const string& interfaceDefaultValue,
                                    const string& typeAlias, const string& typeDefinition) :
@@ -315,6 +329,23 @@ string AggregateTypeSyntax::getValue(const RtValue& value) const
     string result;
     RtValue::toString(_type, value, result);
     return getTypeName() + "(" + result + ")";
+}
+
+string AggregateTypeSyntax::getValue(const StringVec& values) const
+{
+    if (values.empty())
+    {
+        throw ExceptionRuntimeError("No values given to construct a value");
+    }
+
+    string result = getTypeName() + "(" + values[0];
+    for (size_t i = 1; i < values.size(); ++i)
+    {
+        result += ", " + values[i];
+    }
+    result += ")";
+
+    return result;
 }
 
 } // namespace Codegen

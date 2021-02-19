@@ -141,7 +141,7 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
     shaderFile << sourceCode.asString();
 }
 
-TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
+TEST_CASE("Codegen: Fragments from RtNodeGraph", "[codegen]")
 {
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath());
     searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));

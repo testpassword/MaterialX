@@ -28,26 +28,26 @@ Fragment::Fragment(const RtToken& name) :
 {
 }
 
-void Fragment::copy(Fragment& other) const
+void Fragment::copy(const Fragment& other)
 {
-    other._name = _name;
-    other._classification = _classification;
-    other._functionName = _functionName;
+    _name = other._name;
+    _classification = other._classification;
+    _functionName = other._functionName;
 
-    other._inputs.clear();
-    other._outputs.clear();
+    _inputs.clear();
+    _outputs.clear();
 
-    for (size_t i = 0; i < numInputs(); ++i)
+    for (size_t i = 0; i < other.numInputs(); ++i)
     {
-        const Input* port = getInput(i);
-        Input* otherPort = other.createInput(port->getName(), port->getType());
+        const Input* port = other.getInput(i);
+        Input* otherPort = createInput(port->getName(), port->getType());
         otherPort->setVariable(port->getVariable());
         RtValue::copy(port->getType(), port->getValue(), otherPort->getValue());
     }
-    for (size_t i = 0; i < numOutputs(); ++i)
+    for (size_t i = 0; i < other.numOutputs(); ++i)
     {
-        const Output* port = getOutput(i);
-        Output* otherPort = other.createOutput(port->getName(), port->getType());
+        const Output* port = other.getOutput(i);
+        Output* otherPort = createOutput(port->getName(), port->getType());
         otherPort->setVariable(port->getVariable());
     }
 }
@@ -86,6 +86,14 @@ Output* Fragment::createOutput(const RtToken& name, const RtToken& type)
     return output.get();
 }
 
+void Fragment::emitFunctionDefinitions(const Context&, SourceCode&) const
+{
+}
+
+void Fragment::emitFunctionCall(const Context&, SourceCode&) const
+{
+}
+
 
 FragmentGraph::FragmentGraph(const RtToken& name) :
     Fragment(name)
@@ -106,11 +114,11 @@ const RtToken& FragmentGraph::className()
 FragmentPtr FragmentGraph::clone() const
 {
     FragmentPtr other = FragmentGraph::create(_name);
-    copy(*other);
+    other->copy(*this);
     return other;
 }
 
-void FragmentGraph::copy(Fragment& /*other*/) const
+void FragmentGraph::copy(const Fragment& /*other*/)
 {
     throw ExceptionRuntimeError("FragmentGraph::copy: Not implemented yet!");
 /*
@@ -418,7 +426,7 @@ void FragmentGraph::emitFunctionDefinitions(const Context& context, SourceCode& 
         const Input* outputSocket = getOutputSocket(i);
         result.beginLine();
         result.addString(outputSocket->getVariable().str() + " = ");
-        compiler.emitVariable(*outputSocket, result);
+        result.addString(compiler.getResult(*outputSocket));
         result.endLine();
     }
 
@@ -449,7 +457,7 @@ void FragmentGraph::emitFunctionCall(const Context& context, SourceCode& result)
     {
         const Input* input = getInput(i);
         result.addString(delim);
-        compiler.emitVariable(*input, result);
+        result.addString(compiler.getResult(*input));
         delim = ", ";
     }
 
@@ -485,15 +493,15 @@ const RtToken& SourceFragment::className()
 FragmentPtr SourceFragment::clone() const
 {
     FragmentPtr other = SourceFragment::create(_name);
-    copy(*other);
+    other->copy(*this);
     return other;
 }
 
-void SourceFragment::copy(Fragment& other) const
+void SourceFragment::copy(const Fragment& other)
 {
     Fragment::copy(other);
-    SourceFragment* otherFragment = other.asA<SourceFragment>();
-    otherFragment->_sourceCode = _sourceCode;
+    const SourceFragment* otherFragment = other.asA<const SourceFragment>();
+    _sourceCode = otherFragment->_sourceCode;
 }
 
 void SourceFragment::emitFunctionDefinitions(const Context& context, SourceCode& result) const
@@ -544,7 +552,7 @@ void SourceFragment::emitFunctionCall(const Context& context, SourceCode& result
 
             if (input->isConnected())
             {
-                compiler.emitVariable(*input, inlineResult);
+                inlineResult.addString(compiler.getResult(*input));
             }
             else
             {
@@ -595,7 +603,7 @@ void SourceFragment::emitFunctionCall(const Context& context, SourceCode& result
         {
             const Input* input = getInput(i);
             result.addString(delim);
-            compiler.emitVariable(*input, result);
+            result.addString(compiler.getResult(*input));
             delim = ", ";
         }
 

@@ -31,8 +31,10 @@ public:
     virtual void declareVariable(const Attribute& attr, bool assignDefault, SourceCode& result) const;
     virtual void emitBlock(const string& block, SourceCode& result) const;
     virtual void emitInclude(const FilePath& file, SourceCode& result) const;
-    virtual void emitVariable(const Input& input, SourceCode& result) const;
     virtual void emitTypeDefinitions(SourceCode& result) const;
+
+    string getResult(const Input& input) const;
+    string getResultSwizzle(const Input& input) const;
 
     /// Return the set of reserved words that should not be used
     /// as identifiers during code generation.

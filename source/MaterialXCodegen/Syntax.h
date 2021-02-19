@@ -47,9 +47,20 @@ public:
     /// Returns a value formatted according to this type syntax.
     virtual string getValue(const RtValue& value) const = 0;
 
+    /// Returns a value formatted according to this type syntax.
+    /// The value is constructed from the given list of value entries
+    /// with one entry for each member of the type.
+    virtual string getValue(const StringVec& value) const = 0;
+
     /// Returns a value formatted according to this type syntax
     /// when used in a shader interface context.
     virtual string getInterfaceValue(const RtValue& value) const { return getValue(value); }
+
+    /// Returns a value formatted according to this type syntax
+    /// when used in a shader interface context.
+    /// The value is constructed from the given list of value entries
+    /// with one entry for each member of the type.
+    virtual string getInterfaceValue(const StringVec& value) const { return getValue(value); }
 
     /// Returns the syntax for accessing type members if the type 
     /// can be swizzled.
@@ -79,6 +90,7 @@ public:
         const string& typeAlias = EMPTY_STRING, const string& typeDefinition = EMPTY_STRING);
 
     string getValue(const RtValue& value) const override;
+    string getValue(const StringVec& value) const override;
 };
 
 /// Specialization of TypeSyntax for string types.
@@ -100,6 +112,7 @@ public:
         const StringVec& members = EMPTY_MEMBERS);
 
     string getValue(const RtValue& value) const override;
+    string getValue(const StringVec& value) const override;
 };
 
 
@@ -200,7 +213,7 @@ class Syntax
     }
 
     /// Get syntax for a swizzled variable
-//    virtual string getSwizzledVariable(const string& srcName, const RtToken& srcType, const string& channels, const RtToken& dstType) const;
+    virtual string getSwizzledVariable(const string& variable, const RtToken& type, const RtToken& dstType, const string& channels) const;
 
     /// Get swizzled value
 //    virtual RtValue getSwizzledValue(const RtValue& value, const RtToken& srcType, const string& channels, const RtToken& dstType) const;
