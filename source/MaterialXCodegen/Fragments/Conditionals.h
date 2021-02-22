@@ -25,15 +25,16 @@ public:
     /// Return the equality operator to use.
     virtual const string& equalityOperator() const = 0;
 
+    /// Generate the fragment source code.
     void emitFunctionCall(const Context& context, SourceCode& result) const override;
 
   protected:
     /// Private constructor.
-      IfFragment(const RtToken& name);
+    IfFragment(const RtToken& name);
 };
 
 /// @class IfEqualFragment
-/// A fragments representing an if-equal conditions.
+/// A fragment representing an if-equal condition.
 class IfEqualFragment : public IfFragment
 {
 public:
@@ -60,7 +61,7 @@ public:
 };
 
 /// @class IfGreaterFragment
-/// A fragments representing an if-greater conditions.
+/// A fragment representing an if-greater condition.
 class IfGreaterFragment : public IfFragment
 {
 public:
@@ -87,7 +88,7 @@ public:
 };
 
 /// @class IfGreaterEqFragment
-/// A fragments representing an if-greater-or-equal conditions.
+/// A fragment representing an if-greater-or-equal condition.
 class IfGreaterEqFragment : public IfFragment
 {
 public:
@@ -113,6 +114,33 @@ public:
     const string& equalityOperator() const override;
 };
 
+
+/// @class SwitchFragment
+/// A fragment representing a switch condition.
+class SwitchFragment : public Fragment
+{
+public:
+    /// Constructor.
+    SwitchFragment(const RtToken& name);
+
+    /// Create a new instance of this class.
+    static FragmentPtr create(const RtToken& name);
+
+    /// Return the class name for this fragment.
+    static const RtToken& className();
+
+    /// Create a copy of this fragment.
+    FragmentPtr clone() const override;
+
+    /// Return the fragment class name.
+    const RtToken& getClassName() const override
+    {
+        return className();
+    }
+
+    /// Generate the fragment source code.
+    void emitFunctionCall(const Context& context, SourceCode& result) const override;
+};
 
 } // namespace Codegen
 } // namespace MaterialX

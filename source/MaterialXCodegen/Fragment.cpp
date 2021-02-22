@@ -564,7 +564,7 @@ void SourceFragment::emitFunctionCall(const Context& context, SourceCode& result
                     result.beginLine();
                     const string& qualifier = syntax.getConstantQualifier();
                     result.addString(qualifier.empty() ? EMPTY_STRING : qualifier + " ");
-                    result.addString(syntax.getTypeName(input->getType()) + " " + input->getVariable().str() + " = " + syntax.getValue(input->getType(), input->getValue()));
+                    result.addString(syntax.getTypeName(input->getType()) + " " + variableName + " = " + syntax.getValue(input->getType(), input->getValue()));
                     result.endLine();
                     localVariableNames.insert(variableName);
                 }

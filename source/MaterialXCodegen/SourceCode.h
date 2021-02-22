@@ -10,9 +10,12 @@
 /// TODO: Docs
 
 #include <MaterialXCodegen/Library.h>
+#include <MaterialXCodegen/Syntax.h>
+
+#include <MaterialXRuntime/RtApi.h>
 #include <MaterialXRuntime/RtToken.h>
 
-#include <MaterialXCodegen/Syntax.h>
+#include <sstream>
 
 namespace MaterialX
 {
@@ -47,6 +50,16 @@ public:
 
     /// Add a line of code, optionally appending a semicolon.
     void addLine(const string& str, bool semicolon = true);
+
+    /// Add a value.
+    template<typename T>
+    void addValue(const T& value)
+    {
+        std::stringstream ss;
+        RtApi::get().setStreamFloatFormat(ss);
+        ss << value;
+        _code += ss.str();
+    }
 
     /// Set the given function as defined in this source code.
     void setDefined(const RtToken& function);

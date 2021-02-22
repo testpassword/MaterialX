@@ -65,6 +65,8 @@ void OslCompiler::compileShader(const Output& output, SourceCode& result) const
 
     // Add global constants and type definitions.
     emitTypeDefinitions(result);
+    result.addLine("#define true 1", false);
+    result.addLine("#define false 0", false);
     result.addLine("#define M_FLOAT_EPS 1e-8", false);
     result.addLine("#define M_GOLDEN_RATIO 1.6180339887498948482045868343656", false);
     result.addLine("#define GGX_DIRECTIONAL_ALBEDO_METHOD " + std::to_string(int(_context.getOptions().directionalAlbedoMethod)), false);
@@ -100,21 +102,22 @@ void OslCompiler::compileShader(const Output& output, SourceCode& result) const
     {
         const Input* port = graph->getInput(i);
         result.addLine(syntax.getTypeName(port->getType()) + " " + port->getVariable().str() + " = " +
-            syntax.getValue(port->getType(), port->getValue()) + ',', false);
+            syntax.getInterfaceValue(port->getType(), port->getValue()) + ',', false);
     }
     for (size_t i = 0; i < graph->numOutputs(); ++i)
     {
         const Output* port = graph->getOutput(i);
         const string delim = (i == graph->numOutputs() - 1) ? EMPTY_STRING : ",";
         result.addLine(syntax.getOutputQualifier() + syntax.getTypeName(port->getType()) + " " + 
-            port->getVariable().str() + " = " + syntax.getDefaultValue(port->getType()) + delim, false);
+            port->getVariable().str() + " = " + syntax.getInterfaceDefaultValue(port->getType()) + delim, false);
     }
     result.endScope();
 
     // Emit shader body.
     result.beginScope();
 
-    if (graph->hasClassification(FragmentClassification::CLOSURE))
+    if (graph->hasClassification(FragmentClassification::CLOSURE) ||
+        graph->hasClassification(FragmentClassification::SHADER))
     {
         result.addLine("closure color null_closure = 0");
     }

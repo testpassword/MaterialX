@@ -135,5 +135,62 @@ const string& IfGreaterEqFragment::equalityOperator() const
     return OP;
 }
 
+
+SwitchFragment::SwitchFragment(const RtToken& name) : Fragment(name) {}
+
+FragmentPtr SwitchFragment::create(const RtToken& name)
+{
+    return FragmentPtr(new SwitchFragment(name));
+}
+
+const RtToken& SwitchFragment::className()
+{
+    static const RtToken CLASS_NAME("SwitchFragment");
+    return CLASS_NAME;
+}
+
+FragmentPtr SwitchFragment::clone() const
+{
+    FragmentPtr other = SwitchFragment::create(_name);
+    other->copy(*this);
+    return other;
+}
+
+void SwitchFragment::emitFunctionCall(const Context& context, SourceCode& result) const
+{
+    const FragmentCompiler& compiler = context.getCompiler();
+
+    const Output* output = getOutput();
+    const Input* which = getInput(5);
+
+    // Declare the output variable
+    result.beginLine();
+    compiler.declareVariable(*output, true, result);
+    result.endLine();
+
+    // Process the branches of the switch node
+    for (size_t branch = 0; branch < 5; ++branch)
+    {
+        const Input* input = getInput(branch);
+        result.beginLine();
+        if (branch > 0)
+        {
+            result.addString("else ");
+        }
+        result.addString("if (float(");
+        result.addString(compiler.getResult(*which));
+        result.addString(") < ");
+        result.addValue(float(branch + 1));
+        result.addString(")");
+        result.endLine(false);
+        result.beginScope();
+        result.beginLine();
+        result.addString(output->getVariable().str() + " = ");
+        result.addString(compiler.getResult(*input));
+        result.endLine();
+        result.endScope();
+    }
+}
+
 } // namespace Codegen
 } // namespace MaterialX

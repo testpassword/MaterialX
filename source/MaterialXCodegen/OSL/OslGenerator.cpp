@@ -67,6 +67,20 @@ OslGenerator::OslGenerator(const Context& context) :
     registerFragmentClass(RtToken("IM_ifequal_vector3B_genosl"), IfEqualFragment::create);
     registerFragmentClass(RtToken("IM_ifequal_vector4B_genosl"), IfEqualFragment::create);
 
+    // <switch>
+    registerFragmentClass(RtToken("IM_switch_float_genosl"), SwitchFragment::create);
+    registerFragmentClass(RtToken("IM_switch_color3_genosl"), SwitchFragment::create);
+    registerFragmentClass(RtToken("IM_switch_color4_genosl"), SwitchFragment::create);
+    registerFragmentClass(RtToken("IM_switch_vector2_genosl"), SwitchFragment::create);
+    registerFragmentClass(RtToken("IM_switch_vector3_genosl"), SwitchFragment::create);
+    registerFragmentClass(RtToken("IM_switch_vector4_genosl"), SwitchFragment::create);
+    registerFragmentClass(RtToken("IM_switch_floatI_genosl"), SwitchFragment::create);
+    registerFragmentClass(RtToken("IM_switch_color3I_genosl"), SwitchFragment::create);
+    registerFragmentClass(RtToken("IM_switch_color4I_genosl"), SwitchFragment::create);
+    registerFragmentClass(RtToken("IM_switch_vector2I_genosl"), SwitchFragment::create);
+    registerFragmentClass(RtToken("IM_switch_vector3I_genosl"), SwitchFragment::create);
+    registerFragmentClass(RtToken("IM_switch_vector4I_genosl"), SwitchFragment::create);
+
     // <convert>
     registerFragmentClass(RtToken("IM_convert_float_color3_genosl"), ConvertFragment::create);
     registerFragmentClass(RtToken("IM_convert_float_color4_genosl"), ConvertFragment::create);
