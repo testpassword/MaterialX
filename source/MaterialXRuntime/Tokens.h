@@ -53,6 +53,11 @@ namespace Tokens
     extern const RtToken TARGET;
     extern const RtToken UIFOLDER;
     extern const RtToken VERSION;
+    extern const RtToken WEIGHT;
+    extern const RtToken COLOR;
+    extern const RtToken ROUGHNESS;
+    extern const RtToken NORMAL;
+    extern const RtToken BASE;
     extern const RtToken UNKNOWN;
     extern const RtToken CONSTANT;
     extern const RtToken IMAGE;

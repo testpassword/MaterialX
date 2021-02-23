@@ -66,25 +66,7 @@ namespace
     };
 }
 
-ConvertFragment::ConvertFragment(const RtToken& name) : Fragment(name) {}
-
-FragmentPtr ConvertFragment::create(const RtToken& name)
-{
-    return FragmentPtr(new ConvertFragment(name));
-}
-
-const RtToken& ConvertFragment::className()
-{
-    static const RtToken CLASS_NAME("ConvertFragment");
-    return CLASS_NAME;
-}
-
-FragmentPtr ConvertFragment::clone() const
-{
-    FragmentPtr other = ConvertFragment::create(_name);
-    other->copy(*this);
-    return other;
-}
+DEFINE_FRAGMENT_CLASS(ConvertFragment, Fragment)
 
 void ConvertFragment::emitFunctionCall(const Context& context, SourceCode& result) const
 {
@@ -149,25 +131,7 @@ void ConvertFragment::emitFunctionCall(const Context& context, SourceCode& resul
 }
 
 
-SwizzleFragment::SwizzleFragment(const RtToken& name) : Fragment(name) {}
-
-FragmentPtr SwizzleFragment::create(const RtToken& name)
-{
-    return FragmentPtr(new SwizzleFragment(name));
-}
-
-const RtToken& SwizzleFragment::className()
-{
-    static const RtToken CLASS_NAME("SwizzleFragment");
-    return CLASS_NAME;
-}
-
-FragmentPtr SwizzleFragment::clone() const
-{
-    FragmentPtr other = SwizzleFragment::create(_name);
-    other->copy(*this);
-    return other;
-}
+DEFINE_FRAGMENT_CLASS(SwizzleFragment, Fragment)
 
 void SwizzleFragment::emitFunctionCall(const Context& context, SourceCode& result) const
 {

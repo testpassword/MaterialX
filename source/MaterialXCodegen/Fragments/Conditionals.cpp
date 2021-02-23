@@ -55,25 +55,7 @@ void IfFragment::emitFunctionCall(const Context& context, SourceCode& result) co
 }
 
 
-IfEqualFragment::IfEqualFragment(const RtToken& name) : IfFragment(name) {}
-
-FragmentPtr IfEqualFragment::create(const RtToken& name)
-{
-    return FragmentPtr(new IfEqualFragment(name));
-}
-
-const RtToken& IfEqualFragment::className()
-{
-    static const RtToken CLASS_NAME("IfEqualFragment");
-    return CLASS_NAME;
-}
-
-FragmentPtr IfEqualFragment::clone() const
-{
-    FragmentPtr other = IfEqualFragment::create(_name);
-    other->copy(*this);
-    return other;
-}
+DEFINE_FRAGMENT_CLASS(IfEqualFragment, IfFragment)
 
 const string& IfEqualFragment::equalityOperator() const
 {
@@ -82,25 +64,7 @@ const string& IfEqualFragment::equalityOperator() const
 }
 
 
-IfGreaterFragment::IfGreaterFragment(const RtToken& name) : IfFragment(name) {}
-
-FragmentPtr IfGreaterFragment::create(const RtToken& name)
-{
-    return FragmentPtr(new IfGreaterFragment(name));
-}
-
-const RtToken& IfGreaterFragment::className()
-{
-    static const RtToken CLASS_NAME("IfGreaterFragment");
-    return CLASS_NAME;
-}
-
-FragmentPtr IfGreaterFragment::clone() const
-{
-    FragmentPtr other = IfGreaterFragment::create(_name);
-    other->copy(*this);
-    return other;
-}
+DEFINE_FRAGMENT_CLASS(IfGreaterFragment, IfFragment)
 
 const string& IfGreaterFragment::equalityOperator() const
 {
@@ -109,25 +73,7 @@ const string& IfGreaterFragment::equalityOperator() const
 }
 
 
-IfGreaterEqFragment::IfGreaterEqFragment(const RtToken& name) : IfFragment(name) {}
-
-FragmentPtr IfGreaterEqFragment::create(const RtToken& name)
-{
-    return FragmentPtr(new IfGreaterFragment(name));
-}
-
-const RtToken& IfGreaterEqFragment::className()
-{
-    static const RtToken CLASS_NAME("IfGreaterEqFragment");
-    return CLASS_NAME;
-}
-
-FragmentPtr IfGreaterEqFragment::clone() const
-{
-    FragmentPtr other = IfGreaterEqFragment::create(_name);
-    other->copy(*this);
-    return other;
-}
+DEFINE_FRAGMENT_CLASS(IfGreaterEqFragment, IfFragment)
 
 const string& IfGreaterEqFragment::equalityOperator() const
 {
@@ -136,25 +82,7 @@ const string& IfGreaterEqFragment::equalityOperator() const
 }
 
 
-SwitchFragment::SwitchFragment(const RtToken& name) : Fragment(name) {}
-
-FragmentPtr SwitchFragment::create(const RtToken& name)
-{
-    return FragmentPtr(new SwitchFragment(name));
-}
-
-const RtToken& SwitchFragment::className()
-{
-    static const RtToken CLASS_NAME("SwitchFragment");
-    return CLASS_NAME;
-}
-
-FragmentPtr SwitchFragment::clone() const
-{
-    FragmentPtr other = SwitchFragment::create(_name);
-    other->copy(*this);
-    return other;
-}
+DEFINE_FRAGMENT_CLASS(SwitchFragment, Fragment)
 
 void SwitchFragment::emitFunctionCall(const Context& context, SourceCode& result) const
 {

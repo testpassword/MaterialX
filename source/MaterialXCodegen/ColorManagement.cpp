@@ -4,6 +4,7 @@
 //
 
 #include <MaterialXCodegen/ColorManagement.h>
+#include <MaterialXCodegen/Context.h>
 
 #include <MaterialXRuntime/RtApi.h>
 #include <MaterialXRuntime/RtTypeDef.h>
@@ -32,8 +33,8 @@ ColorSpaceTransform::ColorSpaceTransform(const RtToken& type_, const RtToken& so
 }
 
 
-DefaultColorManagementSystem::DefaultColorManagementSystem(const RtToken& target) :
-    _target(target)
+DefaultColorManagementSystem::DefaultColorManagementSystem(const Context& context) :
+    _context(context)
 {}
 
 DefaultColorManagementSystem::~DefaultColorManagementSystem()
@@ -44,9 +45,9 @@ DefaultColorManagementSystem::~DefaultColorManagementSystem()
     }
 }
 
-ColorManagementSystemPtr DefaultColorManagementSystem::create(const RtToken& target)
+ColorManagementSystemPtr DefaultColorManagementSystem::create(const Context& context)
 {
-    return ColorManagementSystemPtr(new DefaultColorManagementSystem(target));
+    return ColorManagementSystemPtr(new DefaultColorManagementSystem(context));
 }
 
 const RtToken& DefaultColorManagementSystem::getName() const
@@ -58,7 +59,7 @@ const RtToken& DefaultColorManagementSystem::getName() const
 FragmentPtr DefaultColorManagementSystem::createFragment(const ColorSpaceTransform& transform) const
 {
     const RtToken fragmentName("IM_" + transform.sourceSpace.str() + "_to_" + 
-        transform.targetSpace.str() + "_" + transform.type.str() + "_" + _target.str());
+        transform.targetSpace.str() + "_" + transform.type.str() + "_" + _context.getTarget().str());
     auto it = _fragments.find(fragmentName);
     return it != _fragments.end() ? it->second->clone() : nullptr;
 }
@@ -71,7 +72,7 @@ void DefaultColorManagementSystem::loadImplementations(const FilePath& file)
     for (auto impl : doc->getImplementations())
     {
         const string& target = impl->getTarget();
-        if (target == _target.str())
+        if (target == _context.getTarget().str())
         {
             const string& name = impl->getName();
             const string& function = impl->getFunction();
@@ -109,6 +110,7 @@ void DefaultColorManagementSystem::loadImplementations(const FilePath& file)
             sourceFragment->createOutput(Tokens::OUT, type);
             sourceFragment->setSourceCode(sourceCode);
             sourceFragment->setFunctionName(RtToken(function));
+            sourceFragment->finalize(_context);
 
             _fragments[frag->getName()] = frag;
             _sourceCode.push_back(sourceCode);

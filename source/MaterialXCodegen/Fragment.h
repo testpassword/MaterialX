@@ -16,6 +16,40 @@
 #include <MaterialXCodegen/Attribute.h>
 #include <MaterialXCodegen/SourceCode.h>
 
+/// Macro declaring required methods and mambers on a fragment class.
+#define DECLARE_FRAGMENT_CLASS(T)                                        \
+public:                                                                  \
+    T(const RtToken& name);                                              \
+    static FragmentPtr create(const RtToken& name);                      \
+    static const RtToken& className();                                   \
+    FragmentPtr clone() const override;                                  \
+    const RtToken& getClassName() const override { return className(); } \
+
+/// Macro defining required methods and mambers on a fragment class.
+/// The constructor has to be defined separatelly.
+#define DEFINE_FRAGMENT_CLASS_NO_CONSTRUCT(T)                            \
+    FragmentPtr T::create(const RtToken& name)                           \
+    {                                                                    \
+        return FragmentPtr(new T(name));                                 \
+    }                                                                    \
+    const RtToken& T::className()                                        \
+    {                                                                    \
+        static const RtToken CLASS_NAME(#T);                             \
+        return CLASS_NAME;                                               \
+    }                                                                    \
+    FragmentPtr T::clone() const                                         \
+    {                                                                    \
+        FragmentPtr other = T::create(_name);                            \
+        other->copy(*this);                                              \
+        return other;                                                    \
+    }                                                                    \
+
+/// Macro defining required methods and mambers on a fragment class
+/// including a default constructor.
+#define DEFINE_FRAGMENT_CLASS(T, BaseClass)                              \
+    T::T(const RtToken& name) : BaseClass(name) {}                       \
+    DEFINE_FRAGMENT_CLASS_NO_CONSTRUCT(T)                                \
+
 namespace MaterialX
 {
 namespace Codegen
@@ -108,6 +142,12 @@ class Fragment : public RtSharedBase<Fragment>, public NamedObject
     }
 
     template<class T>
+    bool isA()
+    {
+        return dynamic_cast<T*>(this) != nullptr;
+    }
+
+    template<class T>
     T* asA()
     {
         return static_cast<T*>(this);
@@ -119,8 +159,10 @@ class Fragment : public RtSharedBase<Fragment>, public NamedObject
         return static_cast<T*>(this);
     }
 
+    /// Create an input.
     virtual Input* createInput(const RtToken& name, const RtToken& type);
 
+    /// Create an output.
     virtual Output* createOutput(const RtToken& name, const RtToken& type);
 
     size_t numInputs() const
@@ -165,6 +207,8 @@ class Fragment : public RtSharedBase<Fragment>, public NamedObject
         return _functionName;
     }
 
+    virtual void finalize(const Context& context);
+
     virtual void emitFunctionDefinitions(const Context& context, SourceCode& result) const;
 
     virtual void emitFunctionCall(const Context& context, SourceCode& result) const;
@@ -197,28 +241,12 @@ using FragmentList = ObjectList<Fragment>;
 /// Class holding a set of fragments connected in a graph.
 class FragmentGraph : public Fragment
 {
+    DECLARE_FRAGMENT_CLASS(FragmentGraph)
+
 public:
-    /// Constructor.
-    FragmentGraph(const RtToken& name);
-
-    /// Create a new instance of this class.
-    static FragmentPtr create(const RtToken& name);
-
-    /// Return the class name for this fragment.
-    static const RtToken& className();
-
-    /// Create a copy of this fragment.
-    FragmentPtr clone() const override;
-
     /// Copy data from this fragment to another.
     /// Given fragment must be of the same type.
     void copy(const Fragment& other) override;
-
-    /// Return the fragment class name.
-    const RtToken& getClassName() const override
-    {
-        return className();
-    }
 
     /// Add a fragment to the graph and make
     /// this graph parent of the fragment.
@@ -267,8 +295,8 @@ public:
         return _outputSockets.get(name);
     }
 
-    /// Finalize the graph construction.
-    void finalize(const Context& context, bool publishAllInputs = false);
+    /// Finalize the fragment graph construction.
+    void finalize(const Context& context) override;
 
     void emitFunctionDefinitions(const Context& context, SourceCode& result) const override;
 
@@ -286,31 +314,15 @@ protected:
 };
 
 /// @class SourceFragment
-/// Class holding a fragment of static source code.
+/// A fragment of static source code.
 class SourceFragment : public Fragment
 {
+    DECLARE_FRAGMENT_CLASS(SourceFragment)
+
 public:
-    /// Constructor.
-    SourceFragment(const RtToken& name);
-
-    /// Create a new instance of this class.
-    static FragmentPtr create(const RtToken& name);
-
-    /// Return the class name for this fragment.
-    static const RtToken& className();
-
-    /// Create a copy of this fragment.
-    FragmentPtr clone() const override;
-
     /// Copy data from another fragment.
     /// Given fragment must be of the same type.
     void copy(const Fragment& other) override;
-
-    /// Return the fragment class name.
-    const RtToken& getClassName() const override
-    {
-        return className();
-    }
 
     /// Set fragment source code.
     void setSourceCode(const string* sourceCode)

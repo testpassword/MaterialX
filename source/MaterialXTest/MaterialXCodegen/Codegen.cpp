@@ -214,7 +214,7 @@ TEST_CASE("Codegen: Color Management", "[codegen]")
     options->targetColorSpaceOverride = mx::RtToken("lin_rec709");
 
     // Setup a color managment system.
-    mx::Codegen::ColorManagementSystemPtr cms = mx::Codegen::DefaultColorManagementSystem::create(mx::Codegen::OslContext::TARGET);
+    mx::Codegen::ColorManagementSystemPtr cms = mx::Codegen::DefaultColorManagementSystem::create(*context);
     const mx::FilePath cmsImplFile = searchPath.find("stdlib/genosl/stdlib_genosl_cm_impl.mtlx");
     cms->asA<mx::Codegen::DefaultColorManagementSystem>()->loadImplementations(cmsImplFile);
     context->setColorManagementSystem(cms);

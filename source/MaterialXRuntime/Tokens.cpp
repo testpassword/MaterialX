@@ -46,6 +46,11 @@ namespace Tokens
     const RtToken VERSION("version");
     const RtToken UIFOLDER("uifolder");
     const RtToken UNKNOWN("unknown");
+    const RtToken WEIGHT("weight");
+    const RtToken COLOR("color");
+    const RtToken ROUGHNESS("roughness");
+    const RtToken NORMAL("normal");
+    const RtToken BASE("base");
     const RtToken CONSTANT("constant");
     const RtToken IMAGE("image");
     const RtToken COMPARE("compare");

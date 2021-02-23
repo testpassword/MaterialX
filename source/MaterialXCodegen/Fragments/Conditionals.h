@@ -1,5 +1,5 @@
 //
-// TM & (c) 2020 Lucasfilm Entertainment Company Ltd. and Lucasfilm Ltd.
+// TM & (c) 2021 Lucasfilm Entertainment Company Ltd. and Lucasfilm Ltd.
 // All rights reserved. See LICENSE.txt for license.
 //
 
@@ -37,25 +37,9 @@ public:
 /// A fragment representing an if-equal condition.
 class IfEqualFragment : public IfFragment
 {
+    DECLARE_FRAGMENT_CLASS(IfEqualFragment)
+
 public:
-    /// Constructor.
-    IfEqualFragment(const RtToken& name);
-
-    /// Create a new instance of this class.
-    static FragmentPtr create(const RtToken& name);
-
-    /// Return the class name for this fragment.
-    static const RtToken& className();
-
-    /// Create a copy of this fragment.
-    FragmentPtr clone() const override;
-
-    /// Return the fragment class name.
-    const RtToken& getClassName() const override
-    {
-        return className();
-    }
-
     /// Return the equality operator to use.
     const string& equalityOperator() const override;
 };
@@ -64,25 +48,9 @@ public:
 /// A fragment representing an if-greater condition.
 class IfGreaterFragment : public IfFragment
 {
+    DECLARE_FRAGMENT_CLASS(IfGreaterFragment)
+
 public:
-    /// Constructor.
-    IfGreaterFragment(const RtToken& name);
-
-    /// Create a new instance of this class.
-    static FragmentPtr create(const RtToken& name);
-
-    /// Return the class name for this fragment.
-    static const RtToken& className();
-
-    /// Create a copy of this fragment.
-    FragmentPtr clone() const override;
-
-    /// Return the fragment class name.
-    const RtToken& getClassName() const override
-    {
-        return className();
-    }
-
     /// Return the equality operator to use.
     const string& equalityOperator() const override;
 };
@@ -91,25 +59,9 @@ public:
 /// A fragment representing an if-greater-or-equal condition.
 class IfGreaterEqFragment : public IfFragment
 {
+    DECLARE_FRAGMENT_CLASS(IfGreaterEqFragment)
+
 public:
-    /// Constructor.
-    IfGreaterEqFragment(const RtToken& name);
-
-    /// Create a new instance of this class.
-    static FragmentPtr create(const RtToken& name);
-
-    /// Return the class name for this fragment.
-    static const RtToken& className();
-
-    /// Create a copy of this fragment.
-    FragmentPtr clone() const override;
-
-    /// Return the fragment class name.
-    const RtToken& getClassName() const override
-    {
-        return className();
-    }
-
     /// Return the equality operator to use.
     const string& equalityOperator() const override;
 };
@@ -119,25 +71,9 @@ public:
 /// A fragment representing a switch condition.
 class SwitchFragment : public Fragment
 {
+    DECLARE_FRAGMENT_CLASS(SwitchFragment)
+
 public:
-    /// Constructor.
-    SwitchFragment(const RtToken& name);
-
-    /// Create a new instance of this class.
-    static FragmentPtr create(const RtToken& name);
-
-    /// Return the class name for this fragment.
-    static const RtToken& className();
-
-    /// Create a copy of this fragment.
-    FragmentPtr clone() const override;
-
-    /// Return the fragment class name.
-    const RtToken& getClassName() const override
-    {
-        return className();
-    }
-
     /// Generate the fragment source code.
     void emitFunctionCall(const Context& context, SourceCode& result) const override;
 };

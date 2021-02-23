@@ -93,10 +93,8 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
     frag->setFunctionName(function);
     frag->setClassification(getClassificationMask(node));
 
-    // Let the parent take ownership.
-    parent.addFragment(frag);
-
-    if (frag->getClassName() == SourceFragment::className())
+    // Load source code for source code fragments.
+    if (frag->isA<SourceFragment>())
     {
         SourceFragment* sourceFragment = frag->asA<SourceFragment>();
 
@@ -125,11 +123,18 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
         sourceFragment->setSourceCode(contentPtr);
     }
 
-    // Create any sub-fragments needed for this node.
+    // Finalize the fragment construction.
+    frag->finalize(_context);
+
+    // Let the parent take ownership of the fragment.
+    parent.addFragment(frag);
+
+    // Create any sub-fragments. Returning the resulting fragment graph
+    // if this is needed, or return the original fragment otherwise.
     return createSubFragments(node, *frag);
 }
 
-FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool publishAllInputs) const
+FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node) const
 {
     if (node.getPrim().hasApi<RtNodeGraph>())
     {
@@ -192,7 +197,7 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, bool publ
             }
         }
 
-        graph->finalize(_context, publishAllInputs);
+        graph->finalize(_context);
 
         return graphFragment;
     }

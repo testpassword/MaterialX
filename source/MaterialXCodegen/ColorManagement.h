@@ -78,7 +78,7 @@ public:
     virtual ~DefaultColorManagementSystem();
 
     /// Create a new DefaultColorManagementSystem for the given target.
-    static ColorManagementSystemPtr create(const RtToken& target);
+    static ColorManagementSystemPtr create(const Context& context);
 
     /// Return the ColorManagementSystem name.
     const RtToken& getName() const override;
@@ -91,10 +91,10 @@ public:
 
 protected:
     /// Protected constructor
-    DefaultColorManagementSystem(const RtToken& target);
+    DefaultColorManagementSystem(const Context& context);
 
 private:
-    RtToken _target;
+    const Context& _context;
     RtTokenMap<FragmentPtr> _fragments;
     vector<string*> _sourceCode;
 };

@@ -86,6 +86,10 @@ Output* Fragment::createOutput(const RtToken& name, const RtToken& type)
     return output.get();
 }
 
+void Fragment::finalize(const Context&)
+{
+}
+
 void Fragment::emitFunctionDefinitions(const Context&, SourceCode&) const
 {
 }
@@ -95,28 +99,7 @@ void Fragment::emitFunctionCall(const Context&, SourceCode&) const
 }
 
 
-FragmentGraph::FragmentGraph(const RtToken& name) :
-    Fragment(name)
-{
-}
-
-FragmentPtr FragmentGraph::create(const RtToken& name)
-{
-    return FragmentPtr(new FragmentGraph(name));
-}
-
-const RtToken& FragmentGraph::className()
-{
-    static const RtToken CLASS_NAME("FragmentGraph");
-    return CLASS_NAME;
-}
-
-FragmentPtr FragmentGraph::clone() const
-{
-    FragmentPtr other = FragmentGraph::create(_name);
-    other->copy(*this);
-    return other;
-}
+DEFINE_FRAGMENT_CLASS(FragmentGraph, Fragment)
 
 void FragmentGraph::copy(const Fragment& /*other*/)
 {
@@ -229,13 +212,14 @@ Output* FragmentGraph::createOutput(const RtToken& name, const RtToken& type)
     return output;
 }
 
-void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
+void FragmentGraph::finalize(const Context& context)
 {
     //
     // Finalize the graph construction.
     //
     const size_t numFragments = _fragments.size();
 
+/*
     if (publishAllInputs)
     {
         // Create graph inputs for unconnected inputs inside the graph.
@@ -255,6 +239,7 @@ void FragmentGraph::finalize(const Context& context, bool publishAllInputs)
             }
         }
     }
+*/
 
     const Syntax& syntax = context.getSyntax();
 
@@ -473,28 +458,12 @@ void FragmentGraph::emitFunctionCall(const Context& context, SourceCode& result)
 }
 
 
+DEFINE_FRAGMENT_CLASS_NO_CONSTRUCT(SourceFragment)
+
 SourceFragment::SourceFragment(const RtToken& name) :
     Fragment(name),
     _sourceCode(nullptr)
 {
-}
-
-FragmentPtr SourceFragment::create(const RtToken& name)
-{
-    return FragmentPtr(new SourceFragment(name));
-}
-
-const RtToken& SourceFragment::className()
-{
-    static const RtToken CLASS_NAME("SourceFragment");
-    return CLASS_NAME;
-}
-
-FragmentPtr SourceFragment::clone() const
-{
-    FragmentPtr other = SourceFragment::create(_name);
-    other->copy(*this);
-    return other;
 }
 
 void SourceFragment::copy(const Fragment& other)
