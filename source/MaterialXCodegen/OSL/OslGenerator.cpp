@@ -143,11 +143,20 @@ OslGenerator::OslGenerator(const Context& context) :
     registerFragmentClass(RtToken("IM_swizzle_vector4_vector3_genosl"), SwizzleFragment::create);
     registerFragmentClass(RtToken("IM_swizzle_vector4_vector4_genosl"), SwizzleFragment::create);
 
-    // <sheen_bsdf>
-    registerFragmentClass(RtToken("IM_sheen_bsdf_genosl"), SheenBsdfFragment::create);
+    // <layer>
+    registerFragmentClass(RtToken("IM_layer_bsdf_genosl"), LayerFragment::create);
 
-    registerFragmentClass(RtToken("IM_layer_bsdf_genosl"), ConvertFragment::create);
-    registerFragmentClass(RtToken("IM_thin_film_bsdf_genosl"), ConvertFragment::create);
+    // <thin_film_bsdf>
+    registerFragmentClass(RtToken("IM_thin_film_bsdf_genosl"), ThinFilmBsdfFragment::create);
+
+    // <sheen_bsdf>
+    registerFragmentClass(RtToken("IM_sheen_bsdf_genosl"), LayerableBsdfFragment::create);
+
+    // <dielectric_bsdf>
+    registerFragmentClass(RtToken("IM_dielectric_bsdf_genosl"), DielectricBsdfFragment::create);
+
+    // <generalized_schlick_bsdf>
+    registerFragmentClass(RtToken("IM_generalized_schlick_bsdf_genosl"), DielectricBsdfFragment::create);
 }
 
 FragmentGeneratorPtr OslGenerator::create(const Context& context)

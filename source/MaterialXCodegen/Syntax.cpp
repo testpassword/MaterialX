@@ -348,5 +348,31 @@ string AggregateTypeSyntax::getValue(const StringVec& values) const
     return result;
 }
 
+SingleValuedTypeSyntax::SingleValuedTypeSyntax(const RtToken& type, const string& typeName, const string& defaultValue, const string& interfaceDefaultValue,
+    const string& typeAlias, const string& typeDefinition) :
+    ScalarTypeSyntax(type, typeName, defaultValue, interfaceDefaultValue, typeAlias, typeDefinition)
+{
+}
+
+string SingleValuedTypeSyntax::getValue(const RtValue&) const
+{
+    return getDefaultValue();
+}
+
+string SingleValuedTypeSyntax::getValue(const StringVec&) const
+{
+    return getDefaultValue();
+}
+
+string SingleValuedTypeSyntax::getInterfaceValue(const RtValue&) const
+{
+    return getInterfaceDefaultValue();
+}
+
+string SingleValuedTypeSyntax::getInterfaceValue(const StringVec&) const
+{
+    return getInterfaceDefaultValue();
+}
+
 } // namespace Codegen
 } // namespace MaterialX

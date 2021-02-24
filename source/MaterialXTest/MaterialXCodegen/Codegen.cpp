@@ -157,6 +157,14 @@ TEST_CASE("Codegen: Fragments from RtNodeGraph", "[codegen]")
     api->loadLibrary(PBRLIB, readOptions);
     api->loadLibrary(BXDFLIB, readOptions);
 
+    // Create a new working space stage
+    mx::RtStagePtr stage = api->createStage(MAIN);
+
+    mx::RtFileIo fileIO(stage);
+    fileIO.read("resources/Materials/TestSuite/pbrlib/bsdf/layer_bsdf.mtlx", searchPath);
+
+//    mx::RtPrim prim = stage->getPrimAtPath("/layer_bsdf_test2");
+
     mx::RtPrim prim = api->getLibrary()->getPrimAtPath("/IMPL_standard_surface_surfaceshader");
     REQUIRE(prim);
 

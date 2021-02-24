@@ -395,6 +395,7 @@ PvtTypeDefRegistry::PvtTypeDefRegistry()
     newType(RtType::BSDF, RtTypeDef::BASETYPE_NONE, noneFuncs, RtTypeDef::SEMANTIC_CLOSURE);
     newType(RtType::EDF, RtTypeDef::BASETYPE_NONE, noneFuncs, RtTypeDef::SEMANTIC_CLOSURE);
     newType(RtType::VDF, RtTypeDef::BASETYPE_NONE, noneFuncs, RtTypeDef::SEMANTIC_CLOSURE);
+    newType(RtType::THINFILM, RtTypeDef::BASETYPE_NONE, noneFuncs);
     newType(RtType::SURFACESHADER, RtTypeDef::BASETYPE_NONE, noneFuncs, RtTypeDef::SEMANTIC_SHADER);
     newType(RtType::VOLUMESHADER, RtTypeDef::BASETYPE_NONE, noneFuncs, RtTypeDef::SEMANTIC_SHADER);
     newType(RtType::DISPLACEMENTSHADER, RtTypeDef::BASETYPE_NONE, noneFuncs, RtTypeDef::SEMANTIC_SHADER);

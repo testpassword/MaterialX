@@ -271,6 +271,19 @@ public:
     void connect(const RtToken& srcFragment, const RtToken& srcOutput,
                  const RtToken& dstFragment, const RtToken& dstOutput);
 
+    /// Break a connection between two fragments.
+    void disconnect(Output* src, Input* dst);
+
+    /// Break a connections between two fragments.
+    void disconnect(const RtToken& srcFragment, const RtToken& srcOutput,
+        const RtToken& dstFragment, const RtToken& dstOutput);
+
+    /// Break the connection to an input.
+    void disconnect(Input* dst);
+
+    /// Break all connections from an output.
+    void disconnect(Output* src);
+
     Input* createInput(const RtToken& name, const RtToken& type) override;
 
     Output* createOutput(const RtToken& name, const RtToken& type) override;
@@ -341,7 +354,7 @@ public:
 
 protected:
     /// Source code for this fragment.
-    const string* _sourceCode;
+    const string* _sourceCode = nullptr;
 };
 
 } // namespace Codegen

@@ -68,7 +68,7 @@ public:
 
 protected:
     /// Protected constructor
-    TypeSyntax(const RtToken& type, const string& name, const string& defaultValue, const string& uniformDefaultValue,
+    TypeSyntax(const RtToken& type, const string& name, const string& defaultValue, const string& interfaceDefaultValue,
         const string& typeAlias, const string& typeDefinition, const StringVec& members);
 
     const RtToken _type;                 // type
@@ -86,7 +86,7 @@ protected:
 class ScalarTypeSyntax : public TypeSyntax
 {
 public:
-    ScalarTypeSyntax(const RtToken& type, const string& typeName, const string& defaultValue, const string& uniformDefaultValue,
+    ScalarTypeSyntax(const RtToken& type, const string& typeName, const string& defaultValue, const string& interfaceDefaultValue,
         const string& typeAlias = EMPTY_STRING, const string& typeDefinition = EMPTY_STRING);
 
     string getValue(const RtValue& value) const override;
@@ -97,7 +97,7 @@ public:
 class StringTypeSyntax : public ScalarTypeSyntax
 {
 public:
-    StringTypeSyntax(const RtToken& type, const string& typeName, const string& defaultValue, const string& uniformDefaultValue,
+    StringTypeSyntax(const RtToken& type, const string& typeName, const string& defaultValue, const string& interfaceDefaultValue,
         const string& typeAlias = EMPTY_STRING, const string& typeDefinition = EMPTY_STRING);
 
     string getValue(const RtValue& value) const override;
@@ -107,12 +107,26 @@ public:
 class AggregateTypeSyntax : public TypeSyntax
 {
 public:
-    AggregateTypeSyntax(const RtToken& type, const string& typeName, const string& defaultValue, const string& uniformDefaultValue,
+    AggregateTypeSyntax(const RtToken& type, const string& typeName, const string& defaultValue, const string& interfaceDefaultValue,
         const string& typeAlias = EMPTY_STRING, const string& typeDefinition = EMPTY_STRING,
         const StringVec& members = EMPTY_MEMBERS);
 
     string getValue(const RtValue& value) const override;
     string getValue(const StringVec& value) const override;
+};
+
+/// Specialization of TypeSyntax for types that can only
+/// take on a single value, the default value.
+class SingleValuedTypeSyntax : public ScalarTypeSyntax
+{
+public:
+    SingleValuedTypeSyntax(const RtToken& type, const string& typeName, const string& defaultValue, const string& interfaceDefaultValue,
+        const string& typeAlias = EMPTY_STRING, const string& typeDefinition = EMPTY_STRING);
+
+    string getValue(const RtValue& value) const override;
+    string getValue(const StringVec& value) const override;
+    string getInterfaceValue(const RtValue& value) const override;
+    string getInterfaceValue(const StringVec& value) const override;
 };
 
 

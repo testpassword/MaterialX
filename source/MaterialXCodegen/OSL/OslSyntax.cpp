@@ -326,7 +326,7 @@ OslSyntax::OslSyntax()
 
     registerTypeSyntax
     (
-        std::make_shared<ScalarTypeSyntax>(
+        std::make_shared<SingleValuedTypeSyntax>(
             RtType::BSDF,
             "BSDF",
             "null_closure",
@@ -336,7 +336,7 @@ OslSyntax::OslSyntax()
 
     registerTypeSyntax
     (
-        std::make_shared<ScalarTypeSyntax>(
+        std::make_shared<SingleValuedTypeSyntax>(
             RtType::EDF,
             "EDF",
             "null_closure",
@@ -346,7 +346,7 @@ OslSyntax::OslSyntax()
 
     registerTypeSyntax
     (
-        std::make_shared<ScalarTypeSyntax>(
+        std::make_shared<SingleValuedTypeSyntax>(
             RtType::VDF,
             "VDF",
             "null_closure",
@@ -356,7 +356,7 @@ OslSyntax::OslSyntax()
 
     registerTypeSyntax
     (
-        std::make_shared<ScalarTypeSyntax>(
+        std::make_shared<SingleValuedTypeSyntax>(
             RtType::SURFACESHADER,
             "surfaceshader",
             "null_closure",
@@ -366,7 +366,7 @@ OslSyntax::OslSyntax()
 
     registerTypeSyntax
     (
-        std::make_shared<ScalarTypeSyntax>(
+        std::make_shared<SingleValuedTypeSyntax>(
             RtType::VOLUMESHADER,
             "volumeshader",
             "null_closure",
@@ -376,7 +376,7 @@ OslSyntax::OslSyntax()
 
     registerTypeSyntax
     (
-        std::make_shared<ScalarTypeSyntax>(
+        std::make_shared<SingleValuedTypeSyntax>(
             RtType::DISPLACEMENTSHADER,
             "displacementshader",
             "vector(0.0)",
@@ -386,7 +386,7 @@ OslSyntax::OslSyntax()
 
     registerTypeSyntax
     (
-        std::make_shared<ScalarTypeSyntax>(
+        std::make_shared<SingleValuedTypeSyntax>(
             RtType::LIGHTSHADER,
             "lightshader",
             "null_closure",
@@ -396,7 +396,7 @@ OslSyntax::OslSyntax()
 
     registerTypeSyntax
     (
-        std::make_shared<AggregateTypeSyntax>(
+        std::make_shared<SingleValuedTypeSyntax>(
             RtType::THINFILM,
             "thinfilm",
             "thinfilm(0.0, 1.5)",

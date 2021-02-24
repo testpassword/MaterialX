@@ -7,6 +7,7 @@
 #include <MaterialXCodegen/FragmentGenerator.h>
 #include <MaterialXCodegen/FragmentCompiler.h>
 #include <MaterialXCodegen/Context.h>
+#include <MaterialXCodegen/Fragments/Bsdfs.h>
 
 #include <MaterialXRuntime/RtApi.h>
 
@@ -185,6 +186,49 @@ void FragmentGraph::connect(const RtToken& srcFragment, const RtToken& srcOutput
     connect(output, input);
 }
 
+void FragmentGraph::disconnect(Output* src, Input* dst)
+{
+    dst->_connection = nullptr;
+    src->_connections.erase(dst);
+}
+
+void FragmentGraph::disconnect(const RtToken& srcFragment, const RtToken& srcOutput,
+    const RtToken& dstFragment, const RtToken& dstOutput)
+{
+    Fragment* src = getFragment(srcFragment);
+    Fragment* dst = getFragment(dstFragment);
+    if (!(src && dst))
+    {
+        throw ExceptionRuntimeError("Failed to break connection '" + srcFragment.str() + "' -> '" + dstFragment.str() + "'");
+    }
+
+    Output* output = src->getOutput(srcOutput);
+    Input* input = src->getInput(dstOutput);
+    if (!(output && input))
+    {
+        throw ExceptionRuntimeError("Failed to break connection '" + srcFragment.str() + "' -> '" + dstFragment.str() + "'");
+    }
+
+    disconnect(output, input);
+}
+
+void FragmentGraph::disconnect(Input* dst)
+{
+    if (dst->isConnected())
+    {
+        disconnect(dst->getConnection(), dst);
+    }
+}
+
+void FragmentGraph::disconnect(Output* src)
+{
+    for (Input* dst : src->getConnections())
+    {
+        dst->_connection = nullptr;
+    }
+    src->_connections.clear();
+}
+
 Input* FragmentGraph::createInput(const RtToken& name, const RtToken& type)
 {
     // Create the external input.
@@ -349,9 +393,16 @@ void FragmentGraph::finalize(const Context& context)
 
     _fragments = orderedFragments;
 
-    // Set classification based on the root fragment.
+    // Set fragmentgraph classification based on the root fragment.
     Fragment* rootFragment = orderedFragments.get(orderedFragments.size() - 1);
     _classification = rootFragment->getClassificationMask();
+
+    // Setup BSDF layering if this is a BSDF or shader graph.
+    if (hasClassification(FragmentClassification::CLOSURE) ||
+        hasClassification(FragmentClassification::SHADER))
+    {
+        LayerFragment::setupLayerStack(*this);
+    }
 }
 
 void FragmentGraph::emitFunctionDefinitions(const Context& context, SourceCode& result) const
@@ -458,13 +509,7 @@ void FragmentGraph::emitFunctionCall(const Context& context, SourceCode& result)
 }
 
 
-DEFINE_FRAGMENT_CLASS_NO_CONSTRUCT(SourceFragment)
-
-SourceFragment::SourceFragment(const RtToken& name) :
-    Fragment(name),
-    _sourceCode(nullptr)
-{
-}
+DEFINE_FRAGMENT_CLASS(SourceFragment, Fragment)
 
 void SourceFragment::copy(const Fragment& other)
 {

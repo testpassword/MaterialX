@@ -58,6 +58,9 @@ namespace Tokens
     extern const RtToken ROUGHNESS;
     extern const RtToken NORMAL;
     extern const RtToken BASE;
+    extern const RtToken TOP;
+    extern const RtToken IOR;
+    extern const RtToken THICKNESS;
     extern const RtToken UNKNOWN;
     extern const RtToken CONSTANT;
     extern const RtToken IMAGE;
