@@ -5,8 +5,8 @@
 
 #include <MaterialXCodegen/OSL/OslContext.h>
 #include <MaterialXCodegen/OSL/OslSyntax.h>
-#include <MaterialXCodegen/OSL/OslGenerator.h>
-#include <MaterialXCodegen/OSL/OslCompiler.h>
+#include <MaterialXCodegen/OSL/OslFragmentGenerator.h>
+#include <MaterialXCodegen/OSL/OslFragmentCompiler.h>
 
 namespace MaterialX
 {
@@ -19,8 +19,8 @@ OslContext::OslContext(OptionsPtr options) :
     Context(options),
     _syntax(OslSyntax::create())
 {
-    _generator = OslGenerator::create(*this);
-    _compiler = OslCompiler::create(*this);
+    _generator = OslFragmentGenerator::create(*this);
+    _compiler = OslFragmentCompiler::create(*this);
 }
 
 ContextPtr OslContext::create(OptionsPtr options)

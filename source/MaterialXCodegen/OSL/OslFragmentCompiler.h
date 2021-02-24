@@ -3,10 +3,10 @@
 // All rights reserved. See LICENSE.txt for license.
 //
 
-#ifndef MATERIALX_CODEGEN_OSLCOMPILER_H
-#define MATERIALX_CODEGEN_OSLCOMPILER_H
+#ifndef MATERIALX_CODEGEN_OSLFRAGMENTCOMPILER_H
+#define MATERIALX_CODEGEN_OSLFRAGMENTCOMPILER_H
 
-/// @file OslCompiler.h
+/// @file OslFragmentCompiler.h
 /// TODO: Docs
 
 #include <MaterialXCodegen/FragmentCompiler.h>
@@ -16,10 +16,10 @@ namespace MaterialX
 namespace Codegen
 {
 
-class OslCompiler : public FragmentCompiler
+class OslFragmentCompiler : public FragmentCompiler
 {
 public:
-    OslCompiler(const Context& context);
+    OslFragmentCompiler(const Context& context);
 
     /// Create a new instance of this compiler.
     static FragmentCompilerPtr create(const Context& context);

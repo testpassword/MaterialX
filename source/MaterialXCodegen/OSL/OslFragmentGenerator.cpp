@@ -3,7 +3,7 @@
 // All rights reserved. See LICENSE.txt for license.
 //
 
-#include <MaterialXCodegen/OSL/OslGenerator.h>
+#include <MaterialXCodegen/OSL/OslFragmentGenerator.h>
 #include <MaterialXCodegen/OSL/OslSyntax.h>
 #include <MaterialXCodegen/OSL/OslContext.h>
 #include <MaterialXCodegen/Fragments/Conditionals.h>
@@ -17,7 +17,7 @@ namespace MaterialX
 namespace Codegen
 {
 
-OslGenerator::OslGenerator(const Context& context) :
+OslFragmentGenerator::OslFragmentGenerator(const Context& context) :
     FragmentGenerator(context)
 {
     // <ifgreater>
@@ -159,9 +159,9 @@ OslGenerator::OslGenerator(const Context& context) :
     registerFragmentClass(RtToken("IM_generalized_schlick_bsdf_genosl"), DielectricBsdfFragment::create);
 }
 
-FragmentGeneratorPtr OslGenerator::create(const Context& context)
+FragmentGeneratorPtr OslFragmentGenerator::create(const Context& context)
 {
-    return FragmentGeneratorPtr(new OslGenerator(context));
+    return FragmentGeneratorPtr(new OslFragmentGenerator(context));
 }
 
 } // namespace Codegen

@@ -3,10 +3,10 @@
 // All rights reserved. See LICENSE.txt for license.
 //
 
-#ifndef MATERIALX_CODEGEN_OSLGENERATOR_H
-#define MATERIALX_CODEGEN_OSLGENERATOR_H
+#ifndef MATERIALX_CODEGEN_OSLFRAGMENTGENERATOR_H
+#define MATERIALX_CODEGEN_OSLFRAGMENTGENERATOR_H
 
-/// @file OslGenerator.h
+/// @file OslFragmentGenerator.h
 /// TODO: Docs
 
 #include <MaterialXCodegen/FragmentGenerator.h>
@@ -17,13 +17,13 @@ namespace MaterialX
 namespace Codegen
 {
 
-/// @class OslGenerator
+/// @class OslFragmentGenerator
 /// Fragment generator for vanilla OSL.
-class OslGenerator : public FragmentGenerator
+class OslFragmentGenerator : public FragmentGenerator
 {
   public:
     /// Constructor.
-    OslGenerator(const Context& context);
+    OslFragmentGenerator(const Context& context);
 
     /// Create a new instance of this generator.
     static FragmentGeneratorPtr create(const Context& context);

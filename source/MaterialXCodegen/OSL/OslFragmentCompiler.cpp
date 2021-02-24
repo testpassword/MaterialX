@@ -3,7 +3,7 @@
 // All rights reserved. See LICENSE.txt for license.
 //
 
-#include <MaterialXCodegen/OSL/OslCompiler.h>
+#include <MaterialXCodegen/OSL/OslFragmentCompiler.h>
 #include <MaterialXCodegen/OSL/OslSyntax.h>
 #include <MaterialXCodegen/OSL/OslContext.h>
 
@@ -14,7 +14,7 @@ namespace MaterialX
 namespace Codegen
 {
 
-OslCompiler::OslCompiler(const Context& context) :
+OslFragmentCompiler::OslFragmentCompiler(const Context& context) :
     FragmentCompiler(context)
 {
     // Add reserved words from the syntax
@@ -42,12 +42,12 @@ OslCompiler::OslCompiler(const Context& context) :
     }
 }
 
-FragmentCompilerPtr OslCompiler::create(const Context& context)
+FragmentCompilerPtr OslFragmentCompiler::create(const Context& context)
 {
-    return FragmentCompilerPtr(new OslCompiler(context));
+    return FragmentCompilerPtr(new OslFragmentCompiler(context));
 }
 
-void OslCompiler::compileShader(const Output& output, SourceCode& result) const
+void OslFragmentCompiler::compileShader(const Output& output, SourceCode& result) const
 {
     if (output.getParent()->getClassName() != FragmentGraph::className())
     {

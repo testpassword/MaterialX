@@ -16,7 +16,7 @@
 #include <MaterialXCodegen/Fragment.h>
 #include <MaterialXCodegen/FragmentCompiler.h>
 #include <MaterialXCodegen/OSL/OslContext.h>
-#include <MaterialXCodegen/OSL/OslGenerator.h>
+#include <MaterialXCodegen/OSL/OslFragmentGenerator.h>
 
 #include <iostream>
 #include <fstream>
