@@ -555,6 +555,7 @@ namespace
     PvtPrim* readGeomPropDef(const GeomPropDefPtr& src, PvtPrim* parent, PvtStage* stage)
     {
         const RtToken name(src->getName());
+        const RtToken type(src->getType());
         const RtToken geomprop(src->getGeomProp());
         const RtToken space(src->getSpace());
         const int index = atoi(src->getIndex().c_str());
@@ -562,6 +563,7 @@ namespace
         PvtPrim* prim = stage->createPrim(parent->getPath(), name, RtGeomPropDef::typeName());
 
         RtGeomPropDef def(prim->hnd());
+        def.setType(type);
         def.setGeomProp(geomprop);
         def.setSpace(space);
         def.setIndex(index);

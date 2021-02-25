@@ -51,7 +51,7 @@ class OslStructTypeSyntax : public AggregateTypeSyntax
     {
         string result;
         RtValue::toString(_type, value, result);
-        return getTypeName() + "{" + result + "}";
+        return "{" + result + "}";
     }
 
     string getValue(const StringVec& values) const override
