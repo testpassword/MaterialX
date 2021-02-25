@@ -52,6 +52,7 @@ void RtApi::initialize()
     registerTypedSchema<RtNodeGraph>();
     registerTypedSchema<RtNodeImpl>();
     registerTypedSchema<RtTargetDef>();
+    registerTypedSchema<RtGeomPropDef>();
     registerTypedSchema<RtBackdrop>();
     registerTypedSchema<RtBindElement>();
     registerTypedSchema<RtLookGroup, RtLookGroupConnectableApi>();
@@ -75,6 +76,7 @@ void RtApi::shutdown()
     unregisterTypedSchema<RtNodeGraph>();
     unregisterTypedSchema<RtNodeImpl>();
     unregisterTypedSchema<RtTargetDef>();
+    unregisterTypedSchema<RtGeomPropDef>();
     unregisterTypedSchema<RtBackdrop>();
     unregisterTypedSchema<RtBindElement>();
     unregisterTypedSchema<RtLookGroup>();
@@ -194,6 +196,51 @@ void RtApi::unregisterTargetDef(const RtToken& name)
 bool RtApi::hasTargetDef(const RtToken& name) const
 {
     return _cast(_ptr)->hasTargetDef(name);
+}
+
+size_t RtApi::numTargetDefs() const
+{
+    return _cast(_ptr)->numTargetDefs();
+}
+
+RtPrim RtApi::getTargetDef(size_t index) const
+{
+    return _cast(_ptr)->getTargetDef(index);
+}
+
+RtPrim RtApi::getTargetDef(const RtToken& name) const
+{
+    return _cast(_ptr)->getTargetDef(name);
+}
+
+void RtApi::registerGeomPropDef(const RtPrim& prim)
+{
+    _cast(_ptr)->registerGeomPropDef(prim);
+}
+
+void RtApi::unregisterGeomPropDef(const RtToken& name)
+{
+    _cast(_ptr)->unregisterGeomPropDef(name);
+}
+
+bool RtApi::hasGeomPropDef(const RtToken& name) const
+{
+    return _cast(_ptr)->hasGeomPropDef(name);
+}
+
+size_t RtApi::numGeomPropDefs() const
+{
+    return _cast(_ptr)->numGeomPropDefs();
+}
+
+RtPrim RtApi::getGeomPropDef(size_t index) const
+{
+    return _cast(_ptr)->getGeomPropDef(index);
+}
+
+RtPrim RtApi::getGeomPropDef(const RtToken& name) const
+{
+    return _cast(_ptr)->getGeomPropDef(name);
 }
 
 void RtApi::clearSearchPath()

@@ -414,9 +414,9 @@ class GeomPropDef : public Element
     /// @{
 
     /// Set the index string of this element.
-    void setIndex(const string& space)
+    void setIndex(const string& index)
     {
-        setAttribute(INDEX_ATTRIBUTE, space);
+        setAttribute(INDEX_ATTRIBUTE, index);
     }
 
     /// Return true if this element has an index string.

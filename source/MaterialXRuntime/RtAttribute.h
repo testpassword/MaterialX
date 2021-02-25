@@ -125,6 +125,12 @@ public:
     /// Return the output connected to this input.
     RtOutput getConnection() const;
 
+    /// Return any default geomprop set for this input.
+    const RtToken& getDefaultGeomProp() const;
+
+    /// Set a default geomprop to be used for this input.
+    void setDefaultGeomProp(const RtToken& geomprop);
+
     friend class RtOutput;
 };
 

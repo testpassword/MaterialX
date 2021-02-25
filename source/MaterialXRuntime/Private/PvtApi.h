@@ -15,6 +15,7 @@
 #include <MaterialXRuntime/RtNodeDef.h>
 #include <MaterialXRuntime/RtNodeImpl.h>
 #include <MaterialXRuntime/RtTargetDef.h>
+#include <MaterialXRuntime/RtGeomPropDef.h>
 
 #include <MaterialXRuntime/Private/PvtObject.h>
 #include <MaterialXRuntime/Private/PvtPrim.h>
@@ -205,6 +206,59 @@ public:
         return _targetdefs.get(name) != nullptr;
     }
 
+    size_t numTargetDefs() const
+    {
+        return _targetdefs.size();
+    }
+
+    RtPrim getTargetDef(const RtToken& name)
+    {
+        return _targetdefs.get(name);
+    }
+
+    RtPrim getTargetDef(size_t index)
+    {
+        return _targetdefs.get(index);
+    }
+
+    void registerGeomPropDef(const RtPrim& prim)
+    {
+        if (!prim.hasApi<RtGeomPropDef>())
+        {
+            throw ExceptionRuntimeError("Given prim '" + prim.getName().str() + "' is not a valid geompropdefs");
+        }
+        if (hasGeomPropDef(prim.getName()))
+        {
+            throw ExceptionRuntimeError("A geompropdefs with name '" + prim.getName().str() + "' is already registered");
+        }
+        _geompropdefs.add(prim.getName(), PvtObject::hnd(prim));
+    }
+
+    void unregisterGeomPropDef(const RtToken& name)
+    {
+        _geompropdefs.remove(name);
+    }
+
+    bool hasGeomPropDef(const RtToken& name)
+    {
+        return _geompropdefs.get(name) != nullptr;
+    }
+
+    size_t numGeomPropDefs() const
+    {
+        return _geompropdefs.size();
+    }
+
+    RtPrim getGeomPropDef(const RtToken& name)
+    {
+        return _geompropdefs.get(name);
+    }
+
+    RtPrim getGeomPropDef(size_t index)
+    {
+        return _geompropdefs.get(index);
+    }
+
     void clearSearchPath()
     {
         _searchPaths.clear();
@@ -385,6 +439,7 @@ public:
     PvtDataHandleRecord _nodedefs;
     PvtDataHandleRecord _nodeimpls;
     PvtDataHandleRecord _targetdefs;
+    PvtDataHandleRecord _geompropdefs;
 
     FloatFormat _floatFormat;
     int _floatPrecision;

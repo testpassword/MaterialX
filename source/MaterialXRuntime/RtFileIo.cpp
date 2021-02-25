@@ -19,6 +19,7 @@
 #include <MaterialXRuntime/Tokens.h>
 #include <MaterialXRuntime/RtNodeImpl.h>
 #include <MaterialXRuntime/RtTargetDef.h>
+#include <MaterialXRuntime/RtGeomPropDef.h>
 
 #include <MaterialXRuntime/Private/PvtStage.h>
 
@@ -37,12 +38,13 @@ namespace
 {
     // Lists of known metadata which are handled explicitly by import/export.
     static const RtTokenSet nodedefMetadata     = { RtToken("name"), RtToken("type"), RtToken("node"), RtToken("nodegroup"), RtToken("version"), RtToken("isdefaultversion"), RtToken("bsdf") };
-    static const RtTokenSet attrMetadata        = { RtToken("name"), RtToken("type"), RtToken("value"), RtToken("nodename"), RtToken("output"), RtToken("channels") };
-    static const RtTokenSet inputMetadata       = { RtToken("name"), RtToken("type"), RtToken("value"), RtToken("nodename"), RtToken("output"), RtToken("channels"), 
+    static const RtTokenSet attrMetadata        = { RtToken("name"), RtToken("type"), RtToken("value"), RtToken("nodename"), RtToken("output"), RtToken("channels"), RtToken("defaultgeomprop") };
+    static const RtTokenSet inputMetadata       = { RtToken("name"), RtToken("type"), RtToken("value"), RtToken("nodename"), RtToken("output"), RtToken("channels"), RtToken("defaultgeomprop"), 
                                                     RtToken("nodegraph"), RtToken("interfacename") };
     static const RtTokenSet nodeMetadata        = { RtToken("name"), RtToken("type"), RtToken("node"), RtToken("version") };
     static const RtTokenSet nodegraphMetadata   = { RtToken("name"), RtToken("nodedef") };
     static const RtTokenSet targetdefMetadata   = { RtToken("name"), RtToken("inherit") };
+    static const RtTokenSet geompropdefMetadata = { RtToken("name") };
     static const RtTokenSet nodeimplMetadata    = { RtToken("name"), RtToken("nodedef"), RtToken("target"), RtToken("file"), RtToken("sourcecode"), RtToken("function"), RtToken("format") };
     static const RtTokenSet lookMetadata        = { RtToken("name"), RtToken("inherit") };
     static const RtTokenSet lookGroupMetadata   = { RtToken("name"), RtToken("looks"), RtToken("default") };
@@ -174,10 +176,12 @@ namespace
             {
                 const uint32_t flags = elem->asA<Input>()->getIsUniform() ? RtAttrFlag::UNIFORM : 0;
                 attr = schema.createInput(attrName, attrType, flags);
-            }
-            else
-            {
-                attr = schema.createInput(attrName, attrType, RtAttrFlag::UNIFORM);
+
+                const string& defaultGeomProp = elem->getAttribute(Tokens::DEFAULTGEOMPROP.str());
+                if (!defaultGeomProp.empty())
+                {
+                    attr.asA<RtInput>().setDefaultGeomProp(RtToken(defaultGeomProp));
+                }
             }
 
             const string& valueStr = elem->getValueString();
@@ -548,6 +552,25 @@ namespace
         return prim;
     }
 
+    PvtPrim* readGeomPropDef(const GeomPropDefPtr& src, PvtPrim* parent, PvtStage* stage)
+    {
+        const RtToken name(src->getName());
+        const RtToken geomprop(src->getGeomProp());
+        const RtToken space(src->getSpace());
+        const int index = atoi(src->getIndex().c_str());
+
+        PvtPrim* prim = stage->createPrim(parent->getPath(), name, RtGeomPropDef::typeName());
+
+        RtGeomPropDef def(prim->hnd());
+        def.setGeomProp(geomprop);
+        def.setSpace(space);
+        def.setIndex(index);
+
+        readMetadata(src, prim, geompropdefMetadata);
+
+        return prim;
+    }
+
     PvtPrim* readImplementation(const ImplementationPtr& src, PvtPrim* parent, PvtStage* stage)
     {
         const RtToken target(src->getAttribute(Tokens::TARGET.str()));
@@ -902,6 +925,14 @@ namespace
                 {
                     destPort->setIsUniform(true);
                 }
+                else
+                {
+                    const RtToken& defaultGeomProp = input->getDefaultGeomProp();
+                    if (defaultGeomProp != EMPTY_TOKEN)
+                    {
+                        destPort->setAttribute(Tokens::DEFAULTGEOMPROP.str(), defaultGeomProp.str());
+                    }
+                }
             }
             else
             {
@@ -957,67 +988,44 @@ namespace
                 if (writeDefaultValues || writeUiVisibleData ||
                     input.isConnected() || !RtValue::compare(input.getType(), input.getValue(), attrDef.getValue()))
                 {
-                    ValueElementPtr valueElem;
-                    if (input.isUniform())
+                    InputPtr inputElem = destNode->addInput(input.getName().str(), input.getType().str());
+                    if (input.isConnected())
                     {
-                        valueElem = destNode->addInput(input.getName().str(), input.getType().str());
-                        valueElem->setIsUniform(true);
-                        if (input.isConnected())
+                        RtOutput source = input.getConnection();
+                        if (source.isSocket())
                         {
-                            RtOutput source = input.getConnection();
-                            if (source.isSocket())
-                            {
-                                // This is a connection to the internal socket of a graph
-                                valueElem->setInterfaceName(source.getName().str());
-                            }
+                            // This is a connection to the internal socket of a graph
+                            inputElem->setInterfaceName(source.getName().str());
                         }
-                        const string& inputValueString = input.getValueString(); 
-                        if (!inputValueString.empty())
+                        else
                         {
-                            valueElem->setValueString(inputValueString);
+                            RtPrim sourcePrim = source.getParent();
+                            if (sourcePrim.hasApi<RtNodeGraph>())
+                            {
+                                inputElem->setNodeGraphString(sourcePrim.getName().str());
+                            }
+                            else
+                            {
+                                inputElem->setNodeName(sourcePrim.getName().str());
+                            }
+                            if (sourcePrim.numOutputs() > 1)
+                            {
+                                inputElem->setOutputString(source.getName().str());
+                            }
                         }
                     }
                     else
                     {
-                        valueElem = destNode->addInput(input.getName().str(), input.getType().str());
-                        if (input.isConnected())
-                        {
-                            RtOutput source = input.getConnection();
-                            if (source.isSocket())
-                            {
-                                // This is a connection to the internal socket of a graph                                
-                                valueElem->setInterfaceName(source.getName().str());
-                                const string& inputValueString = input.getValueString();
-                                if (!inputValueString.empty())
-                                {
-                                    valueElem->setValueString(inputValueString);
-                                }
-                            }
-                            else
-                            {
-                                RtPrim sourcePrim = source.getParent();
-                                InputPtr inputElem = valueElem->asA<Input>();
-                                if (sourcePrim.hasApi<RtNodeGraph>())
-                                {
-                                    inputElem->setNodeGraphString(sourcePrim.getName().str());
-                                }
-                                else
-                                {
-                                    inputElem->setNodeName(sourcePrim.getName().str());
-                                }
-                                if (sourcePrim.numOutputs() > 1)
-                                {
-                                    inputElem->setOutputString(source.getName().str());
-                                }
-                            }
-                        }
-                        else
-                        {
-                            valueElem->setValueString(input.getValueString());
-                        }
+                        inputElem->setValueString(input.getValueString());
                     }
 
-                    writeMetadata(PvtObject::ptr<PvtObject>(attr), valueElem, inputMetadata, options);
+                    const RtToken& defaultGeomProp = input.getDefaultGeomProp();
+                    if (defaultGeomProp != EMPTY_TOKEN)
+                    {
+                        inputElem->setAttribute(Tokens::DEFAULTGEOMPROP.str(), defaultGeomProp.str());
+                    }
+
+                    writeMetadata(PvtObject::ptr<PvtObject>(attr), inputElem, inputMetadata, options);
                 }
             }
             else if(numOutputs > 1)
@@ -1046,21 +1054,20 @@ namespace
 
         if (!options || options->writeNodeGraphInputs)
         {
-            // Write inputs/parameters.
+            // Write inputs.
             RtObjTypePredicate<RtInput> inputsFilter;
             for (RtAttribute attr : src->getAttributes(inputsFilter))
             {
                 RtInput nodegraphInput = nodegraph.getInput(attr.getName());
-                ValueElementPtr v = nullptr;
+                InputPtr input = nullptr;
                 if (nodegraphInput.isUniform())
                 {
-                    v = destNodeGraph->addInput(nodegraphInput.getName().str(), nodegraphInput.getType().str());
-                    v->setIsUniform(true);
+                    input = destNodeGraph->addInput(nodegraphInput.getName().str(), nodegraphInput.getType().str());
+                    input->setIsUniform(true);
                 }
                 else
                 {
-                    InputPtr input = destNodeGraph->addInput(nodegraphInput.getName().str(), nodegraphInput.getType().str());
-                    v = input->asA<ValueElement>();
+                    input = destNodeGraph->addInput(nodegraphInput.getName().str(), nodegraphInput.getType().str());
 
                     if (nodegraphInput.isConnected())
                     {
@@ -1080,11 +1087,17 @@ namespace
                             input->setOutputString(source.getName().str());
                         }
                     }
+
+                    const RtToken& defaultGeomProp = nodegraphInput.getDefaultGeomProp();
+                    if (defaultGeomProp != EMPTY_TOKEN)
+                    {
+                        input->setAttribute(Tokens::DEFAULTGEOMPROP.str(), defaultGeomProp.str());
+                    }
                 }
-                if (v)
+                if (input)
                 {
-                    v->setValueString(nodegraphInput.getValueString());
-                    writeMetadata(PvtObject::ptr<PvtObject>(attr), v, inputMetadata, options);
+                    input->setValueString(nodegraphInput.getValueString());
+                    writeMetadata(PvtObject::ptr<PvtObject>(attr), input, inputMetadata, options);
                 }
             }
         }
@@ -1514,6 +1527,14 @@ void RtFileIo::readLibraries(const FilePathVec& libraryPaths, const FileSearchPa
                 if (prim)
                 {
                     api.registerNodeImpl(prim->hnd());
+                }
+            }
+            else if (elem->isA<GeomPropDef>())
+            {
+                PvtPrim* prim = readGeomPropDef(elem->asA<GeomPropDef>(), stage->getRootPrim(), stage);
+                if (prim)
+                {
+                    api.registerGeomPropDef(prim->hnd());
                 }
             }
             else

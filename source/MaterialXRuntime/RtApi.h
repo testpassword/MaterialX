@@ -126,6 +126,37 @@ public:
     /// Return true if a targetdef prim with the given name has been registered.
     bool hasTargetDef(const RtToken& name) const;
 
+    /// Return the number of registered targetdef prims.
+    size_t numTargetDefs() const;
+
+    /// Return a registered targetdef prim by index.
+    RtPrim getTargetDef(size_t index) const;
+
+    /// Return a registered targetdef prim by name.
+    RtPrim getTargetDef(const RtToken& name) const;
+
+    /// @}
+    /// @name GeomPropDefs
+    /// @{
+
+    /// Register a geompropdef prim defining a named primvar.
+    void registerGeomPropDef(const RtPrim& prim);
+
+    /// Unregister a geompropdef prim.
+    void unregisterGeomPropDef(const RtToken& name);
+
+    /// Return true if a geompropdef prim with the given name has been registered.
+    bool hasGeomPropDef(const RtToken& name) const;
+
+    /// Return the number of registered geompropdef prims.
+    size_t numGeomPropDefs() const;
+
+    /// Return a registered geompropdef prim by index.
+    RtPrim getGeomPropDef(size_t index) const;
+
+    /// Return a registered geompropdef prim by name.
+    RtPrim getGeomPropDef(const RtToken& name) const;
+
     /// @}
     /// @name TypedSchema registration
     /// @{

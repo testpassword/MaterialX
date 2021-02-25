@@ -132,6 +132,16 @@ RtOutput RtInput::getConnection() const
     return output ? RtOutput(output->hnd()) : RtOutput();
 }
 
+const RtToken& RtInput::getDefaultGeomProp() const
+{
+    return hnd()->asA<PvtInput>()->getDefaultGeomProp();
+}
+
+void RtInput::setDefaultGeomProp(const RtToken& geomprop)
+{
+    hnd()->asA<PvtInput>()->setDefaultGeomProp(geomprop);
+}
+
 
 RT_DEFINE_RUNTIME_OBJECT(RtOutput, RtObjType::OUTPUT, "RtOutput")
 

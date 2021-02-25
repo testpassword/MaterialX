@@ -13,6 +13,7 @@
 #include <MaterialXRuntime/RtValue.h>
 #include <MaterialXRuntime/RtTypeDef.h>
 #include <MaterialXRuntime/RtTraversal.h>
+#include <MaterialXRuntime/Tokens.h>
 
 /// @file
 /// TODO: Docs
@@ -74,13 +75,13 @@ public:
 
     const RtToken& getColorSpace() const
     {
-        const RtTypedValue* md = getMetadata(PvtAttribute::COLOR_SPACE);
+        const RtTypedValue* md = getMetadata(PvtAttribute::COLOR_SPACE, RtType::TOKEN);
         return md ? md->getValue().asToken() : EMPTY_TOKEN;
     }
 
     void setColorSpace(const RtToken& colorspace)
     {
-        RtTypedValue* md = getMetadata(PvtAttribute::COLOR_SPACE);
+        RtTypedValue* md = getMetadata(PvtAttribute::COLOR_SPACE, RtType::TOKEN);
         if (!md)
         {
             md = addMetadata(PvtAttribute::COLOR_SPACE, RtType::TOKEN);
@@ -90,13 +91,13 @@ public:
 
     const RtToken& getUnit() const
     {
-        const RtTypedValue* md = getMetadata(PvtAttribute::UNIT);
+        const RtTypedValue* md = getMetadata(PvtAttribute::UNIT, RtType::TOKEN);
         return md ? md->getValue().asToken() : EMPTY_TOKEN;
     }
 
     void setUnit(const RtToken& unit)
     {
-        RtTypedValue* md = getMetadata(PvtAttribute::UNIT);
+        RtTypedValue* md = getMetadata(PvtAttribute::UNIT, RtType::TOKEN);
         if (!md)
         {
             md = addMetadata(PvtAttribute::UNIT, RtType::TOKEN);
@@ -106,13 +107,13 @@ public:
 
     const RtToken& getUnitType() const
     {
-        const RtTypedValue* md = getMetadata(PvtAttribute::UNIT_TYPE);
+        const RtTypedValue* md = getMetadata(PvtAttribute::UNIT_TYPE, RtType::TOKEN);
         return md ? md->getValue().asToken() : EMPTY_TOKEN;
     }
 
     void setUnitType(const RtToken& unit)
     {
-        RtTypedValue* md = getMetadata(PvtAttribute::UNIT_TYPE);
+        RtTypedValue* md = getMetadata(PvtAttribute::UNIT_TYPE, RtType::TOKEN);
         if (!md)
         {
             md = addMetadata(PvtAttribute::UNIT_TYPE, RtType::TOKEN);
@@ -177,6 +178,22 @@ public:
     void disconnect(PvtOutput* output);
 
     void clearConnection();
+
+    const RtToken& getDefaultGeomProp() const
+    {
+        const RtTypedValue* md = getMetadata(Tokens::DEFAULTGEOMPROP, RtType::TOKEN);
+        return md ? md->getValue().asToken() : EMPTY_TOKEN;
+    }
+
+    void setDefaultGeomProp(const RtToken& geomprop)
+    {
+        RtTypedValue* md = getMetadata(Tokens::DEFAULTGEOMPROP, RtType::TOKEN);
+        if (!md)
+        {
+            md = addMetadata(Tokens::DEFAULTGEOMPROP, RtType::TOKEN);
+        }
+        md->getValue().asToken() = geomprop;
+    }
 
 protected:
     PvtDataHandle _connection;

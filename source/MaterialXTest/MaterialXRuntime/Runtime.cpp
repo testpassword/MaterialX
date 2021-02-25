@@ -19,6 +19,8 @@
 #include <MaterialXRuntime/RtAttribute.h>
 #include <MaterialXRuntime/RtNodeDef.h>
 #include <MaterialXRuntime/RtTypeDef.h>
+#include <MaterialXRuntime/RtTargetDef.h>
+#include <MaterialXRuntime/RtGeomPropDef.h>
 #include <MaterialXRuntime/RtNameResolver.h>
 #include <MaterialXRuntime/RtNode.h>
 #include <MaterialXRuntime/RtNodeGraph.h>
@@ -1822,6 +1824,25 @@ TEST_CASE("Runtime: libraries", "[runtime]")
     mx::FileSearchPath implPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries/stdlib/genglsl"));
     api->setImplementationSearchPath(implPath);
     REQUIRE(api->getImplementationSearchPath().find("stdlib_genglsl_unit_impl.mtlx").exists());    
+
+    // Check that targetdefs were loaded
+    REQUIRE(api->hasTargetDef(mx::RtToken("genglsl")));
+    REQUIRE(api->hasTargetDef(mx::RtToken("genmdl")));
+    mx::RtTargetDef genosl(api->getTargetDef(mx::RtToken("genosl")));
+    REQUIRE(genosl);
+    mx::RtTargetDef arnold(api->getTargetDef(mx::RtToken("arnold")));
+    REQUIRE(arnold);
+    REQUIRE(arnold.isMatching(arnold.getName()));
+    REQUIRE(arnold.isMatching(genosl.getName()));
+
+    // Check that geompropdefs were loaded
+    REQUIRE(api->hasGeomPropDef(mx::RtToken("Nworld")));
+    REQUIRE(api->hasGeomPropDef(mx::RtToken("Tworld")));
+    REQUIRE(api->hasGeomPropDef(mx::RtToken("Bworld")));
+    REQUIRE(api->hasGeomPropDef(mx::RtToken("UV0")));
+    mx::RtGeomPropDef Nobject(api->getGeomPropDef(mx::RtToken("Nobject")));
+    REQUIRE(Nobject);
+    REQUIRE(Nobject.getSpace() == mx::Tokens::OBJECT);
 }
 
 TEST_CASE("Runtime: units", "[runtime]")
