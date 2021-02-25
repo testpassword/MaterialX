@@ -61,7 +61,12 @@ FragmentPtr DefaultColorManagementSystem::createFragment(const ColorSpaceTransfo
     const RtToken fragmentName("IM_" + transform.sourceSpace.str() + "_to_" + 
         transform.targetSpace.str() + "_" + transform.type.str() + "_" + _context.getTarget().str());
     auto it = _fragments.find(fragmentName);
-    return it != _fragments.end() ? it->second->clone() : nullptr;
+    if (it == _fragments.end())
+    {
+        throw ExceptionRuntimeError("No fragment loaded to support color transform from '" + transform.sourceSpace.str() +
+            "' to '" + transform.targetSpace.str() + "'");
+    }
+    return it->second->clone();
 }
 
 void DefaultColorManagementSystem::loadImplementations(const FilePath& file)

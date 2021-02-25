@@ -8,9 +8,7 @@
 #include <MaterialXCodegen/Context.h>
 
 #include <MaterialXRuntime/RtApi.h>
-#include <MaterialXRuntime/RtNode.h>
 #include <MaterialXRuntime/RtNodeGraph.h>
-#include <MaterialXRuntime/RtNodeDef.h>
 #include <MaterialXRuntime/RtNodeImpl.h>
 #include <MaterialXRuntime/Tokens.h>
 
@@ -29,34 +27,21 @@ namespace Codegen
 FragmentGenerator::FragmentGenerator(const Context& context) :
     _context(context)
 {
+    // Register the default fragment types.
     registerFragmentClass(FragmentGraph::className(), FragmentGraph::create);
     registerFragmentClass(SourceFragment::className(), SourceFragment::create);
 }
 
-FragmentPtr FragmentGenerator::createFragment(const RtToken& className, const RtToken& instanceName) const
+FragmentPtr FragmentGenerator::createFragment(const RtToken& className, const RtToken& name) const
 {
     auto it = _creatorFunctions.find(className);
-    return it != _creatorFunctions.end() ? it->second(instanceName) : nullptr;
+    return it != _creatorFunctions.end() ? it->second(name) : nullptr;
 }
 
-FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph& parent) const
+FragmentPtr FragmentGenerator::createFragment(const RtNodeDef& nodedef, const RtToken& name) const
 {
-    if (node.getPrim().hasApi<RtNodeGraph>())
-    {
-        FragmentPtr frag = createFragmentGraph(node);
-        parent.addFragment(frag);
-        return frag;
-    }
-
-    RtPrim nodedefPrim = node.getNodeDef();
-    if (!(nodedefPrim && nodedefPrim.hasApi<RtNodeDef>()))
-    {
-        throw ExceptionRuntimeError("No valid nodedef found for node '" + node.getName().str() + "'");
-    }
-
     const RtToken& target = _context.getTarget();
 
-    RtNodeDef nodedef(nodedefPrim);
     RtPrim nodeImplPrim = nodedef.getNodeImpl(target);
     if (!(nodeImplPrim && nodeImplPrim.hasApi<RtNodeImpl>()))
     {
@@ -66,23 +51,20 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
 
     RtNodeImpl nodeimpl(nodeImplPrim);
 
-    // Try creation from the nodeimpl name (fragment class name).
-    FragmentPtr frag = createFragment(nodeimpl.getName(), node.getName());
+    // See if a fragment class has been registered for the nodeimpl.
+    FragmentPtr frag = createFragment(nodeimpl.getName(), name);
     if (!frag)
     {
         // No fragment of this class has been registerd so
         // fallback to a source fragment as default class.
-        frag = SourceFragment::create(node.getName());
+        frag = SourceFragment::create(name);
     }
 
     // Create fragment ports according to the nodedef.
     for (RtAttribute attr : nodedef.getInputs())
     {
         Input* input = frag->createInput(attr.getName(), attr.getType());
-
-        // Get the value from the node instance.
-        RtInput nodeInput = node.getInput(attr.getName());
-        RtValue::copy(input->getType(), nodeInput ? nodeInput.getValue() : attr.getValue(), input->getValue());
+        RtValue::copy(input->getType(), attr.getValue(), input->getValue());
     }
     for (RtAttribute attr : nodedef.getOutputs())
     {
@@ -91,7 +73,7 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
 
     const RtToken& function = nodeimpl.getFunction();
     frag->setFunctionName(function);
-    frag->setClassification(getClassificationMask(node));
+    frag->setClassification(getClassificationMask(nodedef));
 
     // Load source code for source code fragments.
     if (frag->isA<SourceFragment>())
@@ -126,6 +108,53 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
     // Finalize the fragment construction.
     frag->finalize(_context);
 
+    return frag;
+}
+
+FragmentPtr FragmentGenerator::createFragment(const RtGeomPropDef& geomprop, const RtToken& name) const
+{
+    // Find the nodedef for the geometric node referenced by the geomprop. Use the type of the
+    // input here and ignore the type of the geomprop. They are required to have the same type.
+    const RtToken geomNodeDefName("ND_" + geomprop.getGeomProp().str() + "_" + geomprop.getType().str());
+
+    RtPrim geomNodeDefPrim = RtApi::get().getNodeDef(geomNodeDefName);
+    if (!geomNodeDefPrim)
+    {
+        throw ExceptionShaderGenError("Could not find a nodedef named '" + geomNodeDefName.str() +
+            "' for defaultgeomprop '" + geomprop.getName().str() + "'");
+    }
+
+    // Create the fragment from the nodedef.
+    RtNodeDef geomNodeDef(geomNodeDefPrim);
+    return createFragment(geomNodeDef, name);
+}
+
+FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph& parent) const
+{
+    if (node.getPrim().hasApi<RtNodeGraph>())
+    {
+        FragmentPtr frag = createFragmentGraph(node);
+        parent.addFragment(frag);
+        return frag;
+    }
+
+    RtPrim nodedefPrim = node.getNodeDef();
+    if (!(nodedefPrim && nodedefPrim.hasApi<RtNodeDef>()))
+    {
+        throw ExceptionRuntimeError("No valid nodedef found for node '" + node.getName().str() + "'");
+    }
+
+    // Create the fragment from the nodedef.
+    RtNodeDef nodedef(nodedefPrim);
+    FragmentPtr frag = createFragment(nodedef, node.getName());
+
+    // Set values from the node instance.
+    for (RtAttribute attr : node.getInputs())
+    {
+        Input* input = frag->getInput(attr.getName());
+        RtValue::copy(input->getType(), attr.getValue(), input->getValue());
+    }
+
     // Let the parent take ownership of the fragment.
     parent.addFragment(frag);
 
@@ -154,7 +183,7 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node) const
 
         for (RtPrim child : nodegraph.getNodes())
         {
-            createFragment(child, *graph);
+            createFragment(RtNode(child), *graph);
         }
 
         for (RtPrim child : nodegraph.getNodes())
@@ -199,7 +228,7 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node) const
 
         graph->finalize(_context);
 
-        return graphFragment;
+        return createSubFragments(node, *graphFragment);
     }
 
     return nullptr;
@@ -207,15 +236,21 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node) const
 
 FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& fragment) const
 {
+    // By default return the same fragment.
+    FragmentPtr frag = fragment.shared_from_this();
+    FragmentGraph* parent = frag->getParent();
+
     const ColorManagementSystem* cms = _context.getColorManagementSystem();
     const RtToken targetSpace = _context.getOptions().targetColorSpaceOverride;
 
+    std::unordered_map<Input*, ColorSpaceTransform> inputsWithColorSpaceTransforms;
+    std::unordered_map<Output*, ColorSpaceTransform> outputsWithColorSpaceTransforms;
+    std::unordered_map<Input*, RtPrim> inputsWithGeomProps;
+
+    // Check for color management usage.
     if (cms && targetSpace != EMPTY_TOKEN)
     {
-        std::unordered_map<Input*, ColorSpaceTransform> inputColorSpaceTransforms;
-        std::unordered_map<Output*, ColorSpaceTransform> outputColorSpaceTransforms;
-
-        Output* output = fragment.getOutput();
+        Output* output = frag->getOutput();
         const bool isColorOutput = output->getType() == RtType::COLOR3 || output->getType() == RtType::COLOR4;
 
         for (RtAttribute port : node.getInputs())
@@ -226,7 +261,7 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
                 const RtToken portType = port.getType();
                 if (portType == RtType::FILENAME && isColorOutput)
                 {
-                    outputColorSpaceTransforms[output] = ColorSpaceTransform(output->getType(), sourceSpace, targetSpace);
+                    outputsWithColorSpaceTransforms[output] = ColorSpaceTransform(output->getType(), sourceSpace, targetSpace);
                 }
                 else if (portType == RtType::COLOR3 || portType == RtType::COLOR4)
                 {
@@ -234,93 +269,137 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
                     RtOutput upstream = inputPort.getConnection();
                     if (!inputPort.getConnection())
                     {
-                        Input* input = fragment.getInput(port.getName());
-                        inputColorSpaceTransforms[input] = ColorSpaceTransform(portType, sourceSpace, targetSpace);
+                        Input* input = frag->getInput(port.getName());
+                        inputsWithColorSpaceTransforms[input] = ColorSpaceTransform(portType, sourceSpace, targetSpace);
                     }
                 }
             }
         }
+    }
 
-        if (inputColorSpaceTransforms.size() || outputColorSpaceTransforms.size())
+    // Check for geomprop usage.
+    for (RtAttribute port : node.getInputs())
+    {
+        if (!port.asA<RtInput>().isConnected())
         {
-            FragmentGraph* parent = fragment.getParent();
-
-            FragmentPtr containerFragment = FragmentGraph::create(fragment.getName());
-            FragmentGraph* container = containerFragment->asA<FragmentGraph>();
-            for (size_t i = 0; i < fragment.numInputs(); ++i)
+            const RtTypedValue* defaultGeomProp = port.getMetadata(Tokens::DEFAULTGEOMPROP, RtType::TOKEN);
+            if (defaultGeomProp)
             {
-                const Input* port = fragment.getInput(i);
-                container->createInput(port->getName(), port->getType());
-            }
-            for (size_t i = 0; i < fragment.numOutputs(); ++i)
-            {
-                const Output* port = fragment.getOutput(i);
-                container->createOutput(port->getName(), port->getType());
-            }
-
-            // Move the main fragment from the parent into the container.
-            FragmentPtr mainFragment = parent->removeFragment(fragment.getName());
-            container->addFragment(mainFragment);
-
-            for (size_t i = 0; i < mainFragment->numInputs(); ++i)
-            {
-                FragmentPtr transformFragment = nullptr;
-                Input* port = mainFragment->getInput(i);
-                auto it = inputColorSpaceTransforms.find(port);
-                if (it != inputColorSpaceTransforms.end())
+                // Find the corresponding geompropdef prim.
+                RtPrim prim = RtApi::get().getGeomPropDef(defaultGeomProp->getValue().asToken());
+                Input* input = frag->getInput(port.getName());
+                if (prim && !input->isConnected())
                 {
-                    transformFragment = cms->createFragment(it->second);
-                }
-                if (transformFragment)
-                {
-                    container->addFragment(transformFragment);
-                    container->connect(container->getInputSocket(i), transformFragment->getInput(0));
-                    container->connect(transformFragment->getOutput(), port);
-                }
-                else
-                {
-                    container->connect(container->getInputSocket(i), mainFragment->getInput(i));
+                    inputsWithGeomProps[input] = prim;
                 }
             }
-            for (size_t i = 0; i < mainFragment->numOutputs(); ++i)
-            {
-                FragmentPtr transformFragment = nullptr;
-                Output* port = mainFragment->getOutput(i);
-                auto it = outputColorSpaceTransforms.find(port);
-                if (it != outputColorSpaceTransforms.end())
-                {
-                    transformFragment = cms->createFragment(it->second);
-                }
-                if (transformFragment)
-                {
-                    container->addFragment(transformFragment);
-                    container->connect(port, transformFragment->getInput(0));
-                    container->connect(transformFragment->getOutput(), container->getOutputSocket(i));
-                }
-                else
-                {
-                    container->connect(port, container->getOutputSocket(i));
-                }
-            }
-
-            container->finalize(_context);
-            parent->addFragment(containerFragment);
-
-            return containerFragment;
         }
     }
 
-    return fragment.shared_from_this();
-}
-
-uint32_t FragmentGenerator::getClassificationMask(const RtNode& node) const
-{
-    RtNodeDef nodedef = node.getNodeDef();
-    if (!nodedef)
+    if (inputsWithColorSpaceTransforms.size() || outputsWithColorSpaceTransforms.size() || inputsWithGeomProps.size())
     {
-        throw ExceptionRuntimeError("FragmentGenerator::getClassMask: No nodedef found for node '" + node.getName().str() + "'");
+        // Create a container fragment graph to host the sub-fragments.
+        FragmentPtr containerFrag = FragmentGraph::create(frag->getName());
+        FragmentGraph* container = containerFrag->asA<FragmentGraph>();
+        for (size_t i = 0; i < frag->numInputs(); ++i)
+        {
+            const Input* port = frag->getInput(i);
+            container->createInput(port->getName(), port->getType());
+        }
+        for (size_t i = 0; i < frag->numOutputs(); ++i)
+        {
+            const Output* port = frag->getOutput(i);
+            container->createOutput(port->getName(), port->getType());
+        }
+
+        // Move the fragment from its parent to the container.
+        if (parent)
+        {
+            parent->removeFragment(frag->getName());
+            parent->addFragment(containerFrag);
+        }
+        container->addFragment(frag);
+
+        // Create any sub-fragments for the inputs.
+        for (size_t i = 0; i < frag->numInputs(); ++i)
+        {
+            Input* input = frag->getInput(i);
+            RtInput nodeInput = node.getInput(input->getName());
+
+            // Geomprops.
+            bool created = false;
+            {
+                auto it = inputsWithGeomProps.find(input);
+                if (it != inputsWithGeomProps.end())
+                {
+                    RtGeomPropDef geomPropDef(it->second);
+                    const RtToken fragmentName("geomprop_" + geomPropDef.getName().str());
+                    Fragment* geomPropFragment = container->getFragment(fragmentName);
+                    if (!geomPropFragment)
+                    {
+                        // Fragment does not exists so create it.
+                        FragmentPtr newFrag = createFragment(geomPropDef, fragmentName);
+                        container->addFragment(newFrag);
+                        geomPropFragment = newFrag.get();
+                    }
+
+                    // Connect the fragment to this input.
+                    container->connect(geomPropFragment->getOutput(), input);
+
+                    created = true;
+                }
+            }
+
+            // Color management.
+            if (!created)
+            {
+                auto it = inputsWithColorSpaceTransforms.find(input);
+                if (it != inputsWithColorSpaceTransforms.end())
+                {
+                    FragmentPtr transformFragment = cms->createFragment(it->second);
+                    container->addFragment(transformFragment);
+                    container->connect(container->getInputSocket(i), transformFragment->getInput(0));
+                    container->connect(transformFragment->getOutput(), input);
+                }
+                else
+                {
+                    container->connect(container->getInputSocket(i), frag->getInput(i));
+                }
+            }
+        }
+
+        // Create any sub-fragments for the outputs.
+        for (size_t i = 0; i < frag->numOutputs(); ++i)
+        {
+            Output* port = frag->getOutput(i);
+
+            // Color management.
+            auto it = outputsWithColorSpaceTransforms.find(port);
+            if (it != outputsWithColorSpaceTransforms.end())
+            {
+                FragmentPtr transformFragment = cms->createFragment(it->second);
+                container->addFragment(transformFragment);
+                container->connect(port, transformFragment->getInput(0));
+                container->connect(transformFragment->getOutput(), container->getOutputSocket(i));
+            }
+            else
+            {
+                container->connect(port, container->getOutputSocket(i));
+            }
+        }
+
+        // Finalize creation.
+        container->finalize(_context);
+
+        // The container is our new fragment.
+        frag = containerFrag;
     }
 
+    return frag;
+}
+
+uint32_t FragmentGenerator::getClassificationMask(const RtNodeDef& nodedef) const
+{
     const RtToken nodeType = nodedef.getNode();
     const RtToken nodeGroup = nodedef.getNodeGroup();
 
@@ -328,7 +407,7 @@ uint32_t FragmentGenerator::getClassificationMask(const RtNode& node) const
     uint32_t mask = FragmentClassification::TEXTURE;
 
     // First, check for specific output types
-    const RtToken primaryOutputType = node.getOutput().getType();
+    const RtToken primaryOutputType = nodedef.getOutput().getType();
     if (primaryOutputType == RtType::SURFACESHADER)
     {
         mask = FragmentClassification::SURFACE | FragmentClassification::SHADER;

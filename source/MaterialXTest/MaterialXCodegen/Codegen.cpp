@@ -135,7 +135,7 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
     mx::Codegen::SourceCode sourceCode;
     compiler.compileShader(*maingraph->getOutput(), sourceCode);
 
-    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("codegen_test1.osl");
+    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("Codegen_Source.osl");
     std::ofstream shaderFile;
     shaderFile.open(filepath);
     shaderFile << sourceCode.asString();
@@ -157,15 +157,51 @@ TEST_CASE("Codegen: Fragments from RtNodeGraph", "[codegen]")
     api->loadLibrary(PBRLIB, readOptions);
     api->loadLibrary(BXDFLIB, readOptions);
 
+    mx::RtPrim prim = api->getLibrary()->getPrimAtPath("/IMPL_standard_surface_surfaceshader");
+    mx::RtNodeGraph nodegraph(prim);
+    REQUIRE(nodegraph);
+
+    mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
+    mx::Codegen::ContextPtr context = mx::Codegen::OslContext::create(options);
+
+    const mx::Codegen::FragmentGenerator& generator = context->getGenerator();
+    const mx::Codegen::FragmentCompiler& compiler = context->getCompiler();
+
+    mx::Codegen::FragmentPtr frag = generator.createFragmentGraph(nodegraph);
+    REQUIRE(frag);
+
+    mx::Codegen::SourceCode sourceCode;
+    compiler.compileShader(*frag->getOutput(), sourceCode);
+
+    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("Codegen_RtNodeGraph.osl");
+    std::ofstream shaderFile;
+    shaderFile.open(filepath);
+    shaderFile << sourceCode.asString();
+}
+
+TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
+{
+    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath());
+    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries/stdlib/osl"));
+
+    mx::RtScopedApiHandle api;
+    api->setSearchPath(searchPath);
+
+    // Load in standard libraries.
+    mx::RtReadOptions readOptions;
+    api->loadLibrary(TARGETS, readOptions);
+    api->loadLibrary(STDLIB, readOptions);
+    api->loadLibrary(PBRLIB, readOptions);
+    api->loadLibrary(BXDFLIB, readOptions);
+
     // Create a new working space stage
     mx::RtStagePtr stage = api->createStage(MAIN);
 
     mx::RtFileIo fileIO(stage);
     fileIO.read("resources/Materials/TestSuite/pbrlib/bsdf/layer_bsdf.mtlx", searchPath);
 
-//    mx::RtPrim prim = stage->getPrimAtPath("/layer_bsdf_test2");
-
-    mx::RtPrim prim = api->getLibrary()->getPrimAtPath("/IMPL_standard_surface_surfaceshader");
+    mx::RtPrim prim = stage->getPrimAtPath("/layer_bsdf_test2");
     REQUIRE(prim);
 
     mx::RtNodeGraph nodegraph(prim);
@@ -182,7 +218,7 @@ TEST_CASE("Codegen: Fragments from RtNodeGraph", "[codegen]")
     mx::Codegen::SourceCode sourceCode;
     compiler.compileShader(*frag->getOutput(), sourceCode);
 
-    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("codegen_test2.osl");
+    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("Codegen_Nodes.osl");
     std::ofstream shaderFile;
     shaderFile.open(filepath);
     shaderFile << sourceCode.asString();
@@ -204,10 +240,10 @@ TEST_CASE("Codegen: Color Management", "[codegen]")
     api->loadLibrary(PBRLIB, readOptions);
     api->loadLibrary(BXDFLIB, readOptions);
 
+    // Get a nodegraph and enable some color managment on it.
     mx::RtPrim prim = api->getLibrary()->getPrimAtPath("/NG_tiledimage_color3");
-    REQUIRE(prim);
-
     mx::RtNodeGraph nodegraph(prim);
+    REQUIRE(nodegraph);
     mx::RtNode image = nodegraph.getNode(mx::RtToken("N_img_color3"));
     mx::RtInput file = image.getInput(mx::Tokens::FILE);
     file.setColorSpace(mx::RtToken("srgb_texture"));
@@ -236,7 +272,7 @@ TEST_CASE("Codegen: Color Management", "[codegen]")
     mx::Codegen::SourceCode sourceCode;
     compiler.compileShader(*frag->getOutput(), sourceCode);
 
-    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("codegen_test3.osl");
+    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("Codegen_CM.osl");
     std::ofstream shaderFile;
     shaderFile.open(filepath);
     shaderFile << sourceCode.asString();

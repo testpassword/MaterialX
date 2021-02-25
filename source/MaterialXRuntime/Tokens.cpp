@@ -54,6 +54,10 @@ namespace Tokens
     const RtToken TOP("top");
     const RtToken IOR("ior");
     const RtToken THICKNESS("thickness");
+    const RtToken TANGENT("tangent");
+    const RtToken OBJECT("object");
+    const RtToken WORLD("world");
+    const RtToken DEFAULTGEOMPROP("defaultgeomprop");
     const RtToken CONSTANT("constant");
     const RtToken IMAGE("image");
     const RtToken COMPARE("compare");

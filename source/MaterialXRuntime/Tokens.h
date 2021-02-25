@@ -61,6 +61,10 @@ namespace Tokens
     extern const RtToken TOP;
     extern const RtToken IOR;
     extern const RtToken THICKNESS;
+    extern const RtToken TANGENT;
+    extern const RtToken OBJECT;
+    extern const RtToken WORLD;
+    extern const RtToken DEFAULTGEOMPROP;
     extern const RtToken UNKNOWN;
     extern const RtToken CONSTANT;
     extern const RtToken IMAGE;
