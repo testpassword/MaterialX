@@ -23,9 +23,8 @@ namespace Codegen
 {
 
 /// @class FragmentGenerator
-/// Base class for fragment generators.
-/// A fragment generator is a factory turning prims to fragments
-/// for use in code generation.
+/// Base class for fragment generators. A fragment generator is a factory
+/// generating codegen fragments from prims.
 class FragmentGenerator : public RtSharedBase<FragmentGenerator>
 {
   public:
