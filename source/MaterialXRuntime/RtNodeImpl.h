@@ -72,6 +72,12 @@ public:
 
     /// Return the function name to use for this implementation.
     const RtToken& getFunction() const;
+
+    /// Set the node graph prim to use if this is a graph implementation.
+    void setNodeGraph(RtPrim prim);
+
+    /// Return the node graph to use if this is a graph implementation.
+    RtPrim getNodeGraph() const;
 };
 
 }

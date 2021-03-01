@@ -25,6 +25,7 @@ public:
     static FragmentCompilerPtr create(const Context& context);
 
     void compileShader(const Output& output, SourceCode& result) const override;
+    void emitFunctionCalls(const FragmentGraph& graph, SourceCode& result) const override;
 };
 
 } // namespace Codegen

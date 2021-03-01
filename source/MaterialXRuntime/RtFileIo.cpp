@@ -573,7 +573,7 @@ namespace
         return prim;
     }
 
-    PvtPrim* readImplementation(const ImplementationPtr& src, PvtPrim* parent, PvtStage* stage)
+    PvtPrim* readImplementation(const InterfaceElementPtr& src, PvtPrim* parent, PvtStage* stage)
     {
         const RtToken target(src->getAttribute(Tokens::TARGET.str()));
 
@@ -586,25 +586,30 @@ namespace
 
         const RtToken name(src->getName());
         const RtToken nodedef(src->getNodeDefString());
-        const RtToken function(src->getAttribute(Tokens::FUNCTION.str()));
-        const RtToken format(src->getAttribute(Tokens::FORMAT.str()));
 
         PvtPrim* prim = stage->createPrim(parent->getPath(), name, RtNodeImpl::typeName());
         RtNodeImpl impl(prim->hnd());
         impl.setNodeDef(nodedef);
         impl.setTarget(target);
-        impl.setFunction(function);
-        impl.setFormat(format);
 
-        const string& sourcecode = src->getAttribute(Tokens::SOURCECODE.str());
-        if (!sourcecode.empty())
+        if (src->isA<Implementation>())
         {
-            impl.setSourceCode(sourcecode);
-        }
-        else
-        {
-            const string& file = src->getAttribute(Tokens::FILE.str());
-            impl.setFile(file);
+            // A source code implementation.
+            const RtToken function(src->getAttribute(Tokens::FUNCTION.str()));
+            const RtToken format(src->getAttribute(Tokens::FORMAT.str()));
+            impl.setFunction(function);
+            impl.setFormat(format);
+
+            const string& sourcecode = src->getAttribute(Tokens::SOURCECODE.str());
+            if (!sourcecode.empty())
+            {
+                impl.setSourceCode(sourcecode);
+            }
+            else
+            {
+                const string& file = src->getAttribute(Tokens::FILE.str());
+                impl.setFile(file);
+            }
         }
 
         readMetadata(src, prim, nodeimplMetadata);
@@ -854,13 +859,24 @@ namespace
                 }
                 else if (elem->isA<NodeGraph>())
                 {
-                    // Always skip if the nodegraph implements a nodedef
-                    PvtPath path(PvtPath::ROOT_NAME.str() + elem->getName());
-                    if (stage->getPrimAtPath(path) && elem->asA<NodeGraph>()->getNodeDef())
+                    // Load the nodegraph.
+                    NodeGraphPtr nodegraph = elem->asA<NodeGraph>();
+                    PvtPrim* nodegraphPrim = readNodeGraph(nodegraph, stage->getRootPrim(), stage, mapper);
+
+                    // Load a nodeimpl for the nodegraph if it implements a nodedef.
+                    if (!nodegraph->getNodeDefString().empty())
                     {
-                        continue;
+                        PvtPrim* implPrim = readImplementation(nodegraph, stage->getRootPrim(), stage);
+                        if (implPrim)
+                        {
+                            // Set nodeimpl to nodegraph relationship.
+                            RtNodeImpl impl(implPrim->hnd());
+                            impl.setNodeGraph(nodegraphPrim->hnd());
+
+                            // Register the nodeimpl.
+                            api.registerNodeImpl(implPrim->hnd());
+                        }
                     }
-                    readNodeGraph(elem->asA<NodeGraph>(), stage->getRootPrim(), stage, mapper);
                 }
                 else if (elem->isA<Implementation>())
                 {
@@ -1521,7 +1537,24 @@ void RtFileIo::readLibraries(const FilePathVec& libraryPaths, const FileSearchPa
             }
             else if (elem->isA<NodeGraph>())
             {
-                readNodeGraph(elem->asA<NodeGraph>(), stage->getRootPrim(), stage, mapper);
+                // Load the nodegraph.
+                NodeGraphPtr nodegraph = elem->asA<NodeGraph>();
+                PvtPrim* nodegraphPrim = readNodeGraph(nodegraph, stage->getRootPrim(), stage, mapper);
+
+                // Load a nodeimpl for the nodegraph if it implements a nodedef.
+                if (!nodegraph->getNodeDefString().empty())
+                {
+                    PvtPrim* implPrim = readImplementation(nodegraph, stage->getRootPrim(), stage);
+                    if (implPrim)
+                    {
+                        // Set nodeimpl to nodegraph relationship.
+                        RtNodeImpl impl(implPrim->hnd());
+                        impl.setNodeGraph(nodegraphPrim->hnd());
+
+                        // Register the nodeimpl.
+                        api.registerNodeImpl(implPrim->hnd());
+                    }
+                }
             }
             else if (elem->isA<Implementation>())
             {

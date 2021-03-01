@@ -55,6 +55,16 @@ void RtRelationship::clearTargets()
     return hnd()->asA<PvtRelationship>()->clearTargets();
 }
 
+void RtRelationship::setTarget(const RtObject& target, size_t index)
+{
+    return hnd()->asA<PvtRelationship>()->setTarget(target, index);
+}
+
+RtObject RtRelationship::getTarget(size_t index) const
+{
+    return hnd()->asA<PvtRelationship>()->getTarget(index);
+}
+
 RtConnectionIterator RtRelationship::getTargets() const
 {
     return RtConnectionIterator(*this);

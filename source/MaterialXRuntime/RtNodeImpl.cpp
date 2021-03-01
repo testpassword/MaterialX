@@ -109,4 +109,27 @@ const RtToken& RtNodeImpl::getFunction() const
     return data ? data->getValue().asToken() : EMPTY_TOKEN;
 }
 
+void RtNodeImpl::setNodeGraph(RtPrim nodegraph)
+{
+    RtRelationship rel = getPrim().getRelationship(Tokens::NODEGRAPH);
+    if (!rel)
+    {
+        rel = getPrim().createRelationship(Tokens::NODEGRAPH);
+    }
+    if (rel.hasTargets())
+    {
+        rel.setTarget(nodegraph);
+    }
+    else
+    {
+        rel.addTarget(nodegraph);
+    }
+}
+
+RtPrim RtNodeImpl::getNodeGraph() const
+{
+    RtRelationship rel = getPrim().getRelationship(Tokens::NODEGRAPH);
+    return (rel && rel.hasTargets() ? rel.getTarget() : RtPrim());
+}
+
 }

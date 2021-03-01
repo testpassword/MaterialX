@@ -44,6 +44,7 @@ namespace Tokens
     extern const RtToken NAMESPACE;
     extern const RtToken NODE;
     extern const RtToken NODEDEF;
+    extern const RtToken NODEGRAPH;
     extern const RtToken NODEGROUP;
     extern const RtToken NODEIMPL;
     extern const RtToken NOTE;

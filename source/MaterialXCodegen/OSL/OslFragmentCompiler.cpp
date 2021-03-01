@@ -54,6 +54,7 @@ void OslFragmentCompiler::compileShader(const Output& output, SourceCode& result
         throw ExceptionRuntimeError("Given output is not a fragment graph output '" + output.getName().str() + "'");
     }
 
+    const FragmentCompiler& compiler = _context.getCompiler();
     const Syntax& syntax = _context.getSyntax();
     const FragmentGraph* graph = output.getParent()->asA<FragmentGraph>();
 
@@ -74,11 +75,7 @@ void OslFragmentCompiler::compileShader(const Output& output, SourceCode& result
     result.newLine();
 
     // Emit all function definitions.
-    for (size_t i = 0; i < graph->numFragments(); ++i)
-    {
-        const Fragment* child = graph->getFragment(i);
-        child->emitFunctionDefinitions(_context, result);
-    }
+    compiler.emitFunctionDefinitions(*graph, result);
 
     // Begin shader signature.
     if (output.getType() == RtType::SURFACESHADER)
@@ -116,17 +113,8 @@ void OslFragmentCompiler::compileShader(const Output& output, SourceCode& result
     // Emit shader body.
     result.beginScope();
 
-    if (graph->hasClassification(FragmentClassification::CLOSURE) ||
-        graph->hasClassification(FragmentClassification::SHADER))
-    {
-        result.addLine("closure color null_closure = 0");
-    }
-
-    for (size_t i = 0; i < graph->numFragments(); ++i)
-    {
-        const Fragment* child = graph->getFragment(i);
-        child->emitFunctionCall(_context, result);
-    }
+    // Emit all function calls.
+    compiler.emitFunctionCalls(*graph, result);
 
     // Emit final results
     const Input* outputSocket = graph->getOutputSocket(output.getName());
@@ -136,6 +124,16 @@ void OslFragmentCompiler::compileShader(const Output& output, SourceCode& result
     result.endLine();
 
     result.endScope();
+}
+
+void OslFragmentCompiler::emitFunctionCalls(const FragmentGraph& graph, SourceCode& result) const
+{
+    if (graph.hasClassification(FragmentClassification::CLOSURE) ||
+        graph.hasClassification(FragmentClassification::SHADER))
+    {
+        result.addLine("closure color null_closure = 0");
+    }
+    FragmentCompiler::emitFunctionCalls(graph, result);
 }
 
 } // namespace Codegen

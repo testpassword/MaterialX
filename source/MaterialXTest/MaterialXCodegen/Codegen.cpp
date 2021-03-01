@@ -141,7 +141,7 @@ TEST_CASE("Codegen: Fragments from source", "[codegen]")
     shaderFile << sourceCode.asString();
 }
 
-TEST_CASE("Codegen: Fragments from RtNodeGraph", "[codegen]")
+TEST_CASE("Codegen: FragmentGraph from NodeGraph", "[codegen]")
 {
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath());
     searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
@@ -173,13 +173,13 @@ TEST_CASE("Codegen: Fragments from RtNodeGraph", "[codegen]")
     mx::Codegen::SourceCode sourceCode;
     compiler.compileShader(*frag->getOutput(), sourceCode);
 
-    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("Codegen_RtNodeGraph.osl");
+    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("Codegen_FragmentGraph_from_NodeGraph.osl");
     std::ofstream shaderFile;
     shaderFile.open(filepath);
     shaderFile << sourceCode.asString();
 }
 
-TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
+TEST_CASE("Codegen: FragmentGraph from Nodes", "[codegen]")
 {
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath());
     searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
@@ -199,12 +199,7 @@ TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
     mx::RtStagePtr stage = api->createStage(MAIN);
 
     mx::RtFileIo fileIO(stage);
-    fileIO.read("resources/Materials/TestSuite/pbrlib/bsdf/layer_bsdf.mtlx", searchPath);
-
-    mx::RtPrim prim = stage->getPrimAtPath("/layer_bsdf_test2");
-    REQUIRE(prim);
-
-    mx::RtNodeGraph nodegraph(prim);
+    fileIO.read("resources/Materials/Examples/StandardSurface/standard_surface_brass_tiled.mtlx", searchPath);
 
     mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
     mx::Codegen::ContextPtr context = mx::Codegen::OslContext::create(options);
@@ -212,13 +207,19 @@ TEST_CASE("Codegen: Fragments from nodes", "[codegen]")
     const mx::Codegen::FragmentGenerator& generator = context->getGenerator();
     const mx::Codegen::FragmentCompiler& compiler = context->getCompiler();
 
-    mx::Codegen::FragmentPtr frag = generator.createFragmentGraph(nodegraph);
+    // Creating a fragment graph from a node instance
+    mx::RtPrim prim = stage->getPrimAtPath("/SR_brass1");
+    mx::RtNode node(prim);
+    REQUIRE(node);
+    REQUIRE(node.getOutput().getType() == mx::RtType::SURFACESHADER);
+
+    mx::Codegen::FragmentPtr frag = generator.createFragmentGraph(node, node.getOutput().getName());
     REQUIRE(frag);
 
     mx::Codegen::SourceCode sourceCode;
     compiler.compileShader(*frag->getOutput(), sourceCode);
 
-    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("Codegen_Nodes.osl");
+    const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath("Codegen_FragmentGraph_from_Nodes.osl");
     std::ofstream shaderFile;
     shaderFile.open(filepath);
     shaderFile << sourceCode.asString();

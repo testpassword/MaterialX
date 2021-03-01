@@ -105,6 +105,25 @@ void FragmentCompiler::emitTypeDefinitions(SourceCode& result) const
     result.newLine();
 }
 
+void FragmentCompiler::emitFunctionDefinitions(const FragmentGraph& graph, SourceCode& result) const
+{
+    // Default implementation, just emit all function definitions for all fragments.
+    for (size_t i = 0; i < graph.numFragments(); ++i)
+    {
+        const Fragment* child = graph.getFragment(i);
+        child->emitFunctionDefinitions(_context, result);
+    }
+}
+
+void FragmentCompiler::emitFunctionCalls(const FragmentGraph& graph, SourceCode& result) const
+{
+    // Default implementation, just emit all function calls for all fragments.
+    for (size_t i = 0; i < graph.numFragments(); ++i)
+    {
+        const Fragment* child = graph.getFragment(i);
+        child->emitFunctionCall(_context, result);
+    }
+}
 
 } // namespace Codegen
 } // namespace MaterialX

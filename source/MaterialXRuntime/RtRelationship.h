@@ -49,6 +49,14 @@ public:
     /// Clear all targets from this relationship.
     void clearTargets();
 
+    /// Set a target by index. No range check is performed and an entry
+    /// for the given index must exists.
+    void setTarget(const RtObject& obj, size_t index = 0);
+
+    /// Return a target by index. No range check is performed and an entry
+    /// for the given index must exists.
+    RtObject getTarget(size_t index = 0) const;
+
     /// Return an iterator over all targets for this relationship.
     RtConnectionIterator getTargets() const;
 

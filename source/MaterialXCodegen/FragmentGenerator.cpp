@@ -51,62 +51,74 @@ FragmentPtr FragmentGenerator::createFragment(const RtNodeDef& nodedef, const Rt
 
     RtNodeImpl nodeimpl(nodeImplPrim);
 
-    // See if a fragment class has been registered for the nodeimpl.
-    FragmentPtr frag = createFragment(nodeimpl.getName(), name);
-    if (!frag)
+    FragmentPtr frag;
+
+    // Check if this is a nodegraph implementation.
+    RtNodeGraph nodegraph = nodeimpl.getNodeGraph();
+    if (nodegraph)
     {
-        // No fragment of this class has been registerd so
-        // fallback to a source fragment as default class.
-        frag = SourceFragment::create(name);
+        // TODO: Don't recreate every time!
+         frag = createFragmentGraph(nodegraph);
     }
-
-    // Create fragment ports according to the nodedef.
-    for (RtAttribute attr : nodedef.getInputs())
+    else
     {
-        Input* input = frag->createInput(attr.getName(), attr.getType());
-        RtValue::copy(input->getType(), attr.getValue(), input->getValue());
-    }
-    for (RtAttribute attr : nodedef.getOutputs())
-    {
-        frag->createOutput(attr.getName(), attr.getType());
-    }
-
-    const RtToken& function = nodeimpl.getFunction();
-    frag->setFunctionName(function);
-    frag->setClassification(getClassificationMask(nodedef));
-
-    // Load source code for source code fragments.
-    if (frag->isA<SourceFragment>())
-    {
-        SourceFragment* sourceFragment = frag->asA<SourceFragment>();
-
-        // Get the source code from metadata on the nodeimpl.
-        RtTypedValue* sourceCodeData = nodeimpl.addMetadata(Tokens::SOURCECODE, RtType::STRING);
-        string* contentPtr = &sourceCodeData->getValue().asString();
-        if (contentPtr->empty())
+        // See if a fragment class has been registered for the nodeimpl.
+        frag = createFragment(nodeimpl.getName(), name);
+        if (!frag)
         {
-            // No source given so try loading it from file.
-            const FilePath path = RtApi::get().getSearchPath().find(nodeimpl.getFile());
-            *contentPtr = readFile(path);
-            if (contentPtr->empty())
-            {
-                throw ExceptionRuntimeError("Failed to get source code from file '" + path.asString() +
-                    "' used by implementation '" + nodeimpl.getName().str() + "'");
-            }
-
-            // Remove newline if it's an inline expression.
-            if (sourceFragment->isInline())
-            {
-                contentPtr->erase(std::remove(contentPtr->begin(), contentPtr->end(), '\n'), contentPtr->end());
-            }
+            // No fragment of this class has been registered so
+            // fallback to a source fragment as default class.
+            frag = SourceFragment::create(name);
         }
 
-        // Assign this source code to the fragment.
-        sourceFragment->setSourceCode(contentPtr);
-    }
+        // Create fragment ports according to the nodedef.
+        for (RtAttribute attr : nodedef.getInputs())
+        {
+            Input* input = frag->createInput(attr.getName(), attr.getType());
+            RtValue::copy(input->getType(), attr.getValue(), input->getValue());
+        }
+        for (RtAttribute attr : nodedef.getOutputs())
+        {
+            frag->createOutput(attr.getName(), attr.getType());
+        }
 
-    // Finalize the fragment construction.
-    frag->finalize(_context);
+        const RtToken& function = nodeimpl.getFunction();
+        frag->setFunctionName(function);
+        frag->setClassification(getClassificationMask(nodedef));
+
+        // Load source code for source code fragments.
+        if (frag->isA<SourceFragment>())
+        {
+            SourceFragment* sourceFragment = frag->asA<SourceFragment>();
+
+            // Get the source code from metadata on the nodeimpl.
+            RtTypedValue* sourceCodeData = nodeimpl.addMetadata(Tokens::SOURCECODE, RtType::STRING);
+            string* contentPtr = &sourceCodeData->getValue().asString();
+            if (contentPtr->empty())
+            {
+                // No source given so try loading it from file.
+                const FilePath path = RtApi::get().getSearchPath().find(nodeimpl.getFile());
+                *contentPtr = readFile(path);
+                if (contentPtr->empty())
+                {
+                    throw ExceptionRuntimeError("Failed to get source code from file '" + path.asString() +
+                        "' used by implementation '" + nodeimpl.getName().str() + "'");
+                }
+
+                // Remove newline if it's an inline expression.
+                if (sourceFragment->isInline())
+                {
+                    contentPtr->erase(std::remove(contentPtr->begin(), contentPtr->end(), '\n'), contentPtr->end());
+                }
+            }
+
+            // Assign this source code to the fragment.
+            sourceFragment->setSourceCode(contentPtr);
+        }
+
+        // Finalize the fragment construction.
+        frag->finalize(_context);
+    }
 
     return frag;
 }
@@ -199,30 +211,51 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
     return frag;
 }
 
-FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node) const
+FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, const RtToken& output) const
 {
+    FragmentPtr frag;
+
     if (node.getPrim().hasApi<RtNodeGraph>())
     {
+        // Create a fragment graph from the given nodegraph.
         RtNodeGraph nodegraph(node.getPrim());
+        frag = FragmentGraph::create(nodegraph.getName());
+        FragmentGraph* graph = frag->asA<FragmentGraph>();
 
-        FragmentPtr graphFragment = FragmentGraph::create(nodegraph.getName());
-        FragmentGraph* graph = graphFragment->asA<FragmentGraph>();
-
-        for (RtAttribute attr : nodegraph.getInputs())
+        // Create all inputs.
+        for (RtAttribute port : nodegraph.getInputs())
         {
-            Input* input = graph->createInput(attr.getName(), attr.getType());
-            RtValue::copy(input->getType(), attr.getValue(), input->getValue());
-        }
-        for (RtAttribute attr : nodegraph.getOutputs())
-        {
-            graph->createOutput(attr.getName(), attr.getType());
+            Input* input = graph->createInput(port.getName(), port.getType());
+            RtValue::copy(input->getType(), port.getValue(), input->getValue());
         }
 
+        if (output != EMPTY_TOKEN)
+        {
+            // Create specified output.
+            RtOutput port = nodegraph.getOutput(output);
+            if (!port)
+            {
+                throw ExceptionRuntimeError("No output named '" + output.str() + "' on nodegraph '" + nodegraph.getName().str() + "'");
+            }
+            graph->createOutput(port.getName(), port.getType());
+        }
+        else
+        {
+            // Create all outputs.
+            for (RtAttribute port : nodegraph.getOutputs())
+            {
+                graph->createOutput(port.getName(), port.getType());
+            }
+        }
+
+        // Create child fragments for all nodes in the graph.
         for (RtPrim child : nodegraph.getNodes())
         {
             createFragment(RtNode(child), *graph);
         }
 
+        // Connect all child fragments to each other and to 
+        // the fragment graph input interface.
         for (RtPrim child : nodegraph.getNodes())
         {
             RtNode childNode(child);
@@ -250,6 +283,7 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node) const
             }
         }
 
+        // Connect all child fragments to the fragment graph output interface.
         for (RtAttribute attr : nodegraph.getOutputs())
         {
             RtInput socket = nodegraph.getOutputSocket(attr.getName());
@@ -262,13 +296,56 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node) const
                 graph->connect(upstreamChildOutput, fragmentSocket);
             }
         }
+    }
+    else
+    {
+        // Create a fragment graph by traversing upstream dependencies from the given node.
+        
+        // Create the container fragment graph.
+        frag = FragmentGraph::create(node.getName());
+        FragmentGraph* graph = frag->asA<FragmentGraph>();
 
-        graph->finalize(_context);
+        FragmentPtr childFrag = createFragment(node, *graph);
 
-        return graphFragment;
+        // Create all inputs.
+        for (RtAttribute port : node.getInputs())
+        {
+            RtInput nodeInput = port.asA<RtInput>();
+            if (!nodeInput.isConnected())
+            {
+                Input* graphInput = graph->createInput(port.getName(), port.getType());
+                Input* childInput = childFrag->getInput(port.getName());
+                graph->connect(graph->getInputSocket(port.getName()), childInput);
+                RtValue::copy(childInput->getType(), childInput->getValue(), graphInput->getValue());
+            }
+        }
+
+        if (output != EMPTY_TOKEN)
+        {
+            // Create specified output.
+            RtOutput port = node.getOutput(output);
+            if (!port)
+            {
+                throw ExceptionRuntimeError("No output named '" + output.str() + "' on node '" + node.getName().str() + "'");
+            }
+            graph->createOutput(port.getName(), port.getType());
+            graph->connect(childFrag->getOutput(), graph->getOutputSocket());
+        }
+        else
+        {
+            // Create all outputs.
+            for (RtAttribute port : node.getOutputs())
+            {
+                graph->createOutput(port.getName(), port.getType());
+                graph->connect(childFrag->getOutput(port.getName()), graph->getOutputSocket(port.getName()));
+            }
+        }
     }
 
-    return nullptr;
+    // Finalize creation.
+    frag->finalize(_context);
+
+    return frag;
 }
 
 FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& fragment) const

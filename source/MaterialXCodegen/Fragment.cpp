@@ -416,11 +416,8 @@ void FragmentGraph::emitFunctionDefinitions(const Context& context, SourceCode& 
 
     const FragmentCompiler& compiler = context.getCompiler();
 
-    for (size_t i = 0; i < numFragments(); ++i)
-    {
-        const Fragment* child = getFragment(i);
-        child->emitFunctionDefinitions(context, result);
-    }
+    // Emit all function definitions.
+    compiler.emitFunctionDefinitions(*this, result);
 
     result.beginLine();
     result.addString("void " + _functionName.str() + "(");
@@ -450,11 +447,8 @@ void FragmentGraph::emitFunctionDefinitions(const Context& context, SourceCode& 
 
     result.beginScope();
 
-    for (size_t i = 0; i < numFragments(); ++i)
-    {
-        const Fragment* child = getFragment(i);
-        child->emitFunctionCall(context, result);
-    }
+    // Emit all function calls.
+    compiler.emitFunctionCalls(*this, result);
 
     // Emit final results
     for (size_t i = 0; i < numOutputs(); ++i)

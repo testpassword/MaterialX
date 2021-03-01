@@ -213,10 +213,11 @@ RtPrim RtNodeDef::getNodeImpl(const RtToken& target) const
     RtRelationship rel = getNodeImpls();
     for (RtObject obj : rel.getTargets())
     {
-        if (obj.isA<RtPrim>())
+        RtNodeImpl impl(obj);
+        if (impl)
         {
-            RtNodeImpl impl(obj);
-            if (impl.isValid() && (target == EMPTY_TOKEN || impl.getTarget() == target))
+            const RtToken implTarget(impl.getTarget());
+            if (target == EMPTY_TOKEN || implTarget == EMPTY_TOKEN || target == implTarget)
             {
                 return impl.getPrim();
             }

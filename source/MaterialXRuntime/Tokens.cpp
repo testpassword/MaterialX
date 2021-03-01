@@ -36,6 +36,7 @@ namespace Tokens
     const RtToken NAMESPACE("namespace");
     const RtToken NODE("node");
     const RtToken NODEDEF("nodedef");
+    const RtToken NODEGRAPH("nodegraph");
     const RtToken NODEGROUP("nodegroup");
     const RtToken NODEIMPL("nodeimpl");
     const RtToken NOTE("note");

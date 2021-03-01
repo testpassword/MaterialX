@@ -43,6 +43,16 @@ public:
         _targets.clear();
     }
 
+    void setTarget(const RtObject& obj, size_t index = 0)
+    {
+        _targets[index] = PvtObject::hnd(obj);
+    }
+
+    RtObject getTarget(size_t index = 0) const
+    {
+        return _targets[index];
+    }
+
     RtConnectionIterator getTargets() const
     {
         return RtConnectionIterator(this->obj());
