@@ -7,7 +7,8 @@
 #define MATERIALX_CODEGEN_CONVERT_H
 
 /// @file Convert.h
-/// Convert fragment.
+/// Fragments for converting inputs to other data types
+/// or manipulating the channels on multichannel types.
 
 #include <MaterialXCodegen/Library.h>
 #include <MaterialXCodegen/Fragment.h>
@@ -32,6 +33,17 @@ public:
 class SwizzleFragment : public Fragment
 {
     DECLARE_FRAGMENT_CLASS(SwizzleFragment)
+
+public:
+    void emitFunctionCall(const Context& context, SourceCode& result) const override;
+};
+
+/// @class CombineFragment
+/// A fragment for combining multiple input streams
+/// into a single multichannel output stream.
+class CombineFragment : public Fragment
+{
+    DECLARE_FRAGMENT_CLASS(CombineFragment)
 
 public:
     void emitFunctionCall(const Context& context, SourceCode& result) const override;

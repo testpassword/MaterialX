@@ -143,6 +143,18 @@ OslFragmentGenerator::OslFragmentGenerator(const Context& context) :
     registerFragmentClass(RtToken("IM_swizzle_vector4_vector3_genosl"), SwizzleFragment::create);
     registerFragmentClass(RtToken("IM_swizzle_vector4_vector4_genosl"), SwizzleFragment::create);
 
+    // <combine2>
+    registerFragmentClass(RtToken("IM_combine2_vector2_genosl"), CombineFragment::create);
+    registerFragmentClass(RtToken("IM_combine2_color4CF_genosl"), CombineFragment::create);
+    registerFragmentClass(RtToken("IM_combine2_vector4VF_genosl"), CombineFragment::create);
+    registerFragmentClass(RtToken("IM_combine2_vector4VV_genosl"), CombineFragment::create);
+    // <combine3>
+    registerFragmentClass(RtToken("IM_combine3_color3_genosl"), CombineFragment::create);
+    registerFragmentClass(RtToken("IM_combine3_vector3_genosl"), CombineFragment::create);
+    // <combine4>
+    registerFragmentClass(RtToken("IM_combine4_color4_genosl"), CombineFragment::create);
+    registerFragmentClass(RtToken("IM_combine4_vector4_genosl"), CombineFragment::create);
+
     // <layer>
     registerFragmentClass(RtToken("IM_layer_bsdf_genosl"), LayerFragment::create);
 

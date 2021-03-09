@@ -166,5 +166,111 @@ void SwizzleFragment::emitFunctionCall(const Context& context, SourceCode& resul
     result.endLine();
 }
 
+
+DEFINE_FRAGMENT_CLASS(CombineFragment, Fragment)
+
+void CombineFragment::emitFunctionCall(const Context& context, SourceCode& result) const
+{
+    const FragmentCompiler& compiler = context.getCompiler();
+    const Syntax& syntax = context.getSyntax();
+
+    const Input* in1 = getInput(0);
+    const Output* out = getOutput();
+
+    // Check the node signature to determine which
+    // type conversion to perform, and get the value
+    // components to use for constructing the new value.
+    //
+    StringVec valueComponents;
+    if (in1->getType() == RtType::FLOAT)
+    {
+        // Get the components of the input values.
+        const size_t cnt = numInputs();
+        valueComponents.resize(cnt);
+        for (size_t i = 0; i < cnt; ++i)
+        {
+            const Input* input = getInput(i);
+            valueComponents[i] = compiler.getResult(*input);
+        }
+    }
+    else if (in1->getType() == RtType::COLOR3 || in1->getType() == RtType::VECTOR3)
+    {
+        const Input* in2 = getInput(1);
+
+        // If in1 is unconnected we must declare a local variable
+        // for it first, in order to access components from it below.
+        const RtToken& in1Variable = in1->isConnected() ? in1->getConnection()->getVariable() : in1->getVariable();
+        if (!in1->isConnected())
+        {
+            string variableValue = syntax.getValue(in1->getType(), in1->getValue());
+            result.addLine(syntax.getTypeName(in1->getType()) + " " + in1Variable.str() + " = " + variableValue);
+        }
+
+        // Get components from in1
+        const StringVec& in1Members = syntax.getTypeSyntax(in1->getType()).getMembers();
+        size_t memberSize = in1Members.size();
+
+        // Get the components of the input values.
+        if (memberSize)
+        {
+            valueComponents.resize(memberSize + 1);
+            for (size_t i = 0; i < memberSize; i++)
+            {
+                valueComponents[i] = in1Variable.str() + in1Members[i];
+            }
+        }
+        else
+        {
+            memberSize = 1;
+            valueComponents.resize(2);
+            valueComponents[0] = in1Variable.str();
+        }
+        // Get component from in2
+        valueComponents[memberSize] = compiler.getResult(*in2);
+    }
+    else if (in1->getType() == RtType::VECTOR2)
+    {
+        const Input* in2 = getInput(1);
+
+        // If in1 is unconnected we must declare a local variable
+        // for it first, in order to access components from it below.
+        const RtToken& in1Variable = in1->isConnected() ? in1->getConnection()->getVariable() : in1->getVariable();
+        if (!in1->isConnected())
+        {
+            const string variableValue = syntax.getValue(in1->getType(), in1->getValue());
+            result.addLine(syntax.getTypeName(in1->getType()) + " " + in1Variable.str() + " = " + variableValue);
+        }
+
+        // If in2 is unconnected we must declare a local variable
+        // for it first, in order to access components from it below.
+        const RtToken&  in2Variable = in2->isConnected() ? in2->getConnection()->getVariable() : in2->getVariable();
+        if (!in2->isConnected())
+        {
+            const string variableValue = syntax.getValue(in2->getType(), in2->getValue());
+            result.addLine(syntax.getTypeName(in2->getType()) + " " + in2Variable.str() + " = " + variableValue);
+        }
+
+        // Get the components of the input values.
+        valueComponents.resize(4);
+
+        // Get components from in1.
+        const StringVec& in1Members = syntax.getTypeSyntax(in1->getType()).getMembers();
+        valueComponents[0] = in1Variable.str() + in1Members[0];
+        valueComponents[1] = in1Variable.str() + in1Members[1];
+
+        // Get components from in2.
+        const StringVec& in2Members = syntax.getTypeSyntax(in2->getType()).getMembers();
+        valueComponents[2] = in2Variable.str() + in2Members[0];
+        valueComponents[3] = in2Variable.str() + in2Members[1];
+    }
+
+    // Let the TypeSyntax construct the value from the components.
+    const TypeSyntax& outTypeSyntax = syntax.getTypeSyntax(out->getType());
+    result.beginLine();
+    compiler.declareVariable(*out, false, result);
+    result.addString(" = " + outTypeSyntax.getValue(valueComponents));
+    result.endLine();
+}
+
 } // namespace Codegen
 } // namespace MaterialX
