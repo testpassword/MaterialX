@@ -57,8 +57,10 @@ FragmentPtr FragmentGenerator::createFragment(const RtNodeDef& nodedef, const Rt
     RtNodeGraph nodegraph = nodeimpl.getNodeGraph();
     if (nodegraph)
     {
-        // TODO: Don't recreate every time!
-         frag = createFragmentGraph(nodegraph);
+        // [TODO] Don't recreate every time!
+        // Compile and cache the source code on the RtNodeImpl,
+        // turning this into a source code fragment instead?
+         frag = createFragmentGraph(nodegraph, name);
     }
     else
     {
@@ -148,7 +150,7 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
     if (node.getPrim().hasApi<RtNodeGraph>())
     {
         // Create the fragment from the nodegraph.
-        frag = createFragmentGraph(node);
+        frag = createFragmentGraph(node, node.getName());
     }
     else
     {
@@ -211,16 +213,17 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
     return frag;
 }
 
-FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, const RtToken& output) const
+FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, const RtToken& name, const RtToken& output, bool publishFreeInputs) const
 {
     FragmentPtr frag;
+    FragmentGraph* graph;
 
     if (node.getPrim().hasApi<RtNodeGraph>())
     {
         // Create a fragment graph from the given nodegraph.
         RtNodeGraph nodegraph(node.getPrim());
-        frag = FragmentGraph::create(nodegraph.getName());
-        FragmentGraph* graph = frag->asA<FragmentGraph>();
+        frag = FragmentGraph::create(name);
+        graph = frag->asA<FragmentGraph>();
 
         // Create all inputs.
         for (RtAttribute port : nodegraph.getInputs())
@@ -302,8 +305,8 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, const RtT
         // Create a fragment graph by traversing upstream dependencies from the given node.
         
         // Create the container fragment graph.
-        frag = FragmentGraph::create(node.getName());
-        FragmentGraph* graph = frag->asA<FragmentGraph>();
+        frag = FragmentGraph::create(name);
+        graph = frag->asA<FragmentGraph>();
 
         FragmentPtr childFrag = createFragment(node, *graph);
 
@@ -338,6 +341,28 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, const RtT
             {
                 graph->createOutput(port.getName(), port.getType());
                 graph->connect(childFrag->getOutput(port.getName()), graph->getOutputSocket(port.getName()));
+            }
+        }
+    }
+
+    // If requested create graph inputs for all free/unconnected inputs inside the graph.
+    if (publishFreeInputs)
+    {
+        const size_t numFragments = graph->numFragments();
+        for (size_t i = 0; i < numFragments; ++i)
+        {
+            Fragment* child = graph->getFragment(i);
+            const size_t numInputs = child->numInputs();
+            for (size_t j = 0; j < numInputs; ++j)
+            {
+                Input* input = child->getInput(j);
+                if (!input->isConnected())
+                {
+                    const RtToken inputName(input->getLongName());
+                    Input* external = graph->createInput(inputName, input->getType());
+                    Output* socket = graph->getInputSocket(external->getName());
+                    graph->connect(socket, input);
+                }
             }
         }
     }

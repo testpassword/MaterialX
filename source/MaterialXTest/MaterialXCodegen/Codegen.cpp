@@ -167,7 +167,7 @@ TEST_CASE("Codegen: FragmentGraph from NodeGraph", "[codegen]")
     const mx::Codegen::FragmentGenerator& generator = context->getGenerator();
     const mx::Codegen::FragmentCompiler& compiler = context->getCompiler();
 
-    mx::Codegen::FragmentPtr frag = generator.createFragmentGraph(nodegraph);
+    mx::Codegen::FragmentPtr frag = generator.createFragmentGraph(nodegraph, nodegraph.getName());
     REQUIRE(frag);
 
     mx::Codegen::SourceCode sourceCode;
@@ -225,6 +225,54 @@ TEST_CASE("Codegen: FragmentGraph from Nodes", "[codegen]")
     shaderFile << sourceCode.asString();
 }
 
+
+TEST_CASE("Codegen: Testsuite OSL", "[codegen]")
+{
+    mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath());
+    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+    searchPath.append(mx::FilePath::getCurrentPath() / mx::FilePath("libraries/stdlib/osl"));
+
+    mx::RtScopedApiHandle api;
+    api->setSearchPath(searchPath);
+
+    // Load in standard libraries.
+    mx::RtReadOptions readOptions;
+    api->loadLibrary(TARGETS, readOptions);
+    api->loadLibrary(STDLIB, readOptions);
+    api->loadLibrary(PBRLIB, readOptions);
+    api->loadLibrary(BXDFLIB, readOptions);
+
+    mx::Codegen::OptionsPtr options = mx::Codegen::Options::create();
+    mx::Codegen::ContextPtr context = mx::Codegen::OslContext::create(options);
+
+    const mx::Codegen::FragmentGenerator& generator = context->getGenerator();
+    const mx::Codegen::FragmentCompiler& compiler = context->getCompiler();
+
+    // Create a new working space stage
+    mx::RtStagePtr stage = api->createStage(MAIN);
+
+    mx::RtFileIo fileIO(stage);
+    fileIO.read("resources/Materials/TestSuite/stdlib/channel/channel.mtlx", searchPath);
+
+    mx::RtSchemaPredicate<mx::RtNodeGraph> nodegraphFilter;
+    for (mx::RtPrim prim : stage->getPrims(nodegraphFilter))
+    {
+        mx::RtNodeGraph nodegraph(prim);
+        REQUIRE(nodegraph);
+
+        mx::Codegen::FragmentPtr frag = generator.createFragmentGraph(nodegraph, nodegraph.getName(), mx::EMPTY_TOKEN, true);
+        REQUIRE(frag);
+
+        mx::Codegen::SourceCode sourceCode;
+        compiler.compileShader(*frag->getOutput(), sourceCode);
+
+        const std::string filepath = mx::FilePath::getCurrentPath() / mx::FilePath(nodegraph.getName().str() + ".osl");
+        std::ofstream shaderFile;
+        shaderFile.open(filepath);
+        shaderFile << sourceCode.asString();
+    }
+}
+
 TEST_CASE("Codegen: Color Management", "[codegen]")
 {
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath());
@@ -267,7 +315,7 @@ TEST_CASE("Codegen: Color Management", "[codegen]")
     const mx::Codegen::FragmentGenerator& generator = context->getGenerator();
     const mx::Codegen::FragmentCompiler& compiler = context->getCompiler();
 
-    mx::Codegen::FragmentPtr frag = generator.createFragmentGraph(nodegraph);
+    mx::Codegen::FragmentPtr frag = generator.createFragmentGraph(nodegraph, nodegraph.getName());
     REQUIRE(frag);
 
     mx::Codegen::SourceCode sourceCode;

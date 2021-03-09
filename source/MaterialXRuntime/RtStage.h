@@ -11,6 +11,7 @@
 
 #include <MaterialXRuntime/Library.h>
 #include <MaterialXRuntime/RtObject.h>
+#include <MaterialXRuntime/RtPrim.h>
 #include <MaterialXRuntime/RtTraversal.h>
 
 namespace MaterialX
@@ -73,6 +74,16 @@ public:
 
     /// Return the prim representing the root of the stage's prim hierarchy.
     RtPrim getRootPrim();
+
+    /// Return and iterator over the child prims of this stage.
+    /// Using a predicate this method can be used to find all child prims
+    /// of a specific object type, or all child prims supporting a
+    /// specific API, etc.
+    /// Shorthand for calling getRootPrim().getChildren().
+    RtPrimIterator getPrims(RtObjectPredicate predicate = nullptr)
+    {
+        return getRootPrim().getChildren(predicate);
+    }
 
     /// Return an iterator traversing all child prims (siblings) in the stage,
     /// including children from any referenced stages.

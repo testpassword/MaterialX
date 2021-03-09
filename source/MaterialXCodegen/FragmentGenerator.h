@@ -49,9 +49,11 @@ class FragmentGenerator : public RtSharedBase<FragmentGenerator>
     virtual FragmentPtr createFragment(const RtNode& node, FragmentGraph& parent) const;
 
     /// Create a fragment graph from the given node or nodegraph.
-    /// If a node is given a graph will be created by traversing 
-    /// all upstream dependencies.
-    virtual FragmentPtr createFragmentGraph(const RtNode& node, const RtToken& output = EMPTY_TOKEN) const;
+    /// If a node is given a fragment graph will be created by
+    /// traversing all upstream dependencies.
+    virtual FragmentPtr createFragmentGraph(const RtNode& node, const RtToken& name,
+                                            const RtToken& output = EMPTY_TOKEN,
+                                            bool publishFreeInputs = false) const;
 
     /// Create and connect any additional fragments needed for this node.
     /// If such sub-fragments are needed a new fragment graph is created that

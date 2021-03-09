@@ -261,31 +261,9 @@ void FragmentGraph::finalize(const Context& context)
     //
     // Finalize the graph construction.
     //
-    const size_t numFragments = _fragments.size();
-
-/*
-    if (publishAllInputs)
-    {
-        // Create graph inputs for unconnected inputs inside the graph.
-        for (size_t i = 0; i < numFragments; ++i)
-        {
-            Fragment* fragment = _fragments.get(i);
-            for (size_t j = 0; j < fragment->numInputs(); ++j)
-            {
-                Input* input = fragment->getInput(j);
-                if (!input->isConnected())
-                {
-                    const RtToken name(input->getLongName());
-                    Input* external = createInput(name, input->getType());
-                    Output* socket = getInputSocket(external->getName());
-                    connect(socket, input);
-                }
-            }
-        }
-    }
-*/
 
     const Syntax& syntax = context.getSyntax();
+    const size_t numFragments = _fragments.size();
 
     // Add all reserved words as taken identifiers
     RtTokenMap<size_t> identifiers;
