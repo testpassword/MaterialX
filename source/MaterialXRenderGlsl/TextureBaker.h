@@ -87,7 +87,7 @@ class TextureBaker : public GlslRenderer
     }
 
     /// Return whether images should be averaged to generate constants.
-    bool getAverageImages()
+    bool getAverageImages() const
     {
         return _averageImages;
     }
@@ -99,7 +99,7 @@ class TextureBaker : public GlslRenderer
     }
 
     /// Return whether uniform textures should be stored as constants.
-    bool getOptimizeConstants()
+    bool getOptimizeConstants() const
     {
         return _optimizeConstants;
     }
@@ -117,7 +117,7 @@ class TextureBaker : public GlslRenderer
         return _outputImagePath;
     }
 
-    /// Set the "libraries" search path location. Otherwise will use getDefaultSearchPath()
+    /// Set the "libraries" search path location.
     void setCodeSearchPath(const FileSearchPath& codesearchPath)
     {
         _codeSearchPath = codesearchPath;
@@ -159,6 +159,34 @@ class TextureBaker : public GlslRenderer
         return _outputStream;
     }
 
+    /// Set baked texture resolution automatically. Defaults to false.
+    /// If any images are found upstream from a shader input, then the output baked texture is the largest image resolution. 
+    /// If no images are found, then the fixed resolution of the baker is used.
+    void setAutoTextureResolution(bool enable)
+    {
+        _autoTextureResolution = enable;
+    }
+
+    /// Return whether automatic baked texture resolution is set.
+    bool getAutoTextureResolution() const
+    {
+        return _autoTextureResolution;
+    }
+
+    /// Set whether to create a short name for baked images by hashing the baked image filenames
+    /// This is useful for file systems which may have a maximum limit on filename size.
+    /// By default names are not hashed.
+    void setHashImageNames(bool enable)
+    {
+        _hashImageNames = enable;
+    }
+
+    /// Return whether automatic baked texture resolution is set.
+    bool getHashImageNames() const
+    {
+        return _hashImageNames;
+    }
+
     /// Set up the unit definitions to be used in baking.
     void setupUnitSystem(DocumentPtr unitDefinitions);
 
@@ -175,11 +203,11 @@ class TextureBaker : public GlslRenderer
     DocumentPtr bakeMaterial(NodePtr shader, const StringVec& udimSet);
 
     /// Bake all materials in the given document and return them as a vector.
-    BakedDocumentVec createBakeDocuments(DocumentPtr doc, const FileSearchPath& imageSearchPath);
+    BakedDocumentVec createBakeDocuments(DocumentPtr doc, const FileSearchPath& searchPath);
 
     /// Bake all materials in the given document and write them to disk.  If multiple documents are written,
     /// then the given output filename will be used as a template.
-    void bakeAllMaterials(DocumentPtr doc, const FileSearchPath& imageSearchPath, const FilePath& outputFileName);
+    void bakeAllMaterials(DocumentPtr doc, const FileSearchPath& searchPath, const FilePath& outputFileName);
 
   protected:
     TextureBaker(unsigned int width, unsigned int height, Image::BaseType baseType);
@@ -219,6 +247,8 @@ class TextureBaker : public GlslRenderer
     string _bakedGeomInfoName;
     FileSearchPath _codeSearchPath;
     std::ostream* _outputStream;
+    bool _autoTextureResolution;
+    bool _hashImageNames;
 
     ShaderGeneratorPtr _generator;
     ConstNodePtr _material;

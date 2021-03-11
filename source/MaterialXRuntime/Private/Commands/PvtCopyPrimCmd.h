@@ -32,7 +32,7 @@ public:
 
 private:
     RtPrim createPrimCopy(const RtPrim& prim, const RtPath& parentPath);
-    void copyMetadata(const PvtObject* src, PvtObject* dest);
+    void copyAttributes(const PvtObject* src, PvtObject* dest);
 
     RtStagePtr _stage;
     const RtPrim _prim;

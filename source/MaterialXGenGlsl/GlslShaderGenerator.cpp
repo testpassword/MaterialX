@@ -15,7 +15,6 @@
 #include <MaterialXGenGlsl/Nodes/GeomPropValueNodeGlsl.h>
 #include <MaterialXGenGlsl/Nodes/FrameNodeGlsl.h>
 #include <MaterialXGenGlsl/Nodes/TimeNodeGlsl.h>
-#include <MaterialXGenGlsl/Nodes/ViewDirectionNodeGlsl.h>
 #include <MaterialXGenGlsl/Nodes/SurfaceNodeGlsl.h>
 #include <MaterialXGenGlsl/Nodes/SurfaceShaderNodeGlsl.h>
 #include <MaterialXGenGlsl/Nodes/LightNodeGlsl.h>
@@ -38,8 +37,7 @@
 #include <MaterialXGenShader/Nodes/HwImageNode.h>
 #include <MaterialXGenShader/Nodes/LayerNode.h>
 #include <MaterialXGenShader/Nodes/ThinFilmNode.h>
-#include <MaterialXGenShader/Nodes/DielectricBsdfNode.h>
-#include <MaterialXGenShader/Nodes/SheenBsdfNode.h>
+#include <MaterialXGenShader/Nodes/BsdfNodes.h>
 
 namespace MaterialX
 {
@@ -204,8 +202,6 @@ GlslShaderGenerator::GlslShaderGenerator() :
     registerImplementation("IM_frame_float_" + GlslShaderGenerator::TARGET, FrameNodeGlsl::create);
     // <!-- <time> -->
     registerImplementation("IM_time_float_" + GlslShaderGenerator::TARGET, TimeNodeGlsl::create);
-    // <!-- <viewdirection> -->
-    registerImplementation("IM_viewdirection_vector3_" + GlslShaderGenerator::TARGET, ViewDirectionNodeGlsl::create);
 
     // <!-- <surface> -->
     registerImplementation("IM_surface_" + GlslShaderGenerator::TARGET, SurfaceNodeGlsl::create);
@@ -258,6 +254,9 @@ GlslShaderGenerator::GlslShaderGenerator() :
 
     // <!-- <generalized_schlick_bsdf> -->
     registerImplementation("IM_generalized_schlick_bsdf_" + GlslShaderGenerator::TARGET, HwDielectricBsdfNode::create);
+
+    // <!-- <conductor_bsdf> -->
+    registerImplementation("IM_conductor_bsdf_" + GlslShaderGenerator::TARGET, HwConductorBsdfNode::create);
 
     // <!-- <sheen_bsdf> -->
     registerImplementation("IM_sheen_bsdf_" + GlslShaderGenerator::TARGET, HwSheenBsdfNode::create);
@@ -391,6 +390,12 @@ void GlslShaderGenerator::emitSpecularEnvironment(GenContext& context, ShaderSta
     emitLineBreak(stage);
 }
 
+bool GlslShaderGenerator::requiresLighting(const ShaderGraph& graph) const
+{
+    return graph.hasClassification(ShaderNode::Classification::SHADER|ShaderNode::Classification::SURFACE) ||
+           graph.hasClassification(ShaderNode::Classification::BSDF);
+}
+
 void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& context, ShaderStage& stage) const
 {
     HwResourceBindingContextPtr resourceBindingCtx = context.getUserData<HwResourceBindingContext>(HW::USER_DATA_BINDING_CONTEXT);
@@ -445,8 +450,8 @@ void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& c
         }
     }
 
-    bool lighting = graph.hasClassification(ShaderNode::Classification::SHADER|ShaderNode::Classification::SURFACE) ||
-                    graph.hasClassification(ShaderNode::Classification::BSDF);
+    bool lighting = requiresLighting(graph);
+
     bool shadowing = (lighting && context.getOptions().hwShadowMap) ||
                      context.getOptions().hwWriteDepthMoments;
 

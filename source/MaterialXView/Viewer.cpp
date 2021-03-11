@@ -14,6 +14,9 @@
 
 #include <MaterialXGenMdl/MdlShaderGenerator.h>
 #include <MaterialXGenOsl/OslShaderGenerator.h>
+#ifdef MATERIALX_BUILD_GEN_ARNOLD
+#include <MaterialXGenArnold/ArnoldShaderGenerator.h>
+#endif
 
 #include <MaterialXFormat/Environ.h>
 #include <MaterialXFormat/Util.h>
@@ -124,6 +127,52 @@ void applyModifiers(mx::DocumentPtr doc, const DocumentModifiers& modifiers)
     }
 }
 
+// ViewDir implementation for GLSL
+// as needed for the environment shader.
+class ViewDirGlsl : public mx::GlslImplementation
+{
+public:
+    static  mx::ShaderNodeImplPtr create()
+    {
+        return std::make_shared<ViewDirGlsl>();
+    }
+
+    void createVariables(const  mx::ShaderNode&, mx::GenContext&, mx::Shader& shader) const override
+    {
+        mx::ShaderStage& vs = shader.getStage(mx::Stage::VERTEX);
+        mx::ShaderStage& ps = shader.getStage(mx::Stage::PIXEL);
+        addStageInput(mx::HW::VERTEX_INPUTS, mx::Type::VECTOR3, mx::HW::T_IN_POSITION, vs);
+        addStageConnector(mx::HW::VERTEX_DATA, mx::Type::VECTOR3, mx::HW::T_POSITION_WORLD, vs, ps);
+        addStageUniform(mx::HW::PRIVATE_UNIFORMS, mx::Type::VECTOR3, mx::HW::T_VIEW_POSITION, ps);
+    }
+
+    void emitFunctionCall(const  mx::ShaderNode& node, mx::GenContext& context, mx::ShaderStage& stage) const override
+    {
+        const mx::ShaderGenerator& shadergen = context.getShaderGenerator();
+
+        BEGIN_SHADER_STAGE(stage, mx::Stage::VERTEX)
+            mx::VariableBlock& vertexData = stage.getOutputBlock(mx::HW::VERTEX_DATA);
+            const mx::string prefix = vertexData.getInstance() + ".";
+            mx::ShaderPort* position = vertexData[mx::HW::T_POSITION_WORLD];
+            if (!position->isEmitted())
+            {
+                position->setEmitted();
+                shadergen.emitLine(prefix + position->getVariable() + " = hPositionWorld.xyz", stage);
+            }
+        END_SHADER_STAGE(stage, mx::Stage::VERTEX)
+
+        BEGIN_SHADER_STAGE(stage, mx::Stage::PIXEL)
+            mx::VariableBlock& vertexData = stage.getInputBlock(mx::HW::VERTEX_DATA);
+            const mx::string prefix = vertexData.getInstance() + ".";
+            mx::ShaderPort* position = vertexData[mx::HW::T_POSITION_WORLD];
+            shadergen.emitLineBegin(stage);
+            shadergen.emitOutput(node.getOutput(), true, false, context, stage);
+            shadergen.emitString(" = normalize(" + prefix + position->getVariable() + " - " + mx::HW::T_VIEW_POSITION + ")", stage);
+            shadergen.emitLineEnd(stage);
+        END_SHADER_STAGE(stage, mx::Stage::PIXEL)
+    }
+};
+
 } // anonymous namespace
 
 //
@@ -184,6 +233,9 @@ Viewer::Viewer(const std::string& materialFilename,
 #if MATERIALX_BUILD_GEN_MDL
     _genContextMdl(mx::MdlShaderGenerator::create()),
 #endif
+#if MATERIALX_BUILD_GEN_ARNOLD
+    _genContextArnold(mx::ArnoldShaderGenerator::create()),
+#endif
     _unitRegistry(mx::UnitConverterRegistry::create()),
     _splitByUdims(true),
     _mergeMaterials(false),
@@ -224,6 +276,9 @@ Viewer::Viewer(const std::string& materialFilename,
     _genContextMdl.getOptions().targetColorSpaceOverride = "lin_rec709";
     _genContextMdl.getOptions().fileTextureVerticalFlip = false;
 #endif
+
+    // Register the GLSL implementation for <viewdir> used by the environment shader.
+    _genContext.getShaderGenerator().registerImplementation("IM_viewdir_vector3_" + mx::GlslShaderGenerator::TARGET, ViewDirGlsl::create);
 }
 
 void Viewer::initialize()
@@ -447,7 +502,7 @@ void Viewer::loadEnvironmentLight()
     {
         // Create environment shader.
         mx::FilePath envFilename = _searchPath.find(
-            mx::FilePath("resources/Materials/TestSuite/lights/envmap_shader.mtlx"));
+            mx::FilePath("resources/Lights/envmap_shader.mtlx"));
         try
         {
             _envMaterial = Material::create();
@@ -681,6 +736,7 @@ void Viewer::createAdvancedSettings(Widget* parent)
 #endif
         for (MaterialPtr material : _materials)
         {
+            material->bindShader();
             material->bindUnits(_unitRegistry, _genContext);
         }
         mProcessEvents = true;
@@ -964,8 +1020,8 @@ void Viewer::updateMaterialSelections()
     std::vector<std::string> items;
     for (const auto& material : _materials)
     {
-        mx::ElementPtr displayElem = material->getMaterialElement() ?
-                                     material->getMaterialElement() :
+        mx::ElementPtr displayElem = material->getMaterialNode() ?
+                                     material->getMaterialNode() :
                                      material->getElement();
         std::string displayName = displayElem->getName();
         if (!material->getUdim().empty())
@@ -1098,7 +1154,7 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
         // Find new renderable elements.
         mx::StringVec renderablePaths;
         std::vector<mx::TypedElementPtr> elems;
-        std::vector<mx::TypedElementPtr> materials;
+        std::vector<mx::NodePtr> materialNodes;
         mx::findRenderableElements(doc, elems);
         if (elems.empty())
         {
@@ -1115,11 +1171,11 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
                 {
                     renderableElem = *shaderNodes.begin();
                 }
-                materials.push_back(node);
+                materialNodes.push_back(node);
             }
             else
             {
-                materials.push_back(nullptr);
+                materialNodes.push_back(nullptr);
             }
             renderablePaths.push_back(renderableElem->getNamePath());
         }
@@ -1145,7 +1201,7 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
                     MaterialPtr mat = Material::create();
                     mat->setDocument(doc);
                     mat->setElement(typedElem);
-                    mat->setMaterialElement(materials[i]);
+                    mat->setMaterialNode(materialNodes[i]);
                     mat->setUdim(udim);
                     newMaterials.push_back(mat);
                     
@@ -1157,7 +1213,7 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
                 MaterialPtr mat = Material::create();
                 mat->setDocument(doc);
                 mat->setElement(typedElem);
-                mat->setMaterialElement(materials[i]);
+                mat->setMaterialNode(materialNodes[i]);
                 newMaterials.push_back(mat);
             }
         }
@@ -1209,44 +1265,40 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
                 }
                 else
                 {
-                    // Generate a shader for the new material.
                     try
                     {
                         mat->generateShader(_genContext);
 
                     }
-                    catch(std::exception& e)
+                    catch (std::exception& e)
                     {
                         mat->copyShader(_wireMaterial);
                         new ng::MessageDialog(this, ng::MessageDialog::Type::Warning, "Failed to generate shader", e.what());
                     }
                 }
 
-                // Apply geometric assignments specified in the document, if any.
-                if (mat && mat->getMaterialElement())
+                mx::NodePtr materialNode = mat->getMaterialNode();
+                if (materialNode)
                 {
-                    mx::NodePtr materialNode = mat->getMaterialElement()->asA<mx::Node>();
-                    if (materialNode)
+                    // Apply geometric assignments specified in the document, if any.
+                    for (mx::MeshPartitionPtr part : _geometryList)
                     {
-                        for (mx::MeshPartitionPtr part : _geometryList)
+                        std::string partGeomName = part->getIdentifier();
+                        if (!getGeometryBindings(materialNode, partGeomName).empty())
                         {
-                            std::string partGeomName = part->getIdentifier();
-                            if (!getGeometryBindings(materialNode, partGeomName).empty())
-                            {
-                                assignMaterial(part, mat);
-                            }
+                            assignMaterial(part, mat);
                         }
                     }
-                }
 
-                // Apply implicit udim assignments, if any.
-                if (!udim.empty())
-                {
-                    for (mx::MeshPartitionPtr geom : _geometryList)
+                    // Apply implicit udim assignments, if any.
+                    if (!udim.empty())
                     {
-                        if (geom->getIdentifier() == udim)
+                        for (mx::MeshPartitionPtr geom : _geometryList)
                         {
-                            assignMaterial(geom, mat);
+                            if (geom->getIdentifier() == udim)
+                            {
+                                assignMaterial(geom, mat);
+                            }
                         }
                     }
                 }
@@ -1350,6 +1402,14 @@ void Viewer::saveShaderSource(mx::GenContext& context)
                     new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved MDL source: ", baseName);
                 }
 #endif
+#if MATERIALX_BUILD_GEN_ARNOLD
+                else if (context.getShaderGenerator().getTarget() == mx::ArnoldShaderGenerator::TARGET)
+                {
+                    const std::string& pixelShader = shader->getSourceCode(mx::Stage::PIXEL);
+                    writeTextFile(pixelShader, baseName + "_arnold.osl");
+                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved Arnold OSL source: ", baseName);
+                }
+#endif
             }
         }
     }
@@ -1393,7 +1453,7 @@ void Viewer::saveDotFiles()
         if (elem)
         {
             mx::NodePtr shaderNode = elem->asA<mx::Node>();
-            if (shaderNode && material->getMaterialElement())
+            if (shaderNode && material->getMaterialNode())
             {
                 for (mx::InputPtr input : shaderNode->getInputs())
                 {
@@ -1428,7 +1488,10 @@ void Viewer::saveDotFiles()
 void Viewer::initContext(mx::GenContext& context)
 {
     // Initialize search paths.
-    context.registerSourceCodeSearchPath(_searchPath);
+    for (const mx::FilePath& path : _searchPath)
+    {
+        context.registerSourceCodeSearchPath(path / "libraries");
+    }
 
     // Initialize color management.
     mx::DefaultColorManagementSystemPtr cms = mx::DefaultColorManagementSystem::create(context.getShaderGenerator().getTarget());
@@ -1449,7 +1512,7 @@ void Viewer::loadStandardLibraries()
     try
     {
         _stdLib = mx::createDocument();
-        _xincludeFiles = mx::loadLibraries(_libraryFolders, _searchPath, _stdLib, mx::StringSet());
+        _xincludeFiles = mx::loadLibraries(_libraryFolders, _searchPath, _stdLib);
         if (_xincludeFiles.empty())
         {
             std::cerr << "Could not find standard data libraries on the given search path: " << _searchPath.asString() << std::endl;
@@ -1485,6 +1548,9 @@ void Viewer::loadStandardLibraries()
 #endif
 #if MATERIALX_BUILD_GEN_MDL
     initContext(_genContextMdl);
+#endif
+#if MATERIALX_BUILD_GEN_ARNOLD
+    initContext(_genContextArnold);
 #endif
 }
 
@@ -1544,6 +1610,15 @@ bool Viewer::keyboardEvent(int key, int scancode, int action, int modifiers)
     if (key == GLFW_KEY_M && action == GLFW_PRESS)
     {
         saveShaderSource(_genContextMdl);
+        return true;
+    }
+#endif
+
+#if MATERIALX_BUILD_GEN_ARNOLD
+    // Save MDL shader source to file.
+    if (key == GLFW_KEY_A && action == GLFW_PRESS)
+    {
+        saveShaderSource(_genContextArnold);
         return true;
     }
 #endif

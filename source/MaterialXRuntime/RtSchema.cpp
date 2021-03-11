@@ -10,6 +10,11 @@
 namespace MaterialX
 {
 
+namespace
+{
+    static const RtTokenVec EMPTY_ATTR_NAMES;
+}
+
 RtSchemaBase::RtSchemaBase(const RtPrim& prim) :
     _hnd(prim._hnd)
 {
@@ -29,11 +34,6 @@ RtPrim RtSchemaBase::getPrim() const
 PvtPrim* RtTypedSchema::prim() const
 {
     return hnd()->asA<PvtPrim>();
-}
-
-PvtAttribute* RtTypedSchema::attr(const RtToken& name) const
-{
-    return prim()->getAttribute(name);
 }
 
 PvtRelationship* RtTypedSchema::rel(const RtToken& name) const

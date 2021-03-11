@@ -19,6 +19,7 @@ namespace {
 const string SRGB_TEXTURE = "srgb_texture";
 const string LIN_REC709 = "lin_rec709";
 const string BAKED_POSTFIX = "_baked";
+const string NORMAL_MAP_CATEGORY = "normalmap";
 
 StringVec getRenderablePaths(ConstDocumentPtr doc)
 {
@@ -63,6 +64,8 @@ TextureBaker::TextureBaker(unsigned int width, unsigned int height, Image::BaseT
     _bakedGraphName("NG_baked"),
     _bakedGeomInfoName("GI_baked"),
     _outputStream(&std::cout),
+    _autoTextureResolution(false),
+    _hashImageNames(false),
     _generator(GlslShaderGenerator::create())
 {
     if (baseType == Image::BaseType::UINT8)
@@ -91,8 +94,15 @@ FilePath TextureBaker::generateTextureFilename(OutputPtr output, const string& s
     string outputName = createValidName(output->getNamePath());
     string shaderSuffix = shaderName.empty() ? EMPTY_STRING : "_" + shaderName;
     string udimSuffix = udim.empty() ? EMPTY_STRING : "_" + udim;
-
-    return FilePath(outputName + shaderSuffix + BAKED_POSTFIX + udimSuffix + "." + _extension);
+    std::string bakedImageName; 
+    bakedImageName = outputName + shaderSuffix + BAKED_POSTFIX + udimSuffix;
+    if (_hashImageNames)
+    {
+        std::stringstream hashStream;
+        hashStream << std::hash<std::string>{}(bakedImageName);
+        bakedImageName = hashStream.str();
+    }
+    return FilePath(bakedImageName + "." + _extension);
 }
 
 void TextureBaker::bakeShaderInputs(NodePtr material, NodePtr shader, GenContext& context, const string& udim)
@@ -106,7 +116,7 @@ void TextureBaker::bakeShaderInputs(NodePtr material, NodePtr shader, GenContext
 
     std::set<OutputPtr> bakedOutputs;
     StringSet categories;
-    categories.insert("normalmap");
+    categories.insert(NORMAL_MAP_CATEGORY);
 
     for (InputPtr input : shader->getInputs())
     {
@@ -143,8 +153,39 @@ void TextureBaker::bakeGraphOutput(OutputPtr output, GenContext& context, const 
     ShaderPtr shader = _generator->generate("BakingShader", output, context);
     createProgram(shader);
 
+    if (_autoTextureResolution)
+    {
+        GlslProgramPtr program = getProgram();
+        GLFrameBufferPtr framebuffer = getFrameBuffer();
+        unsigned int bakedTextureHeight = 0;
+        unsigned int bakedTextureWidth = 0;
+        bool requiresResize = false;
+
+        // Prefetch all required images and query their dimensions. 
+        // Since Images are cached by ImageHandler, they will be reused during bindTextures
+        ImageVec imageList = getReferencedImages(shader);
+        for (const auto& image : imageList)
+        {
+            const unsigned int imageHeight = image->getHeight();
+            const unsigned int imageWidth = image->getWidth();
+            bakedTextureHeight = imageHeight > bakedTextureHeight ? imageHeight : bakedTextureHeight;
+            bakedTextureWidth = imageWidth > bakedTextureWidth ? imageWidth : bakedTextureWidth;
+            requiresResize = true;
+        }
+
+        if (requiresResize)
+        {
+            framebuffer->resize(bakedTextureWidth, bakedTextureHeight);
+        }
+        else
+        {
+            // Ensure that original size is restored.
+            framebuffer->resize(_width, _height);
+        }
+    }
+
     bool encodeSrgb = _colorSpace == SRGB_TEXTURE &&
-                      (output->getType() == "color3" || output->getType() == "color4");
+        (output->getType() == "color3" || output->getType() == "color4");
     getFrameBuffer()->setEncodeSrgb(encodeSrgb);
 
     renderTextureSpace();
@@ -184,8 +225,8 @@ void TextureBaker::optimizeBakedTextures(NodePtr shader)
             }
         }
 
-        // Check for uniform outputs.
-        if (outputIsUniform)
+        // Add a constant for each uniform if optimizing out uniforms
+        if (outputIsUniform && _optimizeConstants)
         {
             BakedConstant bakedConstant;
             bakedConstant.color = pair.second[0].uniformColor;
@@ -201,12 +242,12 @@ void TextureBaker::optimizeBakedTextures(NodePtr shader)
 
     // Check for uniform outputs at their default values.
     NodeDefPtr shaderNodeDef = shader->getNodeDef();
-    for (InputPtr shaderInput : shader->getInputs())
+    if (shaderNodeDef)
     {
-        OutputPtr output = shaderInput->getConnectedOutput();
-        if (output && _bakedConstantMap.count(output))
+        for (InputPtr shaderInput : shader->getInputs())
         {
-            if (_bakedConstantMap.count(output) && shaderNodeDef)
+            OutputPtr output = shaderInput->getConnectedOutput();
+            if (output && _bakedConstantMap.count(output))
             {
                 InputPtr input = shaderNodeDef->getInput(shaderInput->getName());
                 if (input)
@@ -326,8 +367,8 @@ DocumentPtr TextureBaker::bakeMaterial(NodePtr shader, const StringVec& udimSet)
                 if (worldSpaceShaderInput != _worldSpaceShaderInputs.end())
                 {
                     NodePtr origNormalMapNode = worldSpaceShaderInput->second;
-                    NodePtr normalMapNode = bakedNodeGraph->addNode("normalmap", sourceName + BAKED_POSTFIX + "_map", sourceType);
-                    if (origNormalMapNode)
+                    NodePtr normalMapNode = bakedNodeGraph->addNode(NORMAL_MAP_CATEGORY, sourceName + BAKED_POSTFIX + "_map", sourceType);
+                    if (origNormalMapNode && (origNormalMapNode->getCategory() == NORMAL_MAP_CATEGORY))
                     {
                         normalMapNode->copyContentFrom(origNormalMapNode);
                     }
@@ -387,7 +428,7 @@ DocumentPtr TextureBaker::bakeMaterial(NodePtr shader, const StringVec& udimSet)
     return bakingSuccessful ? bakedTextureDoc : nullptr;
 }
 
-BakedDocumentVec TextureBaker::createBakeDocuments(DocumentPtr doc, const FileSearchPath& imageSearchPath)
+BakedDocumentVec TextureBaker::createBakeDocuments(DocumentPtr doc, const FileSearchPath& searchPath)
 {
     GenContext genContext(_generator);
     genContext.getOptions().hwSpecularEnvironmentMethod = SPECULAR_ENVIRONMENT_FIS;
@@ -399,10 +440,14 @@ BakedDocumentVec TextureBaker::createBakeDocuments(DocumentPtr doc, const FileSe
 
     DefaultColorManagementSystemPtr cms = DefaultColorManagementSystem::create(genContext.getShaderGenerator().getTarget());
     cms->loadLibrary(doc);
-    if (_codeSearchPath.isEmpty())
-        genContext.registerSourceCodeSearchPath(getDefaultSearchPath());
-    else
+    if (!_codeSearchPath.isEmpty())
+    {
         genContext.registerSourceCodeSearchPath(_codeSearchPath);
+    }
+    for (const FilePath& path : searchPath)
+    {
+        genContext.registerSourceCodeSearchPath(path / "libraries");
+    }
     genContext.getShaderGenerator().setColorManagementSystem(cms);
     StringResolverPtr resolver = StringResolver::create();
     ImageHandlerPtr imageHandler = GLTextureHandler::create(StbImageLoader::create());
@@ -454,25 +499,25 @@ BakedDocumentVec TextureBaker::createBakeDocuments(DocumentPtr doc, const FileSe
             {
                 continue;
             }
-            imageHandler->setSearchPath(imageSearchPath);
+            imageHandler->setSearchPath(searchPath);
             resolver->setUdimString(tag);
             imageHandler->setFilenameResolver(resolver);
             setImageHandler(imageHandler);
             bakeShaderInputs(materialNode, shaderNode, genContext, tag);
-
-            // Optimize baked textures.
-            optimizeBakedTextures(shaderNode);
-
-            // Write the baked material and textures.
-            DocumentPtr bakedMaterialDoc = bakeMaterial(shaderNode, udimSet);
-            bakedDocuments.push_back(std::make_pair(shaderNode->getName(), bakedMaterialDoc));
         }
+
+        // Optimize baked textures.
+        optimizeBakedTextures(shaderNode);
+
+        // Write the baked material and textures.
+        DocumentPtr bakedMaterialDoc = bakeMaterial(shaderNode, udimSet);
+        bakedDocuments.push_back(std::make_pair(shaderNode->getName(), bakedMaterialDoc));
     }
 
     return bakedDocuments;
 }
 
-void TextureBaker::bakeAllMaterials(DocumentPtr doc, const FileSearchPath& imageSearchPath, const FilePath& outputFilename)
+void TextureBaker::bakeAllMaterials(DocumentPtr doc, const FileSearchPath& searchPath, const FilePath& outputFilename)
 {
     if (_outputImagePath.isEmpty())
     {
@@ -483,7 +528,7 @@ void TextureBaker::bakeAllMaterials(DocumentPtr doc, const FileSearchPath& image
         }
     }
 
-    BakedDocumentVec bakedDocuments = createBakeDocuments(doc, imageSearchPath);
+    BakedDocumentVec bakedDocuments = createBakeDocuments(doc, searchPath);
     size_t bakeCount = bakedDocuments.size();
     if (bakeCount == 1)
     {

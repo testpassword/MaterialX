@@ -172,13 +172,6 @@ class PortElement : public ValueElement
     /// Return the node, if any, to which this element is connected.
     virtual NodePtr getConnectedNode() const;
 
-    /// Set the output to which this element is connected.  If the output
-    /// argument is null, then any existing output connection will be cleared.
-    void setConnectedOutput(ConstOutputPtr output);
-
-    /// Return the output, if any, to which this element is connected.
-    OutputPtr getConnectedOutput() const;
-
     /// @}
     /// @name Validation
     /// @{
@@ -215,20 +208,6 @@ class Input : public PortElement
     virtual ~Input() { }
 
   public:
-    /// @name Traversal
-    /// @{
-
-    /// Return the input on the parent graph corresponding to the interface name
-    /// for the element.
-    InputPtr getConnectedInterface() const;
-
-    /// Return the output, if any, to which this element is connected.
-    OutputPtr getConnectedOutput() const;
-
-    /// Return the node, if any, to which this element is connected.
-    NodePtr getConnectedNode() const override;
-
-    /// @}
     /// @name Default Geometric Property
     /// @{
 
@@ -252,6 +231,24 @@ class Input : public PortElement
 
     /// Return the GeomPropDef element to use, if defined for this input.
     GeomPropDefPtr getDefaultGeomProp() const;
+
+    /// @}
+    /// @name Connections
+    /// @{
+
+    /// Return the node, if any, to which this input is connected.
+    NodePtr getConnectedNode() const override;
+
+    /// Set the output to which this input is connected.  If the output
+    /// argument is null, then any existing output connection will be cleared.
+    void setConnectedOutput(ConstOutputPtr output);
+
+    /// Return the output, if any, to which this input is connected.
+    virtual OutputPtr getConnectedOutput() const;
+
+    /// Return the input on the parent graph corresponding to the interface name
+    /// for this input.
+    InputPtr getInterfaceInput() const;
 
     /// @}
     /// @name Validation
@@ -563,6 +560,72 @@ class InterfaceElement : public TypedElement
     }
 
     /// @}
+    /// @name Target
+    /// @{
+
+    /// Set the target string of this interface.
+    void setTarget(const string& target)
+    {
+        setAttribute(TARGET_ATTRIBUTE, target);
+    }
+
+    /// Return true if the given interface has a target string.
+    bool hasTarget() const
+    {
+        return hasAttribute(TARGET_ATTRIBUTE);
+    }
+
+    /// Return the target string of this interface.
+    const string& getTarget() const
+    {
+        return getAttribute(TARGET_ATTRIBUTE);
+    }
+
+    /// @}
+    /// @name Version
+    /// @{
+
+    /// Set the version string of this interface.
+    void setVersionString(const string& version)
+    {
+        setAttribute(VERSION_ATTRIBUTE, version);
+    }
+
+    /// Return true if this interface has a version string.
+    bool hasVersionString() const
+    {
+        return hasAttribute(VERSION_ATTRIBUTE);
+    }
+
+    /// Return the version string of this interface.
+    const string& getVersionString() const
+    {
+        return getAttribute(VERSION_ATTRIBUTE);
+    }
+
+    /// Set the major and minor versions as an integer pair.
+    void setVersionIntegers(int majorVersion, int minorVersion);
+
+    /// Return the major and minor versions as an integer pair.
+    virtual std::pair<int, int> getVersionIntegers() const;
+
+    /// @}
+    /// @name Default Version
+    /// @{
+
+    /// Set the default version flag of this element.
+    void setDefaultVersion(bool defaultVersion)
+    {
+        setTypedAttribute<bool>(DEFAULT_VERSION_ATTRIBUTE, defaultVersion);
+    }
+
+    /// Return the default version flag of this element.
+    bool getDefaultVersion() const
+    {
+        return getTypedAttribute<bool>(DEFAULT_VERSION_ATTRIBUTE);
+    }
+
+    /// @}
     /// @name Utility
     /// @{
 
@@ -587,6 +650,9 @@ class InterfaceElement : public TypedElement
 
   public:
     static const string NODE_DEF_ATTRIBUTE;
+    static const string TARGET_ATTRIBUTE;
+    static const string VERSION_ATTRIBUTE;
+    static const string DEFAULT_VERSION_ATTRIBUTE;
 
   protected:
     void registerChildElement(ElementPtr child) override;

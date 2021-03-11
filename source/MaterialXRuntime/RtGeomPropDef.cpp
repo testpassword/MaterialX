@@ -14,21 +14,17 @@ namespace MaterialX
 
 namespace
 {
-    // Private implementation of geompropdef prims.
-    class PvtGeomPropDefPrim : public PvtPrim
+    // TODO: We should derive this from a data driven XML schema.
+    class PvtGeomPropDefPrimSpec : public PvtPrimSpec
     {
     public:
-        PvtGeomPropDefPrim(const RtTypeInfo* typeInfo, const RtToken& name, PvtPrim* parent) : 
-            PvtPrim(typeInfo, name, parent),
-            type(RtType::VECTOR3),
-            space(Tokens::OBJECT),
-            index(0)
-        {}
-
-        RtToken geomprop;
-        RtToken type;
-        RtToken space;
-        int index;
+        PvtGeomPropDefPrimSpec()
+        {
+            addPrimAttribute(Tokens::GEOMPROP, RtType::TOKEN);
+            addPrimAttribute(Tokens::TYPE, RtType::TOKEN);
+            addPrimAttribute(Tokens::SPACE, RtType::TOKEN);
+            addPrimAttribute(Tokens::INDEX, RtType::INTEGER);
+        }
     };
 }
 
@@ -40,49 +36,63 @@ RtPrim RtGeomPropDef::createPrim(const RtToken& typeName, const RtToken& name, R
 
     static const RtToken DEFAULT_NAME("geompropdef1");
     const RtToken primName = name == EMPTY_TOKEN ? DEFAULT_NAME : name;
-    PvtDataHandle primH = PvtPrim::createNew<PvtGeomPropDefPrim>(&_typeInfo, primName, PvtObject::ptr<PvtPrim>(parent));
+    PvtDataHandle primH = PvtPrim::createNew(&_typeInfo, primName, PvtObject::ptr<PvtPrim>(parent));
 
     return primH;
 }
 
+const RtPrimSpec& RtGeomPropDef::getPrimSpec() const
+{
+    static const PvtGeomPropDefPrimSpec s_primSpec;
+    return s_primSpec;
+}
+
 void RtGeomPropDef::setGeomProp(const RtToken& geomprop)
 {
-    prim()->asA<PvtGeomPropDefPrim>()->geomprop = geomprop;
+    RtTypedValue* attr = createAttribute(Tokens::GEOMPROP, RtType::TOKEN);
+    attr->getValue().asToken() = geomprop;
 }
 
 const RtToken& RtGeomPropDef::getGeomProp() const
 {
-    return prim()->asA<PvtGeomPropDefPrim>()->geomprop;
+    const RtTypedValue* attr = getAttribute(Tokens::GEOMPROP, RtType::TOKEN);
+    return attr->asToken();
 }
 
 void RtGeomPropDef::setType(const RtToken& type)
 {
-    prim()->asA<PvtGeomPropDefPrim>()->type = type;
+    RtTypedValue* attr = createAttribute(Tokens::TYPE, RtType::TOKEN);
+    attr->getValue().asToken() = type;
 }
 
 const RtToken& RtGeomPropDef::getType() const
 {
-    return prim()->asA<PvtGeomPropDefPrim>()->type;
+    const RtTypedValue* attr = getAttribute(Tokens::TYPE, RtType::TOKEN);
+    return attr->asToken();
 }
 
 void RtGeomPropDef::setSpace(const RtToken& space)
 {
-    prim()->asA<PvtGeomPropDefPrim>()->space = space;
+    RtTypedValue* attr = createAttribute(Tokens::SPACE, RtType::TOKEN);
+    attr->getValue().asToken() = space;
 }
 
 const RtToken& RtGeomPropDef::getSpace() const
 {
-    return prim()->asA<PvtGeomPropDefPrim>()->space;
+    const RtTypedValue* attr = getAttribute(Tokens::SPACE, RtType::TOKEN);
+    return attr->asToken();
 }
 
 void RtGeomPropDef::setIndex(int index)
 {
-    prim()->asA<PvtGeomPropDefPrim>()->index = index;
+    RtTypedValue* attr = createAttribute(Tokens::INDEX, RtType::INTEGER);
+    attr->getValue().asInt() = index;
 }
 
 int RtGeomPropDef::getIndex() const
 {
-    return prim()->asA<PvtGeomPropDefPrim>()->index;
+    const RtTypedValue* attr = getAttribute(Tokens::INDEX, RtType::INTEGER);
+    return attr->asInt();
 }
 
 }

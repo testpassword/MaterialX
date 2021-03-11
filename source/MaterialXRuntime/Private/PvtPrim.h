@@ -6,7 +6,7 @@
 #ifndef MATERIALX_PVTPRIM_H
 #define MATERIALX_PVTPRIM_H
 
-#include <MaterialXRuntime/Private/PvtAttribute.h>
+#include <MaterialXRuntime/Private/PvtPort.h>
 #include <MaterialXRuntime/Private/PvtRelationship.h>
 
 #include <MaterialXRuntime/RtPrim.h>
@@ -20,6 +20,7 @@ namespace MaterialX
 
 class RtAttrIterator;
 class RtPrimIterator;
+class PvtNodeGraphPrim;
 
 class PvtPrim : public PvtObject
 {
@@ -60,119 +61,110 @@ public:
 
     void removeRelationship(const RtToken& name);
 
-    void renameRelationship(const RtToken& name, const RtToken& newName);
+    void renameRelationship(const RtToken& name, const RtToken& newName)
+    {
+        _rel.rename(name, newName);
+    }
 
     PvtRelationship* getRelationship(const RtToken& name)
     {
-        auto it = _relMap.find(name);
-        return it != _relMap.end() ? it->second->asA<PvtRelationship>() : nullptr;
+        PvtObject* obj = _rel.find(name);
+        return obj ? obj->asA<PvtRelationship>() : nullptr;
     }
 
-    const PvtDataHandleVec& getAllRelationships() const
+    const PvtObjectVec& getAllRelationships() const
     {
-        return _relOrder;
+        return _rel.vec();
     }
 
-    PvtAttribute* createAttribute(const RtToken& name, const RtToken& type, uint32_t flags = 0);
+    PvtPort* getPort(const RtToken& name) const
+    {
+        PvtObject* obj = _inputs.find(name);
+        if (!obj)
+        {
+            obj = _outputs.find(name);
+        }
+        return obj ? obj->asA<PvtPort>() : nullptr;
+    }
 
     PvtInput* createInput(const RtToken& name, const RtToken& type, uint32_t flags = 0);
 
-    PvtOutput* createOutput(const RtToken& name, const RtToken& type, uint32_t flags = 0);
+    void removeInput(const RtToken& name);
 
-    void removeAttribute(const RtToken& name);
-
-    void setAttributeName(const RtToken& name, const RtToken& newName);
-
-    RtToken renameAttribute(const RtToken& name, const RtToken& newName);
-
-    PvtAttribute* getAttribute(const RtToken& name) const
+    RtToken renameInput(const RtToken& name, const RtToken& newName)
     {
-        auto it = _attrMap.find(name);
-        return it != _attrMap.end() ? it->second->asA<PvtAttribute>() : nullptr;
-    }
-
-    PvtInput* getInput(const RtToken& name) const
-    {
-        // TODO: Improve type check and type conversion for RtObject subclasses.
-        auto it = _attrMap.find(name);
-        return it != _attrMap.end() && it->second->isA<PvtInput>() ?
-            it->second->asA<PvtInput>() : nullptr;
-    }
-
-    PvtOutput* getOutput(const RtToken& name) const
-    {
-        // TODO: Improve type check and type conversion for RtObject subclasses.
-        auto it = _attrMap.find(name);
-        return it != _attrMap.end() && it->second->isA<PvtOutput>() ?
-            it->second->asA<PvtOutput>() : nullptr;
-    }
-
-    PvtOutput* getOutput() const
-    {
-        // Return first output found.
-        // Iterate backwards since outputs are often created after inputs.
-        for (auto it = _attrOrder.rbegin(); it != _attrOrder.rend(); ++it)
-        {
-            const PvtDataHandle& hnd = *it;
-            if (hnd->isA<PvtOutput>())
-            {
-                return hnd->asA<PvtOutput>();
-            }
-        }
-        return nullptr;
+        RtToken result = makeUniqueChildName(newName);
+        _inputs.rename(name, result);
+        return result;
     }
 
     size_t numInputs() const
     {
-        size_t count = 0;
-        for (const PvtDataHandle& hnd : _attrOrder)
-        {
-            count += size_t(hnd->isA<PvtInput>());
-        }
-        return count;
+        return _inputs.size();
+    }
+
+    PvtInput* getInput(size_t index) const
+    {
+        return _inputs[index]->asA<PvtInput>();
+    }
+
+    PvtInput* getInput(const RtToken& name) const
+    {
+        PvtObject* obj = _inputs.find(name);
+        return obj ? obj->asA<PvtInput>() : nullptr;
+    }
+
+    const PvtObjectVec& getInputs() const
+    {
+        return _inputs.vec();
+    }
+
+    PvtOutput* createOutput(const RtToken& name, const RtToken& type, uint32_t flags = 0);
+
+    void removeOutput(const RtToken& name);
+
+    RtToken renameOutput(const RtToken& name, const RtToken& newName)
+    {
+        RtToken result = makeUniqueChildName(newName);
+        _outputs.rename(name, result);
+        return result;
     }
 
     size_t numOutputs() const
     {
-        size_t count = 0;
-        for (const PvtDataHandle& hnd : _attrOrder)
-        {
-            count += size_t(hnd->isA<PvtOutput>());
-        }
-        return count;
+        return _outputs.size();
     }
 
-    RtAttrIterator getAttributes(RtObjectPredicate predicate = nullptr) const
+    PvtOutput* getOutput(size_t index = 0) const
     {
-        return RtAttrIterator(hnd(), predicate);
+        return _outputs[index]->asA<PvtOutput>();
     }
 
-    RtAttrIterator getInputs() const
+    PvtOutput* getOutput(const RtToken& name) const
     {
-        RtObjTypePredicate<RtInput> predicate;
-        return RtAttrIterator(hnd(), predicate);
+        PvtObject* obj = _outputs.find(name);
+        return obj ? obj->asA<PvtOutput>() : nullptr;
     }
 
-    RtAttrIterator getOutputs() const
+    const PvtObjectVec& getOutputs() const
     {
-        RtObjTypePredicate<RtOutput> predicate;
-        return RtAttrIterator(hnd(), predicate);
+        return _outputs.vec();
     }
 
-    const PvtDataHandleVec& getAllAttributes() const
+    size_t numChildren() const
     {
-        return _attrOrder;
+        return _prims.size();
     }
 
-    PvtPrim* getChild(const RtToken& name)
+    PvtPrim* getChild(size_t index) const
     {
-        auto it = _primMap.find(name);
-        return it != _primMap.end() ? it->second->asA<PvtPrim>() : nullptr;
+        return _prims[index]->asA<PvtPrim>();
     }
 
-    const PvtPrim* getChild(const RtToken& name) const
+    PvtPrim* getChild(const RtToken& name) const
     {
-        return const_cast<PvtPrim*>(this)->getChild(name);
+        PvtObject* obj = _prims.find(name);
+        return obj ? obj->asA<PvtPrim>() : nullptr;
     }
 
     RtPrimIterator getChildren(RtObjectPredicate predicate = nullptr) const
@@ -180,9 +172,9 @@ public:
         return RtPrimIterator(hnd(), predicate);
     }
 
-    const PvtDataHandleVec& getAllChildren() const
+    const PvtObjectVec& getAllChildren() const
     {
-        return _primOrder;
+        return _prims.vec();
     }
 
     RtAllocator& getAllocator()
@@ -215,29 +207,165 @@ public:
 protected:
     PvtPrim(const RtTypeInfo* typeInfo, const RtToken& name, PvtPrim* parent);
 
-    void addChildPrim(const PvtPrim* prim);
-    void removeChildPrim(const PvtPrim* prim);
+    void addChildPrim(PvtPrim* prim);
+    void removeChildPrim(PvtPrim* prim);
 
     const RtTypeInfo* _typeInfo;
 
     // Relationships
-    PvtDataHandleMap _relMap;
-    PvtDataHandleVec _relOrder;
+    PvtObjectList _rel;
 
-    // Attributes
-    PvtDataHandleMap _attrMap;
-    PvtDataHandleVec _attrOrder;
+    // Inputs
+    PvtObjectList _inputs;
+
+    // Outputs
+    PvtObjectList _outputs;
 
     // Child prims
-    PvtDataHandleMap _primMap;
-    PvtDataHandleVec _primOrder;
+    PvtObjectList _prims;
 
     RtAllocator _allocator;
 
     friend class PvtApi;
     friend class PvtStage;
     friend class RtNodeGraph;
+    friend class RtPrimIterator;
+    friend class RtInputIterator;
+    friend class RtOutputIterator;
     friend class RtRelationshipIterator;
+};
+
+
+struct PvtAttributeSpec
+{
+    RtToken name;
+    RtToken type;
+    // TODO: Use an RtValue instead of string value.
+    //       Need better handling of ownership of large values
+    //       for this, which is part of another change list.
+    // RtValue value;
+    string value;
+    bool custom;
+    bool exportable;
+};
+
+class RtAttributeSpecList
+{
+public:
+    ~RtAttributeSpecList()
+    {
+        for (RtAttributeSpec* spec : _vec)
+        {
+            delete spec;
+        }
+        _map.clear();
+        _vec.clear();
+    }
+
+    void add(RtAttributeSpec* spec)
+    {
+        _map[spec->getName()] = spec;
+        _vec.push_back(spec);
+    }
+
+    size_t size() const
+    {
+        return _vec.size();
+    }
+
+    bool empty() const
+    {
+        return _vec.empty();
+    }
+
+    size_t count(const RtToken& name) const
+    {
+        return _map.count(name);
+    }
+
+    RtAttributeSpec* find(const RtToken& name) const
+    {
+        auto it = _map.find(name);
+        return it != _map.end() ? it->second : nullptr;
+    }
+
+    RtAttributeSpec* operator[](size_t i) const
+    {
+        return i < _vec.size() ? _vec[i] : nullptr;
+    }
+
+private:
+    RtTokenMap<RtAttributeSpec*> _map;
+    vector<RtAttributeSpec*> _vec;
+};
+
+
+class PvtPrimSpec : public RtPrimSpec
+{
+public:
+    PvtPrimSpec()
+    {
+    }
+
+    const RtAttributeSpec* getAttribute(const RtToken& name) const override
+    {
+        return _primAttr.find(name);
+    }
+
+    const RtAttributeSpec* getPortAttribute(const RtPort& port, const RtToken& name) const override;
+
+    RtAttributeSpec* create(const RtToken& name, const RtToken& type, const string& value, bool exportable, bool custom);
+
+    void addPrimAttribute(const RtToken& name, const RtToken& type, const string& value = EMPTY_STRING,
+                      bool exportable = false, bool custom = false)
+    {
+        _primAttr.add(create(name, type, value, exportable, custom));
+    }
+
+    void addInputAttribute(const RtToken& name, const RtToken& type,
+                           const string& value = EMPTY_STRING, bool exportable = false, bool custom = false)
+    {
+        _inputAttr.add(create(name, type, value, exportable, custom));
+    }
+
+    void addInputAttributeByName(const RtToken& portName, const RtToken& name, const RtToken& type,
+                                const string& value = EMPTY_STRING, bool exportable = false, bool custom = false)
+    {
+        _inputAttrByName[portName].add(create(name, type, value, exportable, custom));
+    }
+
+    void addInputAttributeByType(const RtToken& portType, const RtToken& name, const RtToken& type,
+                                 const string& value = EMPTY_STRING, bool exportable = false, bool custom = false)
+    {
+        _inputAttrByType[portType].add(create(name, type, value, exportable, custom));
+    }
+
+    void addOutputAttribute(const RtToken& name, const RtToken& type,
+                            const string& value = EMPTY_STRING, bool exportable = false, bool custom = false)
+    {
+        _outputAttr.add(create(name, type, value, exportable, custom));
+    }
+
+    void addOutputAttributeByName(const RtToken& portName, const RtToken& name, const RtToken& type,
+                                  const string& value = EMPTY_STRING, bool exportable = false, bool custom = false)
+    {
+        _outputAttrByName[portName].add(create(name, type, value, exportable, custom));
+    }
+
+    void addOutputAttributeByType(const RtToken& portType, const RtToken& name, const RtToken& type,
+                                  const string& value = EMPTY_STRING, bool exportable = false, bool custom = false)
+    {
+        _outputAttrByType[portType].add(create(name, type, value, exportable, custom));
+    }
+
+    RtAttributeSpecList _primAttr;
+    RtAttributeSpecList _inputAttr;
+    RtAttributeSpecList _outputAttr;
+    RtTokenMap<RtAttributeSpecList> _inputAttrByName;
+    RtTokenMap<RtAttributeSpecList> _inputAttrByType;
+    RtTokenMap<RtAttributeSpecList> _outputAttrByName;
+    RtTokenMap<RtAttributeSpecList> _outputAttrByType;
+    RtAllocator _allocator; // TODO: Start using this allocator, change default value from strings to actual value type.
 };
 
 }

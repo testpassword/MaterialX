@@ -12,8 +12,7 @@
 #include <MaterialXGenMdl/Nodes/HeightToNormalNodeMdl.h>
 #include <MaterialXGenMdl/Nodes/BlurNodeMdl.h>
 #include <MaterialXGenMdl/Nodes/CombineNodeMdl.h>
-#include <MaterialXGenMdl/Nodes/DielectricBsdfNodeMdl.h>
-#include <MaterialXGenMdl/Nodes/SheenBsdfNodeMdl.h>
+#include <MaterialXGenMdl/Nodes/BsdfNodesMdl.h>
 #include <MaterialXGenMdl/Nodes/ThinFilmNodeMdl.h>
 
 #include <MaterialXGenShader/GenContext.h>
@@ -272,6 +271,9 @@ ShaderPtr MdlShaderGenerator::generate(const string& name, ElementPtr element, G
     }
     else
     {
+        // End shader body
+        emitScopeEnd(stage);
+
         throw ExceptionShaderGenError("Output type '" + outputSocket->getType()->getName() + "' is not yet supported by shader generator");
     }
 

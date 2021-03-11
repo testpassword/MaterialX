@@ -10,6 +10,8 @@
 #include <MaterialXCore/Material.h>
 #include <MaterialXCore/Node.h>
 
+#include <stdexcept>
+
 namespace MaterialX
 {
 
@@ -18,6 +20,9 @@ const string PortElement::NODE_GRAPH_ATTRIBUTE = "nodegraph";
 const string PortElement::OUTPUT_ATTRIBUTE = "output";
 const string PortElement::CHANNELS_ATTRIBUTE = "channels";
 const string InterfaceElement::NODE_DEF_ATTRIBUTE = "nodedef";
+const string InterfaceElement::TARGET_ATTRIBUTE = "target";
+const string InterfaceElement::VERSION_ATTRIBUTE = "version";
+const string InterfaceElement::DEFAULT_VERSION_ATTRIBUTE = "isdefaultversion";
 const string Input::DEFAULT_GEOM_PROP_ATTRIBUTE = "defaultgeomprop";
 const string Output::DEFAULT_INPUT_ATTRIBUTE = "defaultinput";
 
@@ -63,38 +68,6 @@ NodePtr PortElement::getConnectedNode() const
 {
     ConstGraphElementPtr graph = getAncestorOfType<GraphElement>();
     return graph ? graph->getNode(getNodeName()) : nullptr;
-}
-
-void PortElement::setConnectedOutput(ConstOutputPtr output)
-{
-    if (output)
-    {
-        setOutputString(output->getName());
-        ConstElementPtr parent = output->getParent();
-        if (parent->isA<NodeGraph>())
-        {
-            setNodeGraphString(parent->getName());
-        }
-        else
-        {
-            removeAttribute(NODE_GRAPH_ATTRIBUTE);
-        }
-    }
-    else
-    {
-        removeAttribute(OUTPUT_ATTRIBUTE);
-        removeAttribute(NODE_GRAPH_ATTRIBUTE);
-    }
-}
-
-OutputPtr PortElement::getConnectedOutput() const
-{
-    if (hasNodeGraphString())
-    {
-        NodeGraphPtr nodeGraph = resolveRootNameReference<NodeGraph>(getNodeGraphString());
-        return nodeGraph ? nodeGraph->getOutput(getOutputString()) : OutputPtr();
-    }
-    return getDocument()->getOutput(getOutputString());
 }
 
 bool PortElement::validate(string* message) const
@@ -208,6 +181,61 @@ bool PortElement::validChannelsString(const string& channels, const string& sour
 // Input methods
 //
 
+NodePtr Input::getConnectedNode() const
+{
+    // Handle interface name references.
+    InputPtr graphInput = getInterfaceInput();
+    if (graphInput && (graphInput->hasNodeName() || graphInput->hasNodeGraphString()))
+    {
+        return graphInput->getConnectedNode();
+    }
+
+    // Handle inputs of compound nodegraphs.
+    if (getParent()->isA<NodeGraph>())
+    {
+        NodePtr rootNode = getDocument()->getNode(getNodeName());
+        if (rootNode)
+        {
+            return rootNode;
+        }
+    }
+
+    // Handle transitive connections via outputs.
+    OutputPtr output = getConnectedOutput();
+    if (output)
+    {
+        NodePtr node = output->getConnectedNode();
+        if (node)
+        {
+            return node;
+        }
+    }
+
+    return PortElement::getConnectedNode();
+}
+
+void Input::setConnectedOutput(ConstOutputPtr output)
+{
+    if (output)
+    {
+        setOutputString(output->getName());
+        ConstElementPtr parent = output->getParent();
+        if (parent->isA<NodeGraph>())
+        {
+            setNodeGraphString(parent->getName());
+        }
+        else
+        {
+            removeAttribute(NODE_GRAPH_ATTRIBUTE);
+        }
+    }
+    else
+    {
+        removeAttribute(OUTPUT_ATTRIBUTE);
+        removeAttribute(NODE_GRAPH_ATTRIBUTE);
+    }
+}
+
 OutputPtr Input::getConnectedOutput() const
 {
     const string& outputString = getOutputString();
@@ -275,7 +303,7 @@ OutputPtr Input::getConnectedOutput() const
     return result;
 }
 
-InputPtr Input::getConnectedInterface() const
+InputPtr Input::getInterfaceInput() const
 {
     const string& interfaceName = getInterfaceName();
     if (!interfaceName.empty())
@@ -287,47 +315,6 @@ InputPtr Input::getConnectedInterface() const
         }
     }
     return nullptr;
-}
-
-NodePtr Input::getConnectedNode() const
-{
-    // Traverse through interface names to nodegraph input
-    InputPtr graphInput = getConnectedInterface();
-    if (graphInput && (graphInput->hasNodeName() || graphInput->hasNodeGraphString()))
-    {
-        return graphInput->getConnectedNode();
-    }
-
-    OutputPtr output = getConnectedOutput();
-    if (output)
-    {
-        NodePtr node = output->getConnectedNode();
-        if (node)
-            return node;
-    }
-    if (hasNodeName())
-    {
-        const string& nodeName = getNodeName();
-        ConstElementPtr startingElement = getParent();
-        if (startingElement)
-        {
-            // Look for a node reference above the nodegraph if input is a direct child.
-            if (startingElement->isA<NodeGraph>())
-            {
-                startingElement = startingElement->getParent();
-            }
-            if (startingElement)
-            {
-                ConstGraphElementPtr graph = startingElement->getAncestorOfType<GraphElement>();
-                NodePtr node = graph ? graph->getNode(nodeName) : nullptr;
-                if (node)
-                {
-                    return node;
-                }
-            }
-        }
-    }
-    return PortElement::getConnectedNode();
 }
 
 GeomPropDefPtr Input::getDefaultGeomProp() const
@@ -348,7 +335,7 @@ bool Input::validate(string* message) const
     {
         validateRequire(getDefaultGeomProp() != nullptr, res, message, "Invalid defaultgeomprop string");
     }
-    InputPtr interfaceInput = getConnectedInterface();
+    InputPtr interfaceInput = getInterfaceInput();
     if (interfaceInput)
     {
         return interfaceInput->validate() && res;
@@ -556,6 +543,37 @@ ValuePtr InterfaceElement::getInputValue(const string& name, const string& targe
     }
 
     return ValuePtr();
+}
+
+void InterfaceElement::setVersionIntegers(int majorVersion, int minorVersion)
+{
+    string versionString = std::to_string(majorVersion) + "." +
+                           std::to_string(minorVersion);
+    setVersionString(versionString);
+}
+
+std::pair<int, int> InterfaceElement::getVersionIntegers() const
+{
+    const string& versionString = getVersionString();
+    StringVec splitVersion = splitString(versionString, ".");
+    try
+    {
+        if (splitVersion.size() == 2)
+        {
+            return {std::stoi(splitVersion[0]), std::stoi(splitVersion[1])};
+        }
+        else if (splitVersion.size() == 1)
+        {
+            return {std::stoi(splitVersion[0]), 0};
+        }
+    }
+    catch (std::invalid_argument&)
+    {
+    }
+    catch (std::out_of_range&)
+    {
+    }
+    return {0, 0};
 }
 
 void InterfaceElement::registerChildElement(ElementPtr child)

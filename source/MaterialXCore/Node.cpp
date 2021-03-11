@@ -101,7 +101,7 @@ NodeDefPtr Node::getNodeDef(const string& target) const
     for (NodeDefPtr nodeDef : nodeDefs)
     {
         if (targetStringsMatch(nodeDef->getTarget(), target) &&
-            nodeDef->isVersionCompatible(getSelf()) &&
+            nodeDef->isVersionCompatible(getVersionString()) &&
             isTypeCompatible(nodeDef))
         {
             return nodeDef;
@@ -145,7 +145,7 @@ OutputPtr Node::getNodeDefOutput(ElementPtr connectingElement)
             InputPtr interfaceInput = nullptr;
             if (connectedInput->hasInterfaceName())
             {
-                interfaceInput = connectedInput->getConnectedInterface();
+                interfaceInput = connectedInput->getInterfaceInput();
                 if (interfaceInput)
                 {
                     outputName = &(interfaceInput->getOutputString());
@@ -197,8 +197,8 @@ vector<PortElementPtr> Node::getDownstreamPorts() const
 bool Node::validate(string* message) const
 {
     bool res = true;
-    validateRequire(!getCategory().empty(), res, message, "Missing category");
-    validateRequire(hasType(), res, message, "Missing type");
+    validateRequire(!getCategory().empty(), res, message, "Node element is missing a category");
+    validateRequire(hasType(), res, message, "Node element is missing a type");
     return InterfaceElement::validate(message) && res;
 }
 
@@ -622,7 +622,7 @@ bool NodeGraph::validate(string* message) const
 {
     bool res = true;
 
-    validateRequire(!hasVersionString(), res, message, "NodeGraph has an invalid version string: " + getVersionString());
+    validateRequire(!hasVersionString(), res, message, "NodeGraph elements do not support version strings");
     if (hasNodeDefString())
     {
         NodeDefPtr nodeDef = getNodeDef();
@@ -642,7 +642,7 @@ bool NodeGraph::validate(string* message) const
                 const string& interfaceName = input->getInterfaceName();
                 if (!interfaceName.empty())
                 {
-                    InputPtr interfaceInput = input->getConnectedInterface();
+                    InputPtr interfaceInput = input->getInterfaceInput();
                     validateRequire(interfaceInput != nullptr, res, message, "NodeGraph interface input: \"" + interfaceName + "\" does not exist on nodegraph");
                     string connectedNodeName = interfaceInput ? interfaceInput->getNodeName() : EMPTY_STRING;
                     if (connectedNodeName.empty())

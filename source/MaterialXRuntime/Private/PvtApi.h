@@ -103,7 +103,7 @@ public:
         {
             throw ExceptionRuntimeError("A nodedef with name '" + prim.getName().str() + "' is already registered");
         }
-        _nodedefs.add(prim.getName(), PvtObject::hnd(prim));
+        _nodedefs.add(PvtObject::ptr(prim));
     }
 
     void unregisterNodeDef(const RtToken& name)
@@ -113,7 +113,7 @@ public:
 
     bool hasNodeDef(const RtToken& name)
     {
-        return _nodedefs.get(name) != nullptr;
+        return _nodedefs.count(name);
     }
 
     size_t numNodeDefs() const
@@ -123,12 +123,13 @@ public:
 
     RtPrim getNodeDef(const RtToken& name)
     {
-        return _nodedefs.get(name);
+        PvtObject* obj = _nodedefs.find(name);
+        return obj ? obj->hnd() : RtPrim();
     }
 
     RtPrim getNodeDef(size_t index)
     {
-        return _nodedefs.get(index);
+        return _nodedefs[index]->hnd();
     }
 
     void registerNodeImpl(const RtPrim& prim)
@@ -141,7 +142,7 @@ public:
         {
             throw ExceptionRuntimeError("A nodeimpl with name '" + prim.getName().str() + "' is already registered");
         }
-        _nodeimpls.add(prim.getName(), PvtObject::hnd(prim));
+        _nodeimpls.add(PvtObject::ptr(prim));
     }
 
     void unregisterNodeImpl(const RtToken& name)
@@ -151,7 +152,7 @@ public:
 
     bool hasNodeImpl(const RtToken& name)
     {
-        return _nodeimpls.get(name) != nullptr;
+        return _nodeimpls.count(name);
     }
 
     size_t numNodeImpls() const
@@ -161,24 +162,25 @@ public:
 
     RtPrim getNodeImpl(const RtToken& name)
     {
-        return _nodeimpls.get(name);
+        PvtObject* obj = _nodeimpls.find(name);
+        return obj ? obj->hnd() : RtPrim();
     }
 
     RtPrim getNodeImpl(size_t index)
     {
-        return _nodeimpls.get(index);
+        return _nodeimpls[index]->hnd();
     }
 
     void setupNodeImplRelationships()
     {
-        for (PvtDataHandle implH : _nodeimpls.vec)
+        for (PvtObject* implObj : _nodeimpls.vec())
         {
-            RtNodeImpl impl(implH);
-            PvtDataHandle defH =  _nodedefs.get(impl.getNodeDef());
-            RtNodeDef def(defH);
-            if (def)
+            RtNodeImpl impl(implObj->hnd());
+            PvtObject* nodedefObj = _nodedefs.find(impl.getNodeDef());
+            RtNodeDef nodedef(nodedefObj->hnd());
+            if (nodedef)
             {
-                def.getNodeImpls().addTarget(impl.getPrim());
+                nodedef.getNodeImpls().connect(impl.getPrim());
             }
         }
     }
@@ -193,7 +195,7 @@ public:
         {
             throw ExceptionRuntimeError("A targetdef with name '" + prim.getName().str() + "' is already registered");
         }
-        _targetdefs.add(prim.getName(), PvtObject::hnd(prim));
+        _targetdefs.add(PvtObject::ptr(prim));
     }
 
     void unregisterTargetDef(const RtToken& name)
@@ -203,7 +205,7 @@ public:
 
     bool hasTargetDef(const RtToken& name)
     {
-        return _targetdefs.get(name) != nullptr;
+        return _targetdefs.count(name);
     }
 
     size_t numTargetDefs() const
@@ -213,12 +215,13 @@ public:
 
     RtPrim getTargetDef(const RtToken& name)
     {
-        return _targetdefs.get(name);
+        PvtObject* obj = _targetdefs.find(name);
+        return obj ? obj->hnd() : RtPrim();
     }
 
     RtPrim getTargetDef(size_t index)
     {
-        return _targetdefs.get(index);
+        return _targetdefs[index]->hnd();
     }
 
     void registerGeomPropDef(const RtPrim& prim)
@@ -231,7 +234,7 @@ public:
         {
             throw ExceptionRuntimeError("A geompropdefs with name '" + prim.getName().str() + "' is already registered");
         }
-        _geompropdefs.add(prim.getName(), PvtObject::hnd(prim));
+        _geompropdefs.add(PvtObject::ptr(prim));
     }
 
     void unregisterGeomPropDef(const RtToken& name)
@@ -241,7 +244,7 @@ public:
 
     bool hasGeomPropDef(const RtToken& name)
     {
-        return _geompropdefs.get(name) != nullptr;
+        return _geompropdefs.count(name);
     }
 
     size_t numGeomPropDefs() const
@@ -251,12 +254,13 @@ public:
 
     RtPrim getGeomPropDef(const RtToken& name)
     {
-        return _geompropdefs.get(name);
+        PvtObject* obj = _geompropdefs.find(name);
+        return obj ? obj->hnd() : RtPrim();
     }
 
     RtPrim getGeomPropDef(size_t index)
     {
-        return _geompropdefs.get(index);
+        return _geompropdefs[index]->hnd();
     }
 
     void clearSearchPath()
@@ -436,13 +440,14 @@ public:
 
     RtTokenMap<RtPrimCreateFunc> _createFunctions;
     RtTokenMap<RtStagePtr> _stages;
-    PvtDataHandleRecord _nodedefs;
-    PvtDataHandleRecord _nodeimpls;
-    PvtDataHandleRecord _targetdefs;
-    PvtDataHandleRecord _geompropdefs;
 
     FloatFormat _floatFormat;
     int _floatPrecision;
+
+    PvtObjectList _nodedefs;
+    PvtObjectList _nodeimpls;
+    PvtObjectList _targetdefs;
+    PvtObjectList _geompropdefs;
 };
 
 }

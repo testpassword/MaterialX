@@ -22,6 +22,8 @@ class Element;
 class TypedElement;
 class ValueElement;
 class Token;
+class CommentElement;
+class GenericElement;
 class StringResolver;
 class Document;
 
@@ -44,6 +46,16 @@ using ConstValueElementPtr = shared_ptr<const ValueElement>;
 using TokenPtr = shared_ptr<Token>;
 /// A shared pointer to a const Token
 using ConstTokenPtr = shared_ptr<const Token>;
+
+/// A shared pointer to a CommentElement
+using CommentElementPtr = shared_ptr<CommentElement>;
+/// A shared pointer to a const CommentElement
+using ConstCommentElementPtr = shared_ptr<const CommentElement>;
+
+/// A shared pointer to a GenericElement
+using GenericElementPtr = shared_ptr<GenericElement>;
+/// A shared pointer to a const GenericElement
+using ConstGenericElementPtr = shared_ptr<const GenericElement>;
 
 /// A shared pointer to a StringResolver
 using StringResolverPtr = shared_ptr<StringResolver>;
@@ -245,28 +257,6 @@ class Element : public std::enable_shared_from_this<Element>
     }
 
     /// @}
-    /// @name Target
-    /// @{
-
-    /// Set the element's target string.
-    void setTarget(const string& target)
-    {
-        setAttribute(TARGET_ATTRIBUTE, target);
-    }
-
-    /// Return true if the given element has a target string.
-    bool hasTarget() const
-    {
-        return hasAttribute(TARGET_ATTRIBUTE);
-    }
-
-    /// Return the element's target string.
-    const string& getTarget() const
-    {
-        return getAttribute(TARGET_ATTRIBUTE);
-    }
-
-    /// @}
     /// @name Inheritance
     /// @{
 
@@ -357,50 +347,6 @@ class Element : public std::enable_shared_from_this<Element>
             }
         }
         return name;
-    }
-
-    /// @}
-    /// @name Version
-    /// @{
-
-    /// Set the version string of this element.
-    void setVersionString(const string& version)
-    {
-        setAttribute(VERSION_ATTRIBUTE, version);
-    }
-
-    /// Return true if this element has a version string.
-    bool hasVersionString() const
-    {
-        return hasAttribute(VERSION_ATTRIBUTE);
-    }
-
-    /// Return the version string of this element.
-    const string& getVersionString() const
-    {
-        return getAttribute(VERSION_ATTRIBUTE);
-    }
-
-    /// Set the major and minor versions as an integer pair.
-    void setVersionIntegers(int majorVersion, int minorVersion);
-
-    /// Return the major and minor versions as an integer pair.
-    virtual std::pair<int, int> getVersionIntegers() const;
-
-    /// @}
-    /// @name Default Version
-    /// @{
-
-    /// Set the default version flag of this element.
-    void setDefaultVersion(bool defaultVersion)
-    {
-        setTypedAttribute<bool>(DEFAULT_VERSION_ATTRIBUTE, defaultVersion);
-    }
-
-    /// Return the default version flag of this element.
-    bool getDefaultVersion() const
-    {
-        return getTypedAttribute<bool>(DEFAULT_VERSION_ATTRIBUTE);
     }
 
     /// @}
@@ -702,8 +648,6 @@ class Element : public std::enable_shared_from_this<Element>
 
     /// Return the Edge with the given index that lies directly upstream from
     /// this element in the dataflow graph.
-    /// @param material An optional material element, whose data bindings will
-    ///    be applied to the query.
     /// @param index An optional index of the edge to be returned, where the
     ///    valid index range may be determined with getUpstreamEdgeCount.
     /// @return The upstream Edge, if valid, or an empty Edge object.
@@ -844,9 +788,6 @@ class Element : public std::enable_shared_from_this<Element>
     static const string FILE_PREFIX_ATTRIBUTE;
     static const string GEOM_PREFIX_ATTRIBUTE;
     static const string COLOR_SPACE_ATTRIBUTE;
-    static const string TARGET_ATTRIBUTE;
-    static const string VERSION_ATTRIBUTE;
-    static const string DEFAULT_VERSION_ATTRIBUTE;
     static const string INHERIT_ATTRIBUTE;
     static const string NAMESPACE_ATTRIBUTE;
     static const string DOC_ATTRIBUTE;
@@ -1190,6 +1131,26 @@ class Token : public ValueElement
     {
     }
     virtual ~Token() { }
+
+  public:
+    static const string CATEGORY;
+};
+
+/// @class CommentElement
+/// An element representing a block of descriptive text within a document, which will
+/// be stored a comment when the document is written out.
+///
+/// The comment text may be accessed with the methods Element::setDocString and
+/// Element::getDocString.
+/// 
+class CommentElement : public Element
+{
+  public:
+    CommentElement(ElementPtr parent, const string& name) :
+        Element(parent, CATEGORY, name)
+    {
+    }
+    virtual ~CommentElement() { }
 
   public:
     static const string CATEGORY;

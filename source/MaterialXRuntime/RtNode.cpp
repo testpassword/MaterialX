@@ -16,14 +16,63 @@ namespace MaterialX
 
 namespace
 {
-    static const RtToken NODEDEF("nodedef");
+    // TODO: We should derive this from a data driven XML schema.
+    class PvtNodePrimSpec : public PvtPrimSpec
+    {
+    public:
+        PvtNodePrimSpec()
+        {
+            addPrimAttribute(Tokens::DOC, RtType::STRING);
+            addPrimAttribute(Tokens::XPOS, RtType::FLOAT);
+            addPrimAttribute(Tokens::YPOS, RtType::FLOAT);
+            addPrimAttribute(Tokens::WIDTH, RtType::INTEGER);
+            addPrimAttribute(Tokens::HEIGHT, RtType::INTEGER);
+            addPrimAttribute(Tokens::UICOLOR, RtType::COLOR3);
+            addPrimAttribute(Tokens::UINAME, RtType::STRING);
+            addPrimAttribute(Tokens::VERSION, RtType::TOKEN);
+            addPrimAttribute(Tokens::COLORSPACE, RtType::TOKEN);
+            addPrimAttribute(Tokens::FILEPREFIX, RtType::STRING);
+
+            addInputAttribute(Tokens::DOC, RtType::STRING);
+            addInputAttribute(Tokens::MEMBER, RtType::STRING);
+            addInputAttribute(Tokens::CHANNELS, RtType::STRING);
+            addInputAttribute(Tokens::UIADVANCED, RtType::BOOLEAN);
+            addInputAttribute(Tokens::UIVISIBLE, RtType::BOOLEAN);
+
+            addInputAttributeByType(RtType::COLOR3, Tokens::COLORSPACE, RtType::TOKEN);
+            addInputAttributeByType(RtType::COLOR4, Tokens::COLORSPACE, RtType::TOKEN);
+
+            addInputAttributeByType(RtType::FLOAT, Tokens::UNIT, RtType::TOKEN);
+            addInputAttributeByType(RtType::FLOAT, Tokens::UNITTYPE, RtType::TOKEN);
+
+            addInputAttributeByType(RtType::VECTOR2, Tokens::UNIT, RtType::TOKEN);
+            addInputAttributeByType(RtType::VECTOR2, Tokens::UNITTYPE, RtType::TOKEN);
+            addInputAttributeByType(RtType::VECTOR2, Tokens::DEFAULTGEOMPROP, RtType::TOKEN);
+
+            addInputAttributeByType(RtType::VECTOR3, Tokens::UNIT, RtType::TOKEN);
+            addInputAttributeByType(RtType::VECTOR3, Tokens::UNITTYPE, RtType::TOKEN);
+            addInputAttributeByType(RtType::VECTOR3, Tokens::DEFAULTGEOMPROP, RtType::TOKEN);
+
+            addInputAttributeByType(RtType::VECTOR4, Tokens::UNIT, RtType::TOKEN);
+            addInputAttributeByType(RtType::VECTOR4, Tokens::UNITTYPE, RtType::TOKEN);
+
+            addOutputAttribute(Tokens::DOC, RtType::STRING);
+            addOutputAttribute(Tokens::MEMBER, RtType::STRING);
+            addOutputAttribute(Tokens::WIDTH, RtType::INTEGER);
+            addOutputAttribute(Tokens::HEIGHT, RtType::INTEGER);
+            addOutputAttribute(Tokens::BITDEPTH, RtType::INTEGER);
+
+            addOutputAttributeByType(RtType::COLOR3, Tokens::COLORSPACE, RtType::TOKEN);
+            addOutputAttributeByType(RtType::COLOR4, Tokens::COLORSPACE, RtType::TOKEN);
+        }
+    };
 }
 
 DEFINE_TYPED_SCHEMA(RtNode, "node");
 
 RtPrim RtNode::createPrim(const RtToken& typeName, const RtToken& name, RtPrim parent)
 {
-    const RtPrim prim = RtApi::get().getNodeDef(typeName);
+    RtPrim prim = RtApi::get().getNodeDef(typeName);
     if (!prim)
     {
         throw ExceptionRuntimeError("No nodedef registered with name '" + typeName.str() + "'");
@@ -36,122 +85,77 @@ RtPrim RtNode::createPrim(const RtToken& typeName, const RtToken& name, RtPrim p
         throw ExceptionRuntimeError("Nodedef with name '" + typeName.str() + "' is not valid");
     }
 
-    const PvtPrim* nodedefPrim = PvtObject::ptr<PvtPrim>(prim);
+    PvtPrim* nodedefPrim = PvtObject::ptr<PvtPrim>(prim);
 
     const RtToken nodeName = name == EMPTY_TOKEN ? nodedef.getNode() : name;
     PvtDataHandle nodeH = PvtPrim::createNew(&_typeInfo, nodeName, PvtObject::ptr<PvtPrim>(parent));
     PvtPrim* node = nodeH->asA<PvtPrim>();
 
     // Save the nodedef in a relationship.
-    PvtRelationship* nodedefRelation = node->createRelationship(NODEDEF);
-    nodedefRelation->addTarget(nodedefPrim);
+    PvtRelationship* nodedefRelation = node->createRelationship(Tokens::NODEDEF);
+    nodedefRelation->connect(nodedefPrim);
 
-    // Copy over meta-data from nodedef to node. 
-    // TODO: Checks with ILM need to be made to make sure that the appropriate
-    // meta-data set. TBD if target should be set.
-    RtTokenSet copyList = { Tokens::VERSION };
-    const vector<RtToken>& metadata = nodedefPrim->getMetadataOrder();
-    for (const RtToken& dataName : metadata)
-    { 
-        if (copyList.count(dataName))
-        {
-            const RtTypedValue* src = nodedefPrim->getMetadata(dataName);
-            RtTypedValue* v = src ? node->addMetadata(dataName, src->getType()) : nullptr;
-            if (v)
-            {
-                RtToken valueToCopy = src->getValue().asToken();
-                v->getValue().asToken() = valueToCopy;
-            }
-        }
+    // Copy version tag if used.
+    const RtToken& version = nodedef.getVersion();
+    if (version != EMPTY_TOKEN)
+    {
+        RtTypedValue* attr = node->createAttribute(Tokens::VERSION, RtType::TOKEN);
+        attr->asToken() = version;
     }
 
     // Create the interface according to nodedef.
-    for (const PvtDataHandle& attrH : nodedefPrim->getAllAttributes())
+    for (PvtObject* obj : nodedefPrim->getInputs())
     {
-        const PvtAttribute* attr = attrH->asA<PvtAttribute>();
-        if (attr->isA<PvtInput>())
-        {
-            PvtInput* input = node->createInput(attr->getName(), attr->getType(), attr->getFlags());
-            RtValue::copy(attr->getType(), attr->getValue(), input->getValue());
-        }
-        else if (attr->isA<PvtObject>())
-        {
-            PvtOutput* output = node->createOutput(attr->getName(), attr->getType(), attr->getFlags());
-            RtValue::copy(attr->getType(), attr->getValue(), output->getValue());
-        }
+        const PvtInput* port = obj->asA<PvtInput>();
+        PvtInput* input = node->createInput(port->getName(), port->getType(), port->getFlags());
+        RtValue::copy(port->getType(), port->getValue(), input->getValue());
+    }
+    for (PvtObject* obj : nodedefPrim->getOutputs())
+    {
+        const PvtOutput* port = obj->asA<PvtOutput>();
+        PvtOutput* output = node->createOutput(port->getName(), port->getType(), port->getFlags());
+        RtValue::copy(port->getType(), port->getValue(), output->getValue());
     }
 
     return nodeH;
 }
 
-RtPrim RtNode::getNodeDef() const
+const RtPrimSpec& RtNode::getPrimSpec() const
 {
-    PvtRelationship* nodedef = prim()->getRelationship(NODEDEF);
-    return nodedef && nodedef->hasTargets() ? nodedef->getAllTargets()[0] : RtPrim();
+    static const PvtNodePrimSpec s_primSpec;
+    return s_primSpec;
 }
 
 void RtNode::setNodeDef(RtPrim nodeDef)
 {
-    PvtRelationship* nodedefRel = prim()->getRelationship(NODEDEF);
+    PvtRelationship* nodedefRel = prim()->getRelationship(Tokens::NODEDEF);
     if (!nodedefRel)
     {
-        nodedefRel = prim()->createRelationship(NODEDEF);
+        nodedefRel = prim()->createRelationship(Tokens::NODEDEF);
     }
     else
     {
-        nodedefRel->clearTargets();
+        nodedefRel->clearConnections();
     }
-    nodedefRel->addTarget(PvtObject::ptr<PvtPrim>(nodeDef));
+    nodedefRel->connect(PvtObject::ptr(nodeDef));
 }
 
-const RtToken& RtNode::getVersion() const
+RtPrim RtNode::getNodeDef() const
 {
-    RtTypedValue* v = prim()->getMetadata(Tokens::VERSION, RtType::TOKEN);
-    return v ? v->getValue().asToken() : EMPTY_TOKEN;
+    PvtRelationship* nodedefRel = prim()->getRelationship(Tokens::NODEDEF);
+    return nodedefRel && nodedefRel->hasConnections() ? nodedefRel->getConnection() : RtPrim();
 }
 
 void RtNode::setVersion(const RtToken& version)
 {
-    RtTypedValue* v = prim()->addMetadata(Tokens::VERSION, RtType::TOKEN);
-    v->getValue().asToken() = version;
+    RtTypedValue* attr = prim()->createAttribute(Tokens::VERSION, RtType::TOKEN);
+    attr->asToken() = version;
 }
 
-size_t RtNode::numInputs() const
+const RtToken& RtNode::getVersion() const
 {
-    return prim()->numInputs();
-}
-
-RtInput RtNode::getInput(const RtToken& name) const
-{
-    PvtInput* input = prim()->getInput(name);
-    return input ? input->hnd() : RtInput();
-}
-
-RtAttrIterator RtNode::getInputs() const
-{
-    return getPrim().getInputs();
-}
-
-size_t RtNode::numOutputs() const
-{
-    return prim()->numOutputs();
-}
-
-RtOutput RtNode::getOutput(const RtToken& name) const
-{
-    PvtOutput* output = prim()->getOutput(name);
-    return output ? output->hnd() : RtOutput();
-}
-
-RtOutput RtNode::getOutput() const
-{
-    PvtOutput* output = prim()->getOutput();
-    return output ? output->hnd() : RtOutput();
-}
-
-RtAttrIterator RtNode::getOutputs() const
-{
-    return getPrim().getOutputs();
+    RtTypedValue* attr = prim()->getAttribute(Tokens::VERSION, RtType::TOKEN);
+    return attr ? attr->asToken() : EMPTY_TOKEN;
 }
 
 }

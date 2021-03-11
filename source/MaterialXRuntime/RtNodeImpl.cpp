@@ -11,6 +11,24 @@
 
 namespace MaterialX
 {
+namespace
+{
+    // TODO: We should derive this from a attr driven XML schema.
+    class PvtNodeImplPrimSpec : public PvtPrimSpec
+    {
+    public:
+        PvtNodeImplPrimSpec()
+        {
+            addPrimAttribute(Tokens::DOC, RtType::STRING);
+            addPrimAttribute(Tokens::NODEDEF, RtType::TOKEN);
+            addPrimAttribute(Tokens::TARGET, RtType::TOKEN);
+            addPrimAttribute(Tokens::FILE, RtType::STRING);
+            addPrimAttribute(Tokens::SOURCECODE, RtType::STRING);
+            addPrimAttribute(Tokens::FUNCTION, RtType::STRING);
+            addPrimAttribute(Tokens::FORMAT, RtType::TOKEN);
+        }
+    };
+}
 
 DEFINE_TYPED_SCHEMA(RtNodeImpl, "nodeimpl");
 
@@ -25,88 +43,94 @@ RtPrim RtNodeImpl::createPrim(const RtToken& typeName, const RtToken& name, RtPr
     return primH;
 }
 
+const RtPrimSpec& RtNodeImpl::getPrimSpec() const
+{
+    static const PvtNodeImplPrimSpec s_primSpec;
+    return s_primSpec;
+}
+
 void RtNodeImpl::setTarget(const RtToken& target)
 {
-    RtTypedValue* data = addMetadata(Tokens::TARGET, RtType::TOKEN);
-    data->getValue().asToken() = target;
+    RtTypedValue* attr = createAttribute(Tokens::TARGET, RtType::TOKEN);
+    attr->getValue().asToken() = target;
 }
 
 const RtToken& RtNodeImpl::getTarget() const
 {
-    const RtTypedValue* data = getMetadata(Tokens::TARGET, RtType::TOKEN);
-    return data ? data->getValue().asToken() : EMPTY_TOKEN;
+    const RtTypedValue* attr = getAttribute(Tokens::TARGET, RtType::TOKEN);
+    return attr ? attr->asToken() : EMPTY_TOKEN;
 }
 
 void RtNodeImpl::setNodeDef(const RtToken& language)
 {
-    RtTypedValue* data = addMetadata(Tokens::NODEDEF, RtType::TOKEN);
-    data->getValue().asToken() = language;
+    RtTypedValue* attr = createAttribute(Tokens::NODEDEF, RtType::TOKEN);
+    attr->asToken() = language;
 }
 
 const RtToken& RtNodeImpl::getNodeDef() const
 {
-    const RtTypedValue* data = getMetadata(Tokens::NODEDEF, RtType::TOKEN);
-    return data ? data->getValue().asToken() : EMPTY_TOKEN;
+    const RtTypedValue* attr = getAttribute(Tokens::NODEDEF, RtType::TOKEN);
+    return attr ? attr->asToken() : EMPTY_TOKEN;
 }
 
 void RtNodeImpl::setImplName(const RtToken& implname)
 {
-    RtTypedValue* data = addMetadata(Tokens::IMPLNAME, RtType::TOKEN);
-    data->getValue().asToken() = implname;
+    RtTypedValue* attr = createAttribute(Tokens::IMPLNAME, RtType::TOKEN);
+    attr->asToken() = implname;
 }
 
 const RtToken& RtNodeImpl::getImplName() const
 {
-    const RtTypedValue* data = getMetadata(Tokens::IMPLNAME, RtType::TOKEN);
-    return data ? data->getValue().asToken() : EMPTY_TOKEN;
+    const RtTypedValue* attr = getAttribute(Tokens::IMPLNAME, RtType::TOKEN);
+    return attr ? attr->asToken() : EMPTY_TOKEN;
 }
 
 void RtNodeImpl::setFile(const string& file)
 {
-    RtTypedValue* data = addMetadata(Tokens::FILE, RtType::STRING);
-    data->getValue().asString() = file;
+    RtTypedValue* attr = createAttribute(Tokens::FILE, RtType::STRING);
+    attr->asString() = file;
 }
 
 const string& RtNodeImpl::getFile() const
 {
-    const RtTypedValue* data = getMetadata(Tokens::FILE, RtType::STRING);
-    return data ? data->getValue().asString() : EMPTY_STRING;
+    const RtTypedValue* attr = getAttribute(Tokens::FILE, RtType::STRING);
+    return attr ? attr->asString() : EMPTY_STRING;
 }
 
 void RtNodeImpl::setSourceCode(const string& source)
 {
-    RtTypedValue* data = addMetadata(Tokens::SOURCECODE, RtType::STRING);
-    data->getValue().asString() = source;
+    RtTypedValue* attr = createAttribute(Tokens::SOURCECODE, RtType::STRING);
+    attr->asString() = source;
 }
 
 const string& RtNodeImpl::getSourceCode() const
 {
-    const RtTypedValue* data = getMetadata(Tokens::SOURCECODE, RtType::STRING);
-    return data ? data->getValue().asString() : EMPTY_STRING;
+    const RtTypedValue* attr = getAttribute(Tokens::SOURCECODE, RtType::STRING);
+    return attr ? attr->asString() : EMPTY_STRING;
 }
 
 void RtNodeImpl::setFormat(const RtToken& format)
 {
-    RtTypedValue* data = addMetadata(Tokens::FORMAT, RtType::TOKEN);
-    data->getValue().asToken() = format;
+    RtTypedValue* attr = createAttribute(Tokens::FORMAT, RtType::TOKEN);
+    attr->asToken() = format;
 }
 
 const RtToken& RtNodeImpl::getFormat() const
 {
-    const RtTypedValue* data = getMetadata(Tokens::FORMAT, RtType::TOKEN);
-    return data ? data->getValue().asToken() : EMPTY_TOKEN;
+    const RtTypedValue* attr = getAttribute(Tokens::FORMAT, RtType::TOKEN);
+    return attr ? attr->asToken() : EMPTY_TOKEN;
 }
 
 void RtNodeImpl::setFunction(const RtToken& function)
 {
-    RtTypedValue* data = addMetadata(Tokens::FUNCTION, RtType::TOKEN);
-    data->getValue().asToken() = function;
+    RtTypedValue* attr = createAttribute(Tokens::FUNCTION, RtType::TOKEN);
+    attr->asToken() = function;
 }
 
 const RtToken& RtNodeImpl::getFunction() const
 {
-    const RtTypedValue* data = getMetadata(Tokens::FUNCTION, RtType::TOKEN);
-    return data ? data->getValue().asToken() : EMPTY_TOKEN;
+    const RtTypedValue* attr = getAttribute(Tokens::FUNCTION, RtType::TOKEN);
+    return attr ? attr->asToken() : EMPTY_TOKEN;
 }
 
 void RtNodeImpl::setNodeGraph(RtPrim nodegraph)
@@ -116,20 +140,13 @@ void RtNodeImpl::setNodeGraph(RtPrim nodegraph)
     {
         rel = getPrim().createRelationship(Tokens::NODEGRAPH);
     }
-    if (rel.hasTargets())
-    {
-        rel.setTarget(nodegraph);
-    }
-    else
-    {
-        rel.addTarget(nodegraph);
-    }
+    rel.connect(nodegraph);
 }
 
 RtPrim RtNodeImpl::getNodeGraph() const
 {
     RtRelationship rel = getPrim().getRelationship(Tokens::NODEGRAPH);
-    return (rel && rel.hasTargets() ? rel.getTarget() : RtPrim());
+    return (rel && rel.hasConnections() ? rel.getConnection() : RtPrim());
 }
 
 }

@@ -74,14 +74,14 @@ FragmentPtr FragmentGenerator::createFragment(const RtNodeDef& nodedef, const Rt
         }
 
         // Create fragment ports according to the nodedef.
-        for (RtAttribute attr : nodedef.getInputs())
+        for (RtInput port : nodedef.getInputs())
         {
-            Input* input = frag->createInput(attr.getName(), attr.getType());
-            RtValue::copy(input->getType(), attr.getValue(), input->getValue());
+            Input* input = frag->createInput(port.getName(), port.getType());
+            RtValue::copy(input->getType(), port.getValue(), input->getValue());
         }
-        for (RtAttribute attr : nodedef.getOutputs())
+        for (RtOutput port : nodedef.getOutputs())
         {
-            frag->createOutput(attr.getName(), attr.getType());
+            frag->createOutput(port.getName(), port.getType());
         }
 
         const RtToken& function = nodeimpl.getFunction();
@@ -94,7 +94,7 @@ FragmentPtr FragmentGenerator::createFragment(const RtNodeDef& nodedef, const Rt
             SourceFragment* sourceFragment = frag->asA<SourceFragment>();
 
             // Get the source code from metadata on the nodeimpl.
-            RtTypedValue* sourceCodeData = nodeimpl.addMetadata(Tokens::SOURCECODE, RtType::STRING);
+            RtTypedValue* sourceCodeData = nodeimpl.createAttribute(Tokens::SOURCECODE, RtType::STRING);
             string* contentPtr = &sourceCodeData->getValue().asString();
             if (contentPtr->empty())
             {
@@ -165,10 +165,10 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
         frag = createFragment(nodedef, node.getName());
 
         // Set values from the node instance.
-        for (RtAttribute attr : node.getInputs())
+        for (RtInput port : node.getInputs())
         {
-            Input* input = frag->getInput(attr.getName());
-            RtValue::copy(input->getType(), attr.getValue(), input->getValue());
+            Input* input = frag->getInput(port.getName());
+            RtValue::copy(input->getType(), port.getValue(), input->getValue());
         }
     }
 
@@ -180,15 +180,15 @@ FragmentPtr FragmentGenerator::createFragment(const RtNode& node, FragmentGraph&
     frag = createSubFragments(node, *frag);
 
     // Check for geomprop usage.
-    for (RtAttribute port : node.getInputs())
+    for (RtInput port : node.getInputs())
     {
-        if (!port.asA<RtInput>().isConnected())
+        if (!port.isConnected())
         {
-            const RtTypedValue* defaultGeomProp = port.getMetadata(Tokens::DEFAULTGEOMPROP, RtType::TOKEN);
-            if (defaultGeomProp)
+            const RtToken defaultGeomProp = port.getDefaultGeomProp();
+            if (defaultGeomProp != EMPTY_TOKEN)
             {
                 // Find the corresponding geompropdef prim.
-                RtPrim prim = RtApi::get().getGeomPropDef(defaultGeomProp->getValue().asToken());
+                RtPrim prim = RtApi::get().getGeomPropDef(defaultGeomProp);
                 Input* input = frag->getInput(port.getName());
                 if (prim && !input->isConnected())
                 {
@@ -226,7 +226,7 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, const RtT
         graph = frag->asA<FragmentGraph>();
 
         // Create all inputs.
-        for (RtAttribute port : nodegraph.getInputs())
+        for (RtInput port : nodegraph.getInputs())
         {
             Input* input = graph->createInput(port.getName(), port.getType());
             RtValue::copy(input->getType(), port.getValue(), input->getValue());
@@ -245,7 +245,7 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, const RtT
         else
         {
             // Create all outputs.
-            for (RtAttribute port : nodegraph.getOutputs())
+            for (RtOutput port : nodegraph.getOutputs())
             {
                 graph->createOutput(port.getName(), port.getType());
             }
@@ -264,9 +264,8 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, const RtT
             RtNode childNode(child);
             Fragment* childFragment = graph->getFragment(childNode.getName());
 
-            for (RtAttribute attr : childNode.getInputs())
+            for (RtInput input : childNode.getInputs())
             {
-                RtInput input = attr.asA<RtInput>();
                 RtOutput upstream = input.getConnection();
                 if (upstream)
                 {
@@ -287,15 +286,15 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, const RtT
         }
 
         // Connect all child fragments to the fragment graph output interface.
-        for (RtAttribute attr : nodegraph.getOutputs())
+        for (RtOutput port : nodegraph.getOutputs())
         {
-            RtInput socket = nodegraph.getOutputSocket(attr.getName());
+            RtInput socket = nodegraph.getOutputSocket(port.getName());
             RtOutput upstream = socket.getConnection();
             if (upstream)
             {
                 Fragment* upstreamChildFragment = graph->getFragment(upstream.getParent().getName());
                 Output* upstreamChildOutput = upstreamChildFragment->getOutput(upstream.getName());
-                Input* fragmentSocket = graph->getOutputSocket(attr.getName());
+                Input* fragmentSocket = graph->getOutputSocket(port.getName());
                 graph->connect(upstreamChildOutput, fragmentSocket);
             }
         }
@@ -311,14 +310,13 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, const RtT
         FragmentPtr childFrag = createFragment(node, *graph);
 
         // Create all inputs.
-        for (RtAttribute port : node.getInputs())
+        for (RtInput input : node.getInputs())
         {
-            RtInput nodeInput = port.asA<RtInput>();
-            if (!nodeInput.isConnected())
+            if (!input.isConnected())
             {
-                Input* graphInput = graph->createInput(port.getName(), port.getType());
-                Input* childInput = childFrag->getInput(port.getName());
-                graph->connect(graph->getInputSocket(port.getName()), childInput);
+                Input* graphInput = graph->createInput(input.getName(), input.getType());
+                Input* childInput = childFrag->getInput(input.getName());
+                graph->connect(graph->getInputSocket(input.getName()), childInput);
                 RtValue::copy(childInput->getType(), childInput->getValue(), graphInput->getValue());
             }
         }
@@ -337,7 +335,7 @@ FragmentPtr FragmentGenerator::createFragmentGraph(const RtNode& node, const RtT
         else
         {
             // Create all outputs.
-            for (RtAttribute port : node.getOutputs())
+            for (RtOutput port : node.getOutputs())
             {
                 graph->createOutput(port.getName(), port.getType());
                 graph->connect(childFrag->getOutput(port.getName()), graph->getOutputSocket(port.getName()));
@@ -390,24 +388,22 @@ FragmentPtr FragmentGenerator::createSubFragments(const RtNode& node, Fragment& 
         Output* output = frag->getOutput();
         const bool isColorOutput = output->getType() == RtType::COLOR3 || output->getType() == RtType::COLOR4;
 
-        for (RtAttribute port : node.getInputs())
+        for (RtInput input : node.getInputs())
         {
-            const RtToken& sourceSpace = port.getColorSpace();
+            const RtToken& sourceSpace = input.getColorSpace();
             if (sourceSpace != EMPTY_TOKEN && sourceSpace != targetSpace)
             {
-                const RtToken portType = port.getType();
+                const RtToken portType = input.getType();
                 if (portType == RtType::FILENAME && isColorOutput)
                 {
                     outputsWithColorSpaceTransforms[output] = ColorSpaceTransform(output->getType(), sourceSpace, targetSpace);
                 }
                 else if (portType == RtType::COLOR3 || portType == RtType::COLOR4)
                 {
-                    RtInput inputPort = port.asA<RtInput>();
-                    RtOutput upstream = inputPort.getConnection();
-                    if (!inputPort.getConnection())
+                    if (!input.isConnected())
                     {
-                        Input* input = frag->getInput(port.getName());
-                        inputsWithColorSpaceTransforms[input] = ColorSpaceTransform(portType, sourceSpace, targetSpace);
+                        Input* fragInput = frag->getInput(input.getName());
+                        inputsWithColorSpaceTransforms[fragInput] = ColorSpaceTransform(portType, sourceSpace, targetSpace);
                     }
                 }
             }
@@ -512,10 +508,10 @@ uint32_t FragmentGenerator::getClassificationMask(const RtNodeDef& nodedef) cons
         // Add additional classifications if the BSDF is restricted to
         // only reflection or transmission
 
-        const RtTypedValue* bsdf = nodedef.getMetadata(Tokens::BSDF, RtType::TOKEN);
+        const RtTypedValue* bsdf = nodedef.getAttribute(Tokens::BSDF, RtType::TOKEN);
         if (bsdf)
         {
-            const RtToken val = bsdf->getValue().asToken();
+            const RtToken val = bsdf->asToken();
             if (val == Tokens::BSDF_R)
             {
                 mask |= FragmentClassification::BSDF_R;

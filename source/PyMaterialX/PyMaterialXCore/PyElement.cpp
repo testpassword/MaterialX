@@ -47,9 +47,6 @@ void bindPyElement(py::module& mod)
         .def("hasColorSpace", &mx::Element::hasColorSpace)
         .def("getColorSpace", &mx::Element::getColorSpace)
         .def("getActiveColorSpace", &mx::Element::getActiveColorSpace)
-        .def("setTarget", &mx::Element::setTarget)
-        .def("hasTarget", &mx::Element::hasTarget)
-        .def("getTarget", &mx::Element::getTarget)
         .def("setInheritString", &mx::Element::setInheritString)
         .def("hasInheritString", &mx::Element::hasInheritString)
         .def("getInheritString", &mx::Element::getInheritString)
@@ -61,13 +58,6 @@ void bindPyElement(py::module& mod)
         .def("hasNamespace", &mx::Element::hasNamespace)
         .def("getNamespace", &mx::Element::getNamespace)
         .def("getQualifiedName", &mx::Element::getQualifiedName)
-        .def("setVersionString", &mx::Element::setVersionString)
-        .def("hasVersionString", &mx::Element::hasVersionString)
-        .def("getVersionString", &mx::Element::getVersionString)
-        .def("setVersionIntegers", &mx::Element::setVersionIntegers)
-        .def("getVersionIntegers", &mx::Element::getVersionIntegers)
-        .def("setDefaultVersion", &mx::Element::setDefaultVersion)
-        .def("getDefaultVersion", &mx::Element::getDefaultVersion)
         .def("setDocString", &mx::Element::setDocString)
         .def("getDocString", &mx::Element::getDocString)
         .def("addChildOfCategory", &mx::Element::addChildOfCategory,
@@ -194,6 +184,12 @@ void bindPyElement(py::module& mod)
 
     py::class_<mx::Token, mx::TokenPtr, mx::ValueElement>(mod, "Token")
         .def_readonly_static("CATEGORY", &mx::Token::CATEGORY);
+
+    py::class_<mx::CommentElement, mx::CommentElementPtr, mx::Element>(mod, "CommentElement")
+        .def_readonly_static("CATEGORY", &mx::CommentElement::CATEGORY);
+
+    py::class_<mx::GenericElement, mx::GenericElementPtr, mx::Element>(mod, "GenericElement")
+        .def_readonly_static("CATEGORY", &mx::GenericElement::CATEGORY);
 
     py::class_<mx::StringResolver, mx::StringResolverPtr>(mod, "StringResolver")
         .def("setFilePrefix", &mx::StringResolver::setFilePrefix)
