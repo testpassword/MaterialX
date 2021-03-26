@@ -14,6 +14,7 @@
 #include <MaterialXGenShader/HwShaderGenerator.h>
 #include <MaterialXGenShader/ShaderTranslator.h>
 #include <MaterialXGenShader/Util.h>
+#include <MaterialXGenGlsl/GlslShaderGenerator.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -155,6 +156,49 @@ TEST_CASE("GenShader: Translation Check", "[genshader]")
     mx::writeToXmlFile(doc, "transparency_test_nodedefs.mtlx");
 }
 
+TEST_CASE("GenShader: Scoped Nodegraphs", "[genshader1]")
+{
+    mx::FileSearchPath searchPath;
+    const mx::FilePath currentPath = mx::FilePath::getCurrentPath();
+    searchPath.append(currentPath / mx::FilePath("libraries"));
+    searchPath.append(currentPath / mx::FilePath("resources/Materials/TestSuite"));
+
+    mx::DocumentPtr doc = mx::createDocument();
+    loadLibraries({ "targets", "stdlib", "pbrlib", "bxdf", }, searchPath, doc);
+    mx::FilePath testPath = mx::FilePath::getCurrentPath() / mx::FilePath("resources/Materials/TestSuite/stdlib/nodegraph_inputs/duplicate_nodenames.mtlx");
+    mx::readFromXmlFile(doc, testPath, searchPath);
+
+    mx::ShaderGeneratorPtr generator = mx::GlslShaderGenerator::create();
+    mx::GenContext context(generator);
+    context.registerSourceCodeSearchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
+
+    std::vector<mx::TypedElementPtr> testElements;
+    mx::findRenderableElements(doc, testElements);
+    mx::findRenderableElements(doc, testElements);
+    std::string failedElements;
+    std::set<mx::NodeGraphPtr> testGraphs;
+    for (auto testElement : testElements)
+    {
+        if (testElement->isA<mx::Output>())
+        {
+            std::string shaderName = testElement->getName();
+            mx::ShaderPtr shader = nullptr;
+            try
+            {
+                shader = generator->generate(shaderName, testElement, context);
+            }
+            catch (mx::Exception &e)
+            {
+                std::cout << "Failed code generation: " << (testElement->getNamePath()) << ": " << e.what() << std::endl;
+            }
+            CHECK(shader);
+
+            const std::string sourceCode = shader->getSourceCode();
+            std::cout << sourceCode << std::endl;
+        }
+    }
+}
+
 TEST_CASE("GenShader: Shader Translation", "[translate]")
 {
     mx::FileSearchPath searchPath;
@@ -195,4 +239,6 @@ TEST_CASE("GenShader: Shader Translation", "[translate]")
         CHECK(valid);
     }
 }
+
+
 

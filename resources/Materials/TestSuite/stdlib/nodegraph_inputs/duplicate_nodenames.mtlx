@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<materialx version="1.38">
+   <!-- Check for inputs with same nodenames at different levels -->
+   <constant name="duplicate1" type="color3">
+      <input name="value" type="color3" value="1, 0, 0"/>
+   </constant>
+   <nodegraph name="nodename_check" >
+      <!-- This should find the top level node and not use the node internal to the graph -->
+      <input name="in1" type="color3" nodename="duplicate1" />
+      <input name="in2" type="color3" value="0, 1, 0" />
+      <constant name="duplicate1" type="float">
+         <input name="value" type="float" value="0.5"/>
+      </constant>
+      <mix name="mix1" type="color3">
+         <input name="bg" type="color3" interfacename="in1" />
+         <input name="fg" type="color3" interfacename="in1" />
+         <input name="mix" type="float" nodename="duplicate1" />
+      </mix>
+      <output name="out_nodename_check" type="color3" nodename="mix1" />
+   </nodegraph>
+</materialx>
