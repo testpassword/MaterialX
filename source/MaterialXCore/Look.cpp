@@ -19,7 +19,7 @@ const string Visibility::VISIBILITY_TYPE_ATTRIBUTE = "vistype";
 const string Visibility::VISIBLE_ATTRIBUTE = "visible";
 
 const string LookGroup::LOOKS_ATTRIBUTE = "looks";
-const string LookGroup::ACTIVE_ATTRIBUTE = "active";
+const string LookGroup::ENABLED_ATTRIBUTE = "enabled";
 
 vector<MaterialAssignPtr> getGeometryBindings(const NodePtr& materialNode, const string& geom)
 {
@@ -116,6 +116,28 @@ vector<VisibilityPtr> Look::getActiveVisibilities() const
     return activeVisibilities;
 }
 
+void Look::append(const LookPtr& source)
+{
+    for (auto child : source->getChildren())
+    {
+        if (!child)
+        {
+            continue;
+        }
+        string name = source->getName() + "_" + child->getName();
+
+        ConstElementPtr previous = getChild(name);
+        if (previous)
+        {
+            name = createValidChildName(name);
+        }
+
+        // Create the copied element.
+        ElementPtr childCopy = addChildOfCategory(child->getCategory(), name);
+        childCopy->copyContentFrom(child);
+    }
+}
+
 //
 // MaterialAssign methods
 //
@@ -135,5 +157,144 @@ vector<VariantAssignPtr> MaterialAssign::getActiveVariantAssigns() const
     }
     return activeAssigns;
 }
+
+//
+// Lookgroup methods
+//
+
+LookVec LookGroup::getEnabledLooks() const
+{
+    string looks = getEnabledLooksString();
+    if (looks.empty())
+    {
+        looks = getLooks();
+    }
+    const StringVec& lookList = splitString(looks, ARRAY_VALID_SEPARATORS);
+    LookVec enabledLooks;
+    if (!lookList.empty())
+    {
+        const LookVec& lookElements = getDocument()->getLooks();
+        if (!lookElements.empty())
+        {
+            for (const string& lookName : lookList)
+            {
+                for (const auto& lookElement : lookElements)
+                {
+                    if (lookElement->getName() == lookName)
+                    {
+                        enabledLooks.push_back(lookElement);
+                    }
+                }
+            }
+        }
+    }
+    return enabledLooks;
+}
+
+
+void LookGroup::append(const LookGroupPtr& sourceGroup, const string& appendAfterLook)
+{
+    string sourceLooks = sourceGroup->getLooks();
+    if (sourceLooks.empty())
+    {
+        return;
+    }
+
+    // If look already exists in the look list then append if
+     // not skipping duplicates
+    const StringVec& sourceLookList = splitString(sourceLooks, ARRAY_VALID_SEPARATORS);
+    StringVec destLookList = splitString(getLooks(), ARRAY_VALID_SEPARATORS);
+    const StringSet destLookSet(destLookList.begin(), destLookList.end());
+
+    StringVec postList;
+
+    // If inserting after a given look, then append up to that look
+    // and then append the remainder after.
+    if (!appendAfterLook.empty() && destLookSet.count(appendAfterLook))
+    {
+        StringVec prependList = destLookList;
+        destLookList.clear();
+
+        // Add destination looks first. 
+        bool prepend = true;
+        for (const string& lookName : prependList)
+        {
+            if (prepend)
+            {
+                destLookList.push_back(lookName);
+            }
+            else
+            {
+                postList.push_back(lookName);
+            }
+            if (lookName == appendAfterLook)
+            {
+                prepend = false;
+            }
+        }
+    }
+
+    // Append the source list
+    for (const string& lookName : sourceLookList)
+    {
+        if (!destLookSet.count(lookName))
+        {
+            destLookList.push_back(lookName);
+        }
+    }
+
+    // Append anything remaining from destination list
+    if (postList.size())
+    {
+        for (const string& lookName : postList)
+        {
+            destLookList.push_back(lookName);
+        }
+    }
+
+    // Append looks to "active" look list. Order does no matter.
+    string enabledSourceLooks = sourceGroup->getEnabledLooksString();
+    const StringVec& sourceEnabledLookList = splitString(enabledSourceLooks, ARRAY_VALID_SEPARATORS);
+    StringVec destEnabledLookList = splitString(getEnabledLooksString(), ARRAY_VALID_SEPARATORS);
+    const StringSet destEnabledLookSet(destEnabledLookList.begin(), destEnabledLookList.end());
+
+    for (const string& enabledLookName : sourceEnabledLookList)
+    {
+        if (!destEnabledLookSet.count(enabledLookName))
+        {
+            destEnabledLookList.push_back(enabledLookName);
+        }
+    }
+
+    // Update look and active look lists
+    setLooks(mergeStringVec(destLookList, ARRAY_VALID_SEPARATORS));
+    setEnabledLooks(mergeStringVec(destEnabledLookList, ARRAY_VALID_SEPARATORS));
+}
+
+LookPtr LookGroup::combineLooks() 
+{
+    DocumentPtr document = getDocument();
+    LookVec looks = getEnabledLooks();
+    if (looks.empty())
+    {
+        return nullptr;
+    }
+
+    // Create a new look as a copy of the first look
+    LookPtr mergedLook = document->addLook();
+    mergedLook->copyContentFrom(looks[0]);
+
+    // Merge in subsequent looks if any
+    for (size_t i=1; i<looks.size(); i++)
+    {
+        mergedLook->append(looks[i]);
+    }
+    const string& mergedLookName = mergedLook->getName();
+    setEnabledLooks(mergedLookName);
+    setLooks(mergedLookName);
+
+    return mergedLook;
+}
+
 
 } // namespace MaterialX

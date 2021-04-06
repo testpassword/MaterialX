@@ -22,7 +22,7 @@ class PvtRelationship : public PvtObject
     RT_DECLARE_RUNTIME_OBJECT(PvtRelationship)
 
 public:
-    PvtRelationship(const RtToken& name, PvtPrim* parent);
+    PvtRelationship(const RtIdentifier& name, PvtPrim* parent);
 
     void connect(PvtObject* obj);
 
@@ -40,7 +40,7 @@ public:
 
     RtObject getConnection(size_t index = 0) const
     {
-        return _connections[index]->hnd();
+        return _connections[index];
     }
 
     RtConnectionIterator getConnections() const
@@ -54,7 +54,7 @@ public:
     }
 
 protected:
-    PvtObjectVec _connections;
+    PvtObjHandleVec _connections;
     friend class RtConnectionIterator;
 };
 

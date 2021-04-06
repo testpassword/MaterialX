@@ -17,7 +17,7 @@ namespace MaterialX
 RtValue::RtValue(const Matrix33& v, RtPrim& prim)
 {
     // Allocate storage for the value.
-    PvtAllocator& allocator = PvtObject::ptr<PvtPrim>(prim)->getAllocator();
+    PvtAllocator& allocator = PvtObject::cast<PvtPrim>(prim)->getAllocator();
     *_reinterpret_cast<Matrix33**>(&_data) = allocator.allocType<Matrix33>();
 
     // Copy the value.
@@ -27,7 +27,7 @@ RtValue::RtValue(const Matrix33& v, RtPrim& prim)
 RtValue::RtValue(const Matrix44& v, RtPrim& prim)
 {
     // Allocate storage for the value.
-    PvtAllocator& allocator = PvtObject::ptr<PvtPrim>(prim)->getAllocator();
+    PvtAllocator& allocator = PvtObject::cast<PvtPrim>(prim)->getAllocator();
     *_reinterpret_cast<Matrix44**>(&_data) = allocator.allocType<Matrix44>();
 
     // Copy the value.
@@ -37,14 +37,14 @@ RtValue::RtValue(const Matrix44& v, RtPrim& prim)
 RtValue::RtValue(const string& v, RtPrim& prim)
 {
     // Allocate storage for the value.
-    PvtAllocator& allocator = PvtObject::ptr<PvtPrim>(prim)->getAllocator();
+    PvtAllocator& allocator = PvtObject::cast<PvtPrim>(prim)->getAllocator();
     *_reinterpret_cast<string**>(&_data) = allocator.allocType<string>();
 
     // Copy the value.
     asString() = v;
 }
 
-RtValue RtValue::createNew(const RtToken& type, RtPrim owner)
+RtValue RtValue::createNew(const RtIdentifier& type, RtPrim owner)
 {
     const RtTypeDef* typeDef = RtTypeDef::findType(type);
     if (!typeDef)
@@ -54,14 +54,14 @@ RtValue RtValue::createNew(const RtToken& type, RtPrim owner)
     return typeDef->createValue(owner);
 }
 
-RtValue RtValue::clone(const RtToken& type, const RtValue& value, RtPrim owner)
+RtValue RtValue::clone(const RtIdentifier& type, const RtValue& value, RtPrim owner)
 {
     RtValue clonedValue = createNew(type, owner);
     copy(type, value, clonedValue);
     return clonedValue;
 }
 
-void RtValue::copy(const RtToken& type, const RtValue& src, RtValue& dest)
+void RtValue::copy(const RtIdentifier& type, const RtValue& src, RtValue& dest)
 {
     const RtTypeDef* typeDef = RtTypeDef::findType(type);
     if (!typeDef)
@@ -71,7 +71,7 @@ void RtValue::copy(const RtToken& type, const RtValue& src, RtValue& dest)
     typeDef->copyValue(src, dest);
 }
 
-bool RtValue::compare(const RtToken& type, const RtValue& a, const RtValue& b)
+bool RtValue::compare(const RtIdentifier& type, const RtValue& a, const RtValue& b)
 {
     const RtTypeDef* typeDef = RtTypeDef::findType(type);
     if (!typeDef)
@@ -81,7 +81,7 @@ bool RtValue::compare(const RtToken& type, const RtValue& a, const RtValue& b)
     return typeDef->compareValue(a, b);
 }
 
-void RtValue::toString(const RtToken& type, const RtValue& src, string& dest)
+void RtValue::toString(const RtIdentifier& type, const RtValue& src, string& dest)
 {
     const RtTypeDef* typeDef = RtTypeDef::findType(type);
     if (!typeDef)
@@ -91,7 +91,7 @@ void RtValue::toString(const RtToken& type, const RtValue& src, string& dest)
     typeDef->toStringValue(src, dest);
 }
 
-void RtValue::fromString(const RtToken& type, const string& src, RtValue& dest)
+void RtValue::fromString(const RtIdentifier& type, const string& src, RtValue& dest)
 {
     const RtTypeDef* typeDef = RtTypeDef::findType(type);
     if (!typeDef)

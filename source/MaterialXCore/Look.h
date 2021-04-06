@@ -28,6 +28,10 @@ class Visibility;
 using LookPtr = shared_ptr<Look>;
 /// A shared pointer to a const Look
 using ConstLookPtr = shared_ptr<const Look>;
+/// Look vector
+using LookVec = vector<LookPtr>;
+/// Constant look vector
+using ConstLookVec = vector<ConstLookPtr>;
 
 /// A shared pointer to a LookGroup
 using LookGroupPtr = shared_ptr<LookGroup>;
@@ -235,6 +239,11 @@ class Look : public Element
     }
 
     /// @}
+    /// @name Operators
+    /// @{
+
+    /// Append another look to this look
+    void append(const LookPtr& look);
 
   public:
     static const string CATEGORY;
@@ -263,22 +272,32 @@ class LookGroup : public Element
         return getAttribute(LOOKS_ATTRIBUTE);
     }
 
-    /// Set the active look.
-    void setActiveLook(const string& look)
+    /// Set the enabled looks.
+    void setEnabledLooks(const string& looks)
     {
-        setAttribute(ACTIVE_ATTRIBUTE, look);
+        setAttribute(ENABLED_ATTRIBUTE, looks);
     }
 
-    /// Return the active look, if any.
-    const string& getActiveLook() const
+    /// Return the enabled looks, if any.
+    const string& getEnabledLooksString() const
     {
-        return getAttribute(ACTIVE_ATTRIBUTE);
+        return getAttribute(ENABLED_ATTRIBUTE);
     }
+
+    // Return the list of all look elements which are enabled
+    LookVec getEnabledLooks() const;
+
+    /// Append the contents of another lookgroup to this lookgroup. 
+    /// Optionally allow appending after a given look.
+    void append(const LookGroupPtr& lookgroup, const string& appendAfterLook = EMPTY_STRING);
+
+    /// Get a single combined look wihch contains the contents of all the looks in the lookgroup
+    LookPtr combineLooks();
 
   public:
     static const string CATEGORY;
     static const string LOOKS_ATTRIBUTE;
-    static const string ACTIVE_ATTRIBUTE;
+    static const string ENABLED_ATTRIBUTE;
 };
 
 /// @class MaterialAssign

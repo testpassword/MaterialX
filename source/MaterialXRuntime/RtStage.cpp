@@ -11,6 +11,7 @@
 #include <MaterialXRuntime/RtApi.h>
 
 #include <MaterialXRuntime/Private/PvtStage.h>
+#include <MaterialXRuntime/Private/PvtApi.h>
 
 namespace MaterialX
 {
@@ -34,45 +35,33 @@ RtStage::~RtStage()
     delete _cast(_ptr);
 }
 
-RtStagePtr RtStage::createNew(const RtToken& name)
-{
-    // Create the shared stage object.
-    RtStagePtr stage(new RtStage());
-
-    // Create the private stage implementation.
-    stage->_ptr = new PvtStage(name, RtStageWeakPtr(stage));
-
-    // Return the shared wrapper object.
-    return stage;
-}
-
-const RtToken& RtStage::getName() const
+const RtIdentifier& RtStage::getName() const
 {
     return _cast(_ptr)->getName();
 }
 
-void RtStage::addSourceUri(const RtToken& uri)
+void RtStage::addSourceUri(const FilePath& uri)
 {
     return _cast(_ptr)->addSourceUri(uri);
 }
 
-const RtTokenVec& RtStage::getSourceUri() const
+const FilePathVec& RtStage::getSourceUri() const
 {
     return _cast(_ptr)->getSourceUri();
 }
 
-RtPrim RtStage::createPrim(const RtToken& typeName)
+RtPrim RtStage::createPrim(const RtIdentifier& typeName)
 {
-    return createPrim(RtPath("/"), EMPTY_TOKEN, typeName);
+    return createPrim(RtPath("/"), EMPTY_IDENTIFIER, typeName);
 }
 
-RtPrim RtStage::createPrim(const RtPath& path, const RtToken& typeName)
+RtPrim RtStage::createPrim(const RtPath& path, const RtIdentifier& typeName)
 {
     PvtPrim* prim = _cast(_ptr)->createPrim(*static_cast<PvtPath*>(path._ptr), typeName);
     return prim->hnd();
 }
 
-RtPrim RtStage::createPrim(const RtPath& parentPath, const RtToken& name, const RtToken& typeName)
+RtPrim RtStage::createPrim(const RtPath& parentPath, const RtIdentifier& name, const RtIdentifier& typeName)
 {
     PvtPrim* prim = _cast(_ptr)->createPrim(*static_cast<PvtPath*>(parentPath._ptr), name, typeName);
     return prim->hnd();
@@ -83,12 +72,12 @@ void RtStage::removePrim(const RtPath& path)
     _cast(_ptr)->removePrim(*static_cast<PvtPath*>(path._ptr));
 }
 
-RtToken RtStage::renamePrim(const RtPath& path, const RtToken& newName)
+RtIdentifier RtStage::renamePrim(const RtPath& path, const RtIdentifier& newName)
 {
     return _cast(_ptr)->renamePrim(*static_cast<PvtPath*>(path._ptr), newName);
 }
 
-RtToken RtStage::reparentPrim(const RtPath& path, const RtPath& newParentPath)
+RtIdentifier RtStage::reparentPrim(const RtPath& path, const RtPath& newParentPath)
 {
     return _cast(_ptr)->reparentPrim(
         *static_cast<PvtPath*>(path._ptr),
@@ -117,12 +106,12 @@ void RtStage::addReference(RtStagePtr stage)
     _cast(_ptr)->addReference(stage);
 }
 
-RtStagePtr RtStage::getReference(const RtToken& name) const
+RtStagePtr RtStage::getReference(const RtIdentifier& name) const
 {
     return _cast(_ptr)->getReference(name);
 }
 
-void RtStage::removeReference(const RtToken& name)
+void RtStage::removeReference(const RtIdentifier& name)
 {
     _cast(_ptr)->removeReference(name);
 }
@@ -132,7 +121,7 @@ void RtStage::removeReferences()
     _cast(_ptr)->removeReferences();
 }
 
-void RtStage::setName(const RtToken& name)
+void RtStage::setName(const RtIdentifier& name)
 {
     _cast(_ptr)->setName(name);
 }
@@ -147,67 +136,39 @@ void RtStage::restorePrim(const RtPath& parentPath, const RtPrim& prim)
     _cast(_ptr)->restorePrim(*static_cast<PvtPath*>(parentPath._ptr), prim);
 }
 
-RtPrim RtStage::getImplementation(const RtNodeDef& definition) const
-{
-    const RtToken& nodeDefName = definition.getName();
-
-    RtSchemaPredicate<RtNodeGraph> filter;
-    for (RtPrim child : _cast(_ptr)->getRootPrim()->getChildren(filter))
-    {
-        RtNodeGraph nodeGraph(child);
-        // Check if there is a definition name match 
-        if (nodeGraph.getDefinition() == nodeDefName)
-        {
-            PvtPrim* graphPrim = PvtObject::ptr<PvtPrim>(child);
-            return RtPrim(graphPrim->hnd());
-        }
-    }
-
-    // TODO: Return an empty prim for now. When support is added in to be able to
-    // access non-nodegraph implementations, this method should throw an exception if not found.
-    return RtPrim();
-}
-
-RtPrim RtStage::createNodeDef(RtNodeGraph& nodeGraph, 
-                              const RtToken& nodeDefName, 
-                              const RtToken& nodeName, 
-                              const RtToken& version,
+RtPrim RtStage::createNodeDef(RtPrim nodegraphPrim,
+                              const RtIdentifier& nodeDefName, 
+                              const RtIdentifier& nodeName, 
+                              const RtIdentifier& version,
                               bool isDefaultVersion,
-                              const RtToken& nodeGroup,
-                              const RtToken& namespaceString)
+                              const RtIdentifier& nodeGroup,
+                              const RtIdentifier& namespaceString)
 {
     // Must have a nodedef name and a node name
-    if (nodeDefName == EMPTY_TOKEN || nodeName == EMPTY_TOKEN)
+    if (nodeDefName == EMPTY_IDENTIFIER || nodeName == EMPTY_IDENTIFIER)
     {
         throw ExceptionRuntimeError("Cannot create nodedef '" + nodeDefName.str() + "', with node name: '" + nodeName.str() + "'");
     }
 
     // Always used qualified namespace
-    bool isNameSpaced = namespaceString != EMPTY_TOKEN;
-    RtToken qualifiedNodeDefName = isNameSpaced ? RtToken(namespaceString.str() + MaterialX::NAME_PREFIX_SEPARATOR + nodeDefName.str()) : nodeDefName;
+    const bool isNameSpaced = namespaceString != EMPTY_IDENTIFIER;
+    const RtIdentifier qualifiedNodeDefName = isNameSpaced ? RtIdentifier(namespaceString.str() + MaterialX::NAME_PREFIX_SEPARATOR + nodeDefName.str()) : nodeDefName;
 
-    // Make sure a nodedef with this name in not already registered.
-    if (RtApi::get().hasNodeDef(qualifiedNodeDefName))
-    {
-        throw ExceptionRuntimeError("A nodedef named '" + qualifiedNodeDefName.str() + "' is already registered");
-    }
+    PvtStage* stage = PvtStage::cast(this);
 
-    PvtStage* stage = _cast(_ptr);
-
-    // Make sure the nodedef name is unique among all prims.
-    PvtPath path(PvtPath::ROOT_NAME.str());
-    path.push(qualifiedNodeDefName);
+    // Make sure the nodedef name is unique among all prims in the stage.
+    PvtPath path(nodeDefName);
     if (stage->getPrimAtPath(path))
     {
-        throw ExceptionRuntimeError("The nodedef named '" + qualifiedNodeDefName.str() + "' is not unique");
+        throw ExceptionRuntimeError("The nodedef name '" + qualifiedNodeDefName.str() + "' is not unique");
     }
 
-    PvtPrim* prim = stage->createPrim(stage->getPath(), qualifiedNodeDefName, RtNodeDef::typeName());
-    RtNodeDef nodedef(prim->hnd());
+    PvtPrim* nodedefPrim = stage->createPrim(stage->getPath(), qualifiedNodeDefName, RtNodeDef::typeName());
+    RtNodeDef nodedef(nodedefPrim->hnd());
 
     // Set node, version and optional node group
     nodedef.setNode(nodeName);
-    if (version != EMPTY_TOKEN)
+    if (version != EMPTY_IDENTIFIER)
     {
         nodedef.setVersion(version);
 
@@ -217,13 +178,15 @@ RtPrim RtStage::createNodeDef(RtNodeGraph& nodeGraph,
             nodedef.setIsDefaultVersion(true);
         }
     }
-    if (nodeGroup != EMPTY_TOKEN)
+    if (nodeGroup != EMPTY_IDENTIFIER)
     {
         nodedef.setNodeGroup(nodeGroup);
     }
 
+    RtNodeGraph nodegraph(nodegraphPrim);
+
     // Add an input per nodegraph input
-    for (RtInput input : nodeGraph.getInputs())
+    for (RtInput input : nodegraph.getInputs())
     {
         RtInput nodedefInput = nodedef.createInput(input.getName(), input.getType());
         nodedefInput.setUniform(input.isUniform());
@@ -233,7 +196,7 @@ RtPrim RtStage::createNodeDef(RtNodeGraph& nodeGraph,
     // TODO : Add support for tokens
 
     // Add an output per nodegraph output
-    for (RtOutput output : nodeGraph.getOutputs())
+    for (RtOutput output : nodegraph.getOutputs())
     {
         RtOutput nodedefOutput = nodedef.createOutput(output.getName(), output.getType());
         RtValue::copy(output.getType(), output.getValue(), nodedefOutput.getValue());
@@ -243,14 +206,19 @@ RtPrim RtStage::createNodeDef(RtNodeGraph& nodeGraph,
     if (isNameSpaced)
     {
         nodedef.setNamespace(namespaceString);
-        nodeGraph.setNamespace(namespaceString);
+        nodegraph.setNamespace(namespaceString);
     }
 
     // Set the definition on the nodegraph
-    nodeGraph.setDefinition(qualifiedNodeDefName);
+    // turning this into a functional graph
+    nodegraph.setDefinition(qualifiedNodeDefName);
 
-    // Register this nodedef.
-    RtApi::get().registerNodeDef(nodedef.getPrim());
+    // Create the relationship between nodedef and it's implementation.
+    nodedef.getNodeImpls().connect(nodegraph.getPrim());
+
+    PvtApi* api = PvtApi::cast(RtApi::get());
+    api->registerNodeDef(nodedef.getPrim());
+    api->registerNodeGraph(nodegraph.getPrim());
 
     return nodedef.getPrim();
 }

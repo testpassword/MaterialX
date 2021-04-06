@@ -15,6 +15,8 @@ namespace MaterialX
 const string Document::CMS_ATTRIBUTE = "cms";
 const string Document::CMS_CONFIG_ATTRIBUTE = "cmsconfig";
 
+const string ACTIVE_LOOK_STRING = "active";
+
 namespace {
 
 NodeDefPtr getShaderNodeDef(ElementPtr shaderRef)
@@ -968,10 +970,25 @@ void Document::upgradeVersion()
 
             for (ElementPtr shaderRef : mat->getChildrenOfType<Element>("shaderref"))
             {
-                NodeDefPtr nodeDef = getShaderNodeDef(shaderRef);
-
                 // Get the shader node type and category, using the shader nodedef if present.
-                string shaderNodeType = nodeDef ? nodeDef->getType() : SURFACE_SHADER_TYPE_STRING;
+                NodeDefPtr nodeDef = nullptr;
+                string shaderNodeType = SURFACE_SHADER_TYPE_STRING;
+#ifdef SUPPORT_ARNOLD_CONTEXT_STRING
+                const string CONTEXT_STRING("context");
+                const string contextString = shaderRef->getAttribute(CONTEXT_STRING);
+                if (!contextString.empty())
+                {
+                    shaderNodeType = contextString;
+                }
+                else
+#endif
+                {
+                    nodeDef = getShaderNodeDef(shaderRef);
+                    if (nodeDef)
+                    {
+                        shaderNodeType = nodeDef->getType();
+                    }
+                }
                 string shaderNodeCategory = nodeDef ? nodeDef->getNodeString() : shaderRef->getAttribute(NodeDef::NODE_ATTRIBUTE);
 
                 // Add the shader node.
@@ -1404,6 +1421,16 @@ void Document::upgradeVersion()
                         input->setIsUniform(true);
                     }
                 }
+            }
+        }
+
+        for (LookGroupPtr lookGroup : getLookGroups())
+        {
+            if (lookGroup->hasAttribute(ACTIVE_LOOK_STRING))
+            {
+                const string active = lookGroup->getAttribute(ACTIVE_LOOK_STRING);
+                lookGroup->setEnabledLooks(active);
+                lookGroup->removeAttribute(ACTIVE_LOOK_STRING);
             }
         }
 

@@ -30,7 +30,7 @@
 #include <MaterialXRuntime/RtLook.h>
 #include <MaterialXRuntime/RtCollection.h>
 #include <MaterialXRuntime/RtMessage.h>
-#include <MaterialXRuntime/Tokens.h>
+#include <MaterialXRuntime/Identifiers.h>
 
 #include <MaterialXRuntime/Commands/PrimCommands.h>
 #include <MaterialXRuntime/Commands/PortCommands.h>
@@ -47,38 +47,71 @@ namespace mx = MaterialX;
 
 namespace
 {
+    struct RuntimeGlobals
+    {
+        static const mx::FilePath& TARGETS_PATH()
+        {
+            static const mx::FilePath TARGET_PATH("targets");
+            return TARGET_PATH;
+        }
+
+        static const mx::FilePath& STDLIB_PATH()
+        {
+            static const mx::FilePath STDLIB_PATH("stdlib");
+            return STDLIB_PATH;
+        }
+
+        static const mx::FilePath& PBRLIB_PATH()
+        {
+            static const mx::FilePath PBRLIB_PATH("pbrlib");
+            return PBRLIB_PATH;
+        }
+
+        static const mx::FilePath& BXDFLIB_PATH()
+        {
+            static const mx::FilePath BXDFLIB_PATH("bxdf");
+            return BXDFLIB_PATH;
+        }
+
+        static const mx::FilePath& ADSKLIB_PATH()
+        {
+            static const mx::FilePath ADSKLIB_PATH("adsk");
+            return ADSKLIB_PATH;
+        }
+    };
+
     // Commonly used tokens.
-    const mx::RtToken X("x");
-    const mx::RtToken Y("y");
-    const mx::RtToken Z("z");
-    const mx::RtToken W("w");
-    const mx::RtToken R("r");
-    const mx::RtToken G("g");
-    const mx::RtToken B("b");
-    const mx::RtToken A("a");
-    const mx::RtToken ADD("add");
-    const mx::RtToken IN1("in1");
-    const mx::RtToken IN2("in2");
-    const mx::RtToken IN3("in3");
-    const mx::RtToken OUT("out");
-    const mx::RtToken IN("in");
-    const mx::RtToken REFLECTIVITY("reflectivity");
-    const mx::RtToken SURFACESHADER("surfaceshader");
-    const mx::RtToken UIFOLDER("uifolder");
-    const mx::RtToken FOO("foo");
-    const mx::RtToken FOO1("foo1");
-    const mx::RtToken BAR("bar");
-    const mx::RtToken RESULT("result");
-    const mx::RtToken VERSION("version");
-    const mx::RtToken ROOT("root");
-    const mx::RtToken MAIN("main");
-    const mx::RtToken LIBS("libs");
-    const mx::RtToken NONAME("");
-    const mx::RtToken TARGETS("targets");
-    const mx::RtToken STDLIB("stdlib");
-    const mx::RtToken PBRLIB("pbrlib");
-    const mx::RtToken BXDFLIB("bxdf");
-    const mx::RtToken ADSKLIB("adsk");
+    const mx::RtIdentifier X("x");
+    const mx::RtIdentifier Y("y");
+    const mx::RtIdentifier Z("z");
+    const mx::RtIdentifier W("w");
+    const mx::RtIdentifier R("r");
+    const mx::RtIdentifier G("g");
+    const mx::RtIdentifier B("b");
+    const mx::RtIdentifier A("a");
+    const mx::RtIdentifier ADD("add");
+    const mx::RtIdentifier IN1("in1");
+    const mx::RtIdentifier IN2("in2");
+    const mx::RtIdentifier IN3("in3");
+    const mx::RtIdentifier OUT("out");
+    const mx::RtIdentifier IN("in");
+    const mx::RtIdentifier REFLECTIVITY("reflectivity");
+    const mx::RtIdentifier SURFACESHADER("surfaceshader");
+    const mx::RtIdentifier UIFOLDER("uifolder");
+    const mx::RtIdentifier FOO("foo");
+    const mx::RtIdentifier FOO1("foo1");
+    const mx::RtIdentifier BAR("bar");
+    const mx::RtIdentifier RESULT("result");
+    const mx::RtIdentifier VERSION("version");
+    const mx::RtIdentifier ROOT("root");
+    const mx::RtIdentifier MAIN("main");
+    const mx::RtIdentifier LIBS("libs");
+    const mx::RtIdentifier NONAME("");
+    const mx::RtIdentifier TARGETS_NAME("targets");
+    const mx::RtIdentifier STDLIB_NAME("stdlib");
+    const mx::RtIdentifier PBRLIB_NAME("pbrlib");
+    const mx::RtIdentifier BXDFLIB_NAME("bxdf");
+    const mx::RtIdentifier ADSKLIB_NAME("adsk");
 
     bool compareFiles(const mx::FilePath& filename1, const mx::FilePath& filename2)
     {
@@ -95,27 +128,27 @@ TEST_CASE("Runtime: Material Element Upgrade", "[runtime]")
     mx::RtScopedApiHandle api;
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
-    mx::RtReadOptions options;
-    api->loadLibrary(TARGETS, options);
-    api->loadLibrary(STDLIB, options);
-    api->loadLibrary(PBRLIB, options);
-    api->loadLibrary(BXDFLIB, options);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
+    api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH());
+    api->loadLibrary(BXDFLIB_NAME, RuntimeGlobals::BXDFLIB_PATH());
+
     mx::FileSearchPath testSearchPath(mx::FilePath::getCurrentPath() /
         "resources" /
         "Materials" /
         "TestSuite" /
         "stdlib" /
         "upgrade" );
-    mx::RtStagePtr defaultStage = api->createStage(mx::RtToken("defaultStage"));
+    mx::RtStagePtr defaultStage = api->createStage(mx::RtIdentifier("defaultStage"));
     mx::RtFileIo fileIo(defaultStage);
-    fileIo.read("material_element_to_surface_material.mtlx", testSearchPath, &options);
+    fileIo.read("material_element_to_surface_material.mtlx", testSearchPath);
     mx::RtPrim mixNodeGraphPrim = defaultStage->getPrimAtPath("NG_aiMixColor31");
     REQUIRE(mixNodeGraphPrim);
     mx::RtNodeGraph mixNodeGraph(mixNodeGraphPrim);
     REQUIRE(mixNodeGraph);
-    mx::RtOutput mixNodeGraphOutput = mixNodeGraph.getOutput(mx::RtToken("out"));
+    mx::RtOutput mixNodeGraphOutput = mixNodeGraph.getOutput(mx::RtIdentifier("out"));
     REQUIRE(mixNodeGraphOutput);
-    mx::RtInputIterator iter = mixNodeGraphOutput.getConnections();
+    mx::RtConnectionIterator iter = mixNodeGraphOutput.getConnections();
     while (!iter.isDone())
     {
         REQUIRE((*iter).getName() == "base_color");
@@ -125,9 +158,9 @@ TEST_CASE("Runtime: Material Element Upgrade", "[runtime]")
 
 TEST_CASE("Runtime: Token", "[runtime]")
 {
-    mx::RtToken tok1("hej");
-    mx::RtToken tok2("hey");
-    mx::RtToken tok3("hej");
+    mx::RtIdentifier tok1("hej");
+    mx::RtIdentifier tok2("hey");
+    mx::RtIdentifier tok3("hej");
     REQUIRE(tok1 != tok2);
     REQUIRE(tok1 == tok3);
     REQUIRE(tok1 == "hej");
@@ -135,10 +168,10 @@ TEST_CASE("Runtime: Token", "[runtime]")
     REQUIRE("hej" == tok1);
     REQUIRE(std::string("hej") == tok1);
 
-    mx::RtToken one("one");
-    mx::RtToken two("two");
-    mx::RtToken three("three");
-    mx::RtTokenMap<int> intMap;
+    mx::RtIdentifier one("one");
+    mx::RtIdentifier two("two");
+    mx::RtIdentifier three("three");
+    mx::RtIdentifierMap<int> intMap;
     intMap[one] = 1;
     intMap[two] = 2;
     intMap[three] = 3;
@@ -150,7 +183,7 @@ TEST_CASE("Runtime: Token", "[runtime]")
     REQUIRE(intMap.count(three));
     REQUIRE(intMap[three] == 3);
 
-    mx::RtTokenSet intSet;
+    mx::RtIdentifierSet intSet;
     intSet.insert(one);
     intSet.insert(two);
     intSet.insert(three);
@@ -228,8 +261,8 @@ TEST_CASE("Runtime: Values", "[runtime]")
     REQUIRE(value.asColor3() == mx::Color3(1.0, 2.0, 3.0));
     mx::RtValue::fromString(mx::RtType::COLOR4, "1.0, 2.0, 3.0, 4.0", value);
     REQUIRE(value.asColor4() == mx::Color4(1.0, 2.0, 3.0, 4.0));
-    mx::RtValue::fromString(mx::RtType::TOKEN, "materialx", value);
-    REQUIRE(value.asToken() == mx::RtToken("materialx"));
+    mx::RtValue::fromString(mx::RtType::IDENTIFIER, "materialx", value);
+    REQUIRE(value.asIdentifier() == mx::RtIdentifier("materialx"));
     // For large values (>16bytes) we need to allocate a new value instance per type
     mx::RtValue matrix33Value = mx::RtValue::createNew(mx::RtType::MATRIX33, rootPrim);
     mx::RtValue::fromString(mx::RtType::MATRIX33, "1.0, 0.0, 0.0,  0.0, 1.0, 0.0,  0.0, 0.0, 1.0", matrix33Value);
@@ -321,7 +354,7 @@ TEST_CASE("Runtime: Types", "[runtime]")
     REQUIRE_THROWS(mx::RtTypeDef::registerType(mx::RtType::COLOR3, mx::RtTypeDef::BASETYPE_FLOAT, fooFuncs));
 
     // Make sure we can't request an unknown type
-    REQUIRE(mx::RtTypeDef::findType(mx::RtToken("bar")) == nullptr);
+    REQUIRE(mx::RtTypeDef::findType(mx::RtIdentifier("bar")) == nullptr);
 
     // Make sure a type is connectable to its own type
     // TODO: Extend to test more types when type auto cast is implemented.
@@ -453,7 +486,6 @@ TEST_CASE("Runtime: Prims", "[runtime]")
     REQUIRE(stage);
 
     // Test creating a prim of each type
-
     mx::RtPrim nodedefPrim = stage->createPrim("/ND_foo_float", mx::RtNodeDef::typeName());
     REQUIRE(nodedefPrim);
     REQUIRE(nodedefPrim.isA<mx::RtPrim>());
@@ -465,11 +497,9 @@ TEST_CASE("Runtime: Prims", "[runtime]")
     REQUIRE(nodedef);
     REQUIRE(nodedef.isValid());
     REQUIRE(nodedef.getTypeInfo().getShortTypeName() == mx::RtNodeDef::typeName());
-    REQUIRE(nodedef.getName() == mx::RtToken("ND_foo_float"));
+    REQUIRE(nodedef.getName() == mx::RtIdentifier("ND_foo_float"));
     nodedef.setNode(FOO);
     REQUIRE(nodedef.getNode() == FOO);
-    REQUIRE_THROWS(stage->createPrim(nodedef.getName()));
-    api->registerNodeDef(nodedefPrim);
     REQUIRE(stage->createPrim(nodedef.getName()));
 
     mx::RtPrim nodePrim = stage->createPrim(nodedefPrim.getName());
@@ -478,7 +508,7 @@ TEST_CASE("Runtime: Prims", "[runtime]")
     mx::RtNode node(nodePrim);
     REQUIRE(node);
     REQUIRE(node.getTypeInfo().getShortTypeName() == mx::RtNode::typeName());
-    REQUIRE(node.getName() == mx::RtToken("foo1"));
+    REQUIRE(node.getName() == mx::RtIdentifier("foo1"));
     REQUIRE(node.getNodeDef() == nodedefPrim);
 
     mx::RtPrim graphPrim = stage->createPrim(mx::RtNodeGraph::typeName());
@@ -486,7 +516,7 @@ TEST_CASE("Runtime: Prims", "[runtime]")
     REQUIRE(graphPrim.hasApi<mx::RtNodeGraph>());
     mx::RtNodeGraph graph(graphPrim);
     REQUIRE(graph);
-    REQUIRE(graph.getName() == mx::RtToken("nodegraph1"));
+    REQUIRE(graph.getName() == mx::RtIdentifier("nodegraph1"));
     REQUIRE(graph.getTypeInfo().getShortTypeName() == mx::RtNodeGraph::typeName());
     REQUIRE(graph.getTypeInfo().numBaseClasses() == 1);
     REQUIRE(graph.getTypeInfo().getBaseClassType(0) == mx::RtNode::typeName());
@@ -540,7 +570,7 @@ TEST_CASE("Runtime: Prims", "[runtime]")
     mx::RtGeneric generic(genericPrim);
     REQUIRE(generic);
     REQUIRE(generic.getTypeInfo().getShortTypeName() == mx::RtGeneric::typeName());
-    mx::RtToken kind("mykindofprim");
+    mx::RtIdentifier kind("mykindofprim");
     generic.setKind(kind);
     REQUIRE(generic.getKind() == kind);
 
@@ -556,28 +586,26 @@ TEST_CASE("Runtime: Prims", "[runtime]")
     REQUIRE(nodegraphAttrs.size() == 12);
     const mx::RtAttributeSpecVec nodegraphColor3InputAttrs = graph.getPrimSpec().getPortAttributes(graph_in);
     REQUIRE(nodegraphColor3InputAttrs.size() == 6);
-    const mx::RtAttributeSpec* version = nodedef.getPrimSpec().getAttribute(mx::Tokens::VERSION);
+    const mx::RtAttributeSpec* version = nodedef.getPrimSpec().getAttribute(mx::Identifiers::VERSION);
     REQUIRE(version);
-    REQUIRE(version->getType() == mx::RtType::TOKEN);
+    REQUIRE(version->getType() == mx::RtType::IDENTIFIER);
     REQUIRE(!version->isCustom());
-    const mx::RtAttributeSpec* isDefaultVersion = nodedef.getPrimSpec().getAttribute(mx::Tokens::ISDEFAULTVERSION);
+    const mx::RtAttributeSpec* isDefaultVersion = nodedef.getPrimSpec().getAttribute(mx::Identifiers::ISDEFAULTVERSION);
     REQUIRE(isDefaultVersion);
     REQUIRE(isDefaultVersion->getType() == mx::RtType::BOOLEAN);
     REQUIRE(!isDefaultVersion->isCustom());
-    const mx::RtAttributeSpec* uiVisible = graph.getPrimSpec().getPortAttribute(graph_in, mx::Tokens::UIVISIBLE);
+    const mx::RtAttributeSpec* uiVisible = graph.getPrimSpec().getPortAttribute(graph_in, mx::Identifiers::UIVISIBLE);
     REQUIRE(uiVisible);
     REQUIRE(uiVisible->getType() == mx::RtType::BOOLEAN);
     REQUIRE(!uiVisible->isCustom());
-    const mx::RtAttributeSpec* bitDepth = graph.getPrimSpec().getPortAttribute(graph_out, mx::Tokens::BITDEPTH);
+    const mx::RtAttributeSpec* bitDepth = graph.getPrimSpec().getPortAttribute(graph_out, mx::Identifiers::BITDEPTH);
     REQUIRE(bitDepth);
     REQUIRE(bitDepth->getType() == mx::RtType::INTEGER);
     REQUIRE(!uiVisible->isCustom());
 
-
-
     // Test object life-time management
-    mx::RtPrim node1 = stage->createPrim(graph.getPath(), mx::RtToken("node1"), nodedefPrim.getName());
-    mx::RtPrim node2 = stage->createPrim(graph.getPath(), mx::RtToken("node1"), nodedefPrim.getName());
+    mx::RtPrim node1 = stage->createPrim(graph.getPath(), mx::RtIdentifier("node1"), nodedefPrim.getName());
+    mx::RtPrim node2 = stage->createPrim(graph.getPath(), mx::RtIdentifier("node1"), nodedefPrim.getName());
     REQUIRE(node1.isValid());
     stage->removePrim(node1.getPath());
     REQUIRE(!node1.isValid());
@@ -636,7 +664,7 @@ TEST_CASE("Runtime: Nodes", "[runtime]")
     REQUIRE_THROWS(stage->createPrim("/add1", FOO));
 
     // Register so we can create node instance from it.
-    api->registerNodeDef(nodedef.getPrim());
+    api->registerDefinition<mx::RtNodeDef>(nodedef.getPrim());
 
     // Create two new node instances from the add nodedef
     mx::RtPrim add1Prim = stage->createPrim("/add1", nodedef.getName());
@@ -671,13 +699,13 @@ TEST_CASE("Runtime: Nodes", "[runtime]")
     REQUIRE(!invalid_out);
 
     // Test setting input attributes.
-    const mx::RtToken meter("meter");
-    const mx::RtToken srgb("srgb");
+    const mx::RtIdentifier meter("meter");
+    const mx::RtIdentifier srgb("srgb");
     add1_in1.setUnit(meter);
     add1_in2.setColorSpace(srgb);
     REQUIRE(add1_in1.getUnit() == meter);
-    REQUIRE(add1_in1.getColorSpace() == mx::EMPTY_TOKEN);
-    REQUIRE(add1_in2.getUnit() == mx::EMPTY_TOKEN);
+    REQUIRE(add1_in1.getColorSpace() == mx::EMPTY_IDENTIFIER);
+    REQUIRE(add1_in2.getUnit() == mx::EMPTY_IDENTIFIER);
     REQUIRE(add1_in2.getColorSpace() == srgb);
     mx::RtTypedValue* fooData = add1_in1.createAttribute(FOO, mx::RtType::FLOAT);
     fooData->asFloat() = 7.0f;
@@ -700,8 +728,8 @@ TEST_CASE("Runtime: Nodes", "[runtime]")
     }
     REQUIRE(attrCount == 1);
     mx::RtAttributeIterator attrIt = add1_in1.getAttributes();
-    REQUIRE(mx::Tokens::UNIT == (*attrIt).name);
-    REQUIRE(meter == (*attrIt).value->asToken());
+    REQUIRE(mx::Identifiers::UNIT == (*attrIt).name);
+    REQUIRE(meter == (*attrIt).value->asIdentifier());
     ++attrIt;
     REQUIRE(FOO == (*attrIt).name);
     REQUIRE(fooData == (*attrIt).value);
@@ -738,7 +766,7 @@ TEST_CASE("Runtime: Nodes", "[runtime]")
 
     size_t numConnections = 0;
     std::vector<mx::RtObject> dest = { add2_in1, add2_in2 };
-    for (mx::RtInput input : add1_out.getConnections())
+    for (mx::RtObject input : add1_out.getConnections())
     {
         REQUIRE(input == dest[numConnections++]);
     }
@@ -779,7 +807,7 @@ TEST_CASE("Runtime: NodeGraphs", "[runtime]")
     addFloat.createInput(IN1, mx::RtType::FLOAT);
     addFloat.createInput(IN2, mx::RtType::FLOAT);
     addFloat.createOutput(OUT, mx::RtType::FLOAT);
-    api->registerNodeDef(addFloat.getPrim());
+    api->registerDefinition<mx::RtNodeDef>(addFloat.getPrim());
 
     // Create a nodegraph object.
     mx::RtNodeGraph graph1 = stage->createPrim("/graph1", mx::RtNodeGraph::typeName());
@@ -883,23 +911,28 @@ TEST_CASE("Runtime: NodeGraphs", "[runtime]")
     REQUIRE(graph1.getPrim().getParent() == stage->getRootPrim());
 
     // Test creating a nodedef from a nodegraph
-    const mx::RtToken NG_ADDGRAPH("NG_addgraph");
-    const mx::RtToken ND_ADDGRAPH("ND_addgraph");
-    const mx::RtToken ADDGRAPH("addgraph");
-    const mx::RtToken MATH_GROUP("math");
-    const mx::RtToken ADDGRAPH_VERSION("3.4");
-    const mx::RtToken ADDGRAPH_TARGET("mytarget");
-    const mx::RtToken NAMESPACE("namespace1");
-    const mx::RtToken QUALIFIED_DEFINITION("namespace1:ND_addgraph");
+    const mx::RtIdentifier NG_ADDGRAPH("NG_addgraph");
+    const mx::RtIdentifier ND_ADDGRAPH("ND_addgraph");
+    const mx::RtIdentifier ADDGRAPH("addgraph");
+    const mx::RtIdentifier MATH_GROUP("math");
+    const mx::RtIdentifier ADDGRAPH_VERSION("3.4");
+    const mx::RtIdentifier ADDGRAPH_TARGET("mytarget");
+    const mx::RtIdentifier NAMESPACE("namespace1");
+    const mx::RtIdentifier QUALIFIED_DEFINITION("namespace1:ND_addgraph");
     bool isDefaultVersion = false;
     stage->renamePrim(graph1.getPath(), NG_ADDGRAPH);
-    mx::RtPrim addgraphPrim = stage->createNodeDef(graph1, ND_ADDGRAPH, ADDGRAPH, ADDGRAPH_VERSION, isDefaultVersion, MATH_GROUP, NAMESPACE);
-    mx::RtNodeDef addgraphDef(addgraphPrim);    
+    REQUIRE(!api->hasDefinition<mx::RtNodeDef>(ND_ADDGRAPH));
+    REQUIRE(!api->hasImplementation<mx::RtNodeGraph>(NG_ADDGRAPH));
+    mx::RtPrim addgraphPrim = stage->createNodeDef(graph1.getPrim(), ND_ADDGRAPH, ADDGRAPH, ADDGRAPH_VERSION, isDefaultVersion, MATH_GROUP, NAMESPACE);
+    api->registerDefinition<mx::RtNodeDef>(addgraphPrim);
+    api->registerImplementation<mx::RtNodeGraph>(graph1.getPrim());
+    REQUIRE(api->hasDefinition<mx::RtNodeDef>(QUALIFIED_DEFINITION));
+    REQUIRE(api->hasImplementation<mx::RtNodeGraph>(NG_ADDGRAPH));
 
+    mx::RtNodeDef addgraphDef(addgraphPrim);
     REQUIRE(graph1.getDefinition() == QUALIFIED_DEFINITION);
-    REQUIRE(graph1.getVersion() == mx::EMPTY_TOKEN);
+    REQUIRE(graph1.getVersion() == mx::EMPTY_IDENTIFIER);
     REQUIRE(graph1.getNamespace() == NAMESPACE);
-    REQUIRE(api->hasNodeDef(addgraphDef.getName()));
     REQUIRE(addgraphDef.numInputs() == 2);
     REQUIRE(addgraphDef.numOutputs() == 1);
     REQUIRE(addgraphDef.getOutput().getName() == OUT);
@@ -911,8 +944,8 @@ TEST_CASE("Runtime: NodeGraphs", "[runtime]")
     addgraphDef.setTarget(ADDGRAPH_TARGET);
     REQUIRE(addgraphDef.getTarget() == ADDGRAPH_TARGET);
 
-    // Check nodegraph implementation search based on nodedef name.
-    mx::RtPrim addGraphImpl = stage->getImplementation(addgraphDef);
+    // Query implementation from the nodedef.
+    mx::RtPrim addGraphImpl = addgraphDef.getNodeImpl(ADDGRAPH_TARGET);
     REQUIRE(addGraphImpl.getPath() == graph1.getPath());
 
     // Check instance creation:
@@ -921,12 +954,12 @@ TEST_CASE("Runtime: NodeGraphs", "[runtime]")
     mx::RtNode agNode(agPrim);
     {
         // 1. Metadata like version should be copied but not target or node.
-        mx::RtTypedValue* agVersion = agNode.getAttribute(mx::Tokens::VERSION);
+        mx::RtTypedValue* agVersion = agNode.getAttribute(mx::Identifiers::VERSION);
         REQUIRE(agVersion);
         REQUIRE(agVersion->getValueString() == ADDGRAPH_VERSION);
-        mx::RtTypedValue* agTarget = agNode.getAttribute(mx::Tokens::TARGET);
+        mx::RtTypedValue* agTarget = agNode.getAttribute(mx::Identifiers::TARGET);
         REQUIRE(!agTarget);
-        mx::RtTypedValue* agNodeValue = agNode.getAttribute(mx::Tokens::NODE);
+        mx::RtTypedValue* agNodeValue = agNode.getAttribute(mx::Identifiers::NODE);
         REQUIRE(!agNodeValue);
     }
 
@@ -938,7 +971,7 @@ TEST_CASE("Runtime: NodeGraphs", "[runtime]")
 
     // Check export to MTLX document:
     mx::RtFileIo stageIo(stage);
-    mx::RtTokenVec names;
+    mx::RtIdentifierVec names;
     names.push_back(QUALIFIED_DEFINITION);
     stageIo.writeDefinitions("ND_addgraph.mtlx", names);
 
@@ -1007,11 +1040,11 @@ TEST_CASE("Runtime: NodeGraphs", "[runtime]")
         doc->validate();
         mx::ElementPtr agInstance = doc->getChild("addgraph1");
         REQUIRE(agInstance);
-        bool instanceVersionSaved = agInstance->getAttribute(mx::Tokens::VERSION.str()) == ADDGRAPH_VERSION;
+        bool instanceVersionSaved = agInstance->getAttribute(mx::Identifiers::VERSION.str()) == ADDGRAPH_VERSION;
         REQUIRE(instanceVersionSaved);
-        bool instanceTargetNotSaved = agInstance->getAttribute(mx::Tokens::TARGET.str()) == mx::EMPTY_STRING;
+        bool instanceTargetNotSaved = agInstance->getAttribute(mx::Identifiers::TARGET.str()) == mx::EMPTY_STRING;
         REQUIRE(instanceTargetNotSaved);
-        bool instanceNodeNotSaved = agInstance->getAttribute(mx::Tokens::NODE.str()) == mx::EMPTY_STRING;
+        bool instanceNodeNotSaved = agInstance->getAttribute(mx::Identifiers::NODE.str()) == mx::EMPTY_STRING;
         REQUIRE(instanceNodeNotSaved);
     }
 }
@@ -1024,15 +1057,14 @@ TEST_CASE("Runtime: FileIo", "[runtime]")
 
         // Load in stdlib
         api->setSearchPath(searchPath);
-        mx::RtReadOptions readOptions;
-        api->loadLibrary(TARGETS, readOptions);
-        api->loadLibrary(STDLIB, readOptions);
+        api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+        api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
 
         // Create a stage.
         mx::RtStagePtr stage = api->createStage(MAIN);
 
         // Get a nodegraph from the library and write a dot file for inspection.
-        mx::RtNodeGraph graph = api->getLibrary()->getPrimAtPath("/NG_tiledimage_float");
+        mx::RtNodeGraph graph = api->getLibrary(STDLIB_NAME)->getPrimAtPath("/NG_tiledimage_float");
         REQUIRE(graph);
         std::ofstream dotfile;
         dotfile.open(graph.getName().str() + ".dot");
@@ -1045,14 +1077,14 @@ TEST_CASE("Runtime: FileIo", "[runtime]")
         REQUIRE(graph1.getPath() == "/nodegraph1");
 
         // Get a nodedef and create two node instances in the graph.
-        const mx::RtToken multiplyColor3("ND_multiply_color3");
+        const mx::RtIdentifier multiplyColor3("ND_multiply_color3");
         mx::RtNode mult1 = stage->createPrim(graph1.getPath(), NONAME, multiplyColor3);
         mx::RtNode mult2 = stage->createPrim(graph1.getPath(), NONAME, multiplyColor3);
         REQUIRE(mult1);
         REQUIRE(mult2);
 
         // Create a node instance at stage root.
-        const mx::RtToken tiledimageFloat("ND_tiledimage_float");
+        const mx::RtIdentifier tiledimageFloat("ND_tiledimage_float");
         mx::RtNode tiledimage1 = stage->createPrim(tiledimageFloat);
         REQUIRE(tiledimage1);
 
@@ -1074,23 +1106,22 @@ TEST_CASE("Runtime: FileIo", "[runtime]")
 
         // Load in stdlib
         api->setSearchPath(searchPath);
-        mx::RtReadOptions options;
-        api->loadLibrary(TARGETS, options);
-        api->loadLibrary(STDLIB, options);
+        api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+        api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
 
         // Create a new working space stage
         mx::RtStagePtr stage = api->createStage(MAIN);
 
         // Create a small node network.
-        const mx::RtToken tiledimageDef("ND_tiledimage_color3");
-        const mx::RtToken texcoordDef("ND_texcoord_vector2");
+        const mx::RtIdentifier tiledimageDef("ND_tiledimage_color3");
+        const mx::RtIdentifier texcoordDef("ND_texcoord_vector2");
         mx::RtNode tiledimage1 = stage->createPrim(tiledimageDef);
         mx::RtNode texcoord1 = stage->createPrim(texcoordDef);
         REQUIRE(tiledimage1);
         REQUIRE(texcoord1);
-        mx::RtInput tiledimage1_texcoord = tiledimage1.getInput(mx::RtToken("texcoord"));
-        mx::RtInput tiledimage1_file = tiledimage1.getInput(mx::RtToken("file"));
-        mx::RtInput texcoord1_index = texcoord1.getInput(mx::RtToken("index"));
+        mx::RtInput tiledimage1_texcoord = tiledimage1.getInput(mx::RtIdentifier("texcoord"));
+        mx::RtInput tiledimage1_file = tiledimage1.getInput(mx::RtIdentifier("file"));
+        mx::RtInput texcoord1_index = texcoord1.getInput(mx::RtIdentifier("index"));
         mx::RtOutput texcoord1_out = texcoord1.getOutput(OUT);
         REQUIRE(tiledimage1_texcoord);
         REQUIRE(tiledimage1_file);
@@ -1128,18 +1159,14 @@ TEST_CASE("Runtime: DefaultLook", "[runtime]")
 
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
-    mx::RtReadOptions options;
-    api->loadLibrary(TARGETS, options);
-    api->loadLibrary(STDLIB, options);
-    api->loadLibrary(PBRLIB, options);
-    api->loadLibrary(BXDFLIB, options);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
+    api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH());
+    api->loadLibrary(BXDFLIB_NAME, RuntimeGlobals::BXDFLIB_PATH());
 
-    mx::RtStagePtr defaultStage = api->createStage(mx::RtToken("defaultStage"));
-    defaultStage->addReference(api->getLibrary());
+    mx::RtStagePtr defaultStage = api->createStage(mx::RtIdentifier("defaultStage"));
 
-    mx::FileSearchPath lookSearchPath(mx::FilePath::getCurrentPath() /
-                                      "resources" /
-                                      "LookDev");
+    mx::FileSearchPath lookSearchPath(mx::FilePath::getCurrentPath() / "resources" / "LookDev");
     mx::RtFileIo fileIo(defaultStage);
     fileIo.read("defaultLook.mtlx", lookSearchPath);
     fileIo.read("emptyLook.mtlx", lookSearchPath);
@@ -1160,15 +1187,13 @@ TEST_CASE("Runtime: Namespaced definitions", "[runtime]")
         searchPath.append(childFolder);
     }
     api->setSearchPath(searchPath);
-    mx::RtReadOptions options;
-    api->loadLibrary(TARGETS, options);
-    api->loadLibrary(STDLIB, options);
-    api->loadLibrary(PBRLIB, options);
-    api->loadLibrary(BXDFLIB, options);
-    api->loadLibrary(ADSKLIB, options);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
+    api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH());
+    api->loadLibrary(BXDFLIB_NAME, RuntimeGlobals::BXDFLIB_PATH());
+    api->loadLibrary(ADSKLIB_NAME, RuntimeGlobals::ADSKLIB_PATH());
 
-    mx::RtStagePtr defaultStage = api->createStage(mx::RtToken("defaultStage"));
-    defaultStage->addReference(api->getLibrary());
+    mx::RtStagePtr defaultStage = api->createStage(mx::RtIdentifier("defaultStage"));
 
     mx::FileSearchPath adskTestPath(mx::FilePath::getCurrentPath() /
         "resources" /
@@ -1177,7 +1202,6 @@ TEST_CASE("Runtime: Namespaced definitions", "[runtime]")
         "adsklib");
 
     mx::RtFileIo fileIo(defaultStage);
-
     fileIo.read("adsk_shaders.mtlx", adskTestPath);
 }
 
@@ -1187,15 +1211,12 @@ TEST_CASE("Runtime: Conflict resolution", "[runtime]")
 
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
-    mx::RtReadOptions options;
-    api->loadLibrary(TARGETS, options);
-    api->loadLibrary(STDLIB, options);
-    api->loadLibrary(PBRLIB, options);
-    api->loadLibrary(BXDFLIB, options);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
+    api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH());
+    api->loadLibrary(BXDFLIB_NAME, RuntimeGlobals::BXDFLIB_PATH());
 
-    mx::RtStagePtr defaultStage = api->createStage(mx::RtToken("defaultStage"));
-    defaultStage->addReference(api->getLibrary());
-
+    mx::RtStagePtr defaultStage = api->createStage(mx::RtIdentifier("defaultStage"));
     mx::FileSearchPath lookSearchPath(mx::FilePath::getCurrentPath() /
                                       "resources" /
                                       "LookDev");
@@ -1216,9 +1237,8 @@ TEST_CASE("Runtime: Conflict resolution", "[runtime]")
         ++stageTraverser;
     }
 
-    // Everything duplicated except the nodedef ND_default_shader and its
-    // nodegraph implementation NG_default_shader
-    REQUIRE(numBefore * 2 - 2 == numAfter);
+    // Everything duplicated.
+    REQUIRE(numBefore * 2 == numAfter);
 
     // And all duplicates correctly connected:
     mx::RtPrim lg1 = defaultStage->getPrimAtPath("/defaultLookGroup1");
@@ -1270,9 +1290,8 @@ TEST_CASE("Runtime: FileIo NodeGraph", "[runtime]")
     // Load in stdlib
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
-    mx::RtReadOptions readOptions;
-    api->loadLibrary(TARGETS, readOptions);
-    api->loadLibrary(STDLIB, readOptions);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
 
     // Create a main stage
     mx::RtStagePtr stage = api->createStage(MAIN);
@@ -1291,18 +1310,18 @@ TEST_CASE("Runtime: FileIo NodeGraph", "[runtime]")
     REQUIRE(graphOutSocket);
 
     // Add nodes to the graph.
-    mx::RtNodeDef addNodeDef = api->getLibrary()->getPrimAtPath("/ND_add_float");
-    mx::RtNode add1 = stage->createPrim(graph.getPath(), NONAME, addNodeDef.getName());
-    mx::RtNode add2 = stage->createPrim(graph.getPath(), NONAME, addNodeDef.getName());
+    const mx::RtIdentifier ADD_FLOAT_NODEDEF("ND_add_float");
+    mx::RtNode add1 = stage->createPrim(graph.getPath(), NONAME, ADD_FLOAT_NODEDEF);
+    mx::RtNode add2 = stage->createPrim(graph.getPath(), NONAME, ADD_FLOAT_NODEDEF);
     graphInSocket.connect(add1.getInput(IN1));
     add1.getOutput(OUT).connect(add2.getInput(IN1));
     add2.getOutput(OUT).connect(graphOutSocket);
 
     // Add an unconnected node.
-    stage->createPrim(graph.getPath(), NONAME, addNodeDef.getName());
+    stage->createPrim(graph.getPath(), NONAME, ADD_FLOAT_NODEDEF);
 
     // Create a node on root level and connect it downstream after the graph.
-    mx::RtNode add3 = stage->createPrim(addNodeDef.getName());
+    mx::RtNode add3 = stage->createPrim(ADD_FLOAT_NODEDEF);
     graphOut.connect(add3.getInput(IN1));
 
     mx::RtWriteOptions options;
@@ -1314,7 +1333,7 @@ TEST_CASE("Runtime: FileIo NodeGraph", "[runtime]")
     fileIo.write(filename, &options);
 
     // Read the saved file to another stage
-    mx::RtStagePtr anotherStage = api->createStage(mx::RtToken("another"));
+    mx::RtStagePtr anotherStage = api->createStage(mx::RtIdentifier("another"));
     fileIo.setStage(anotherStage);
     fileIo.read(filename, searchPath);
 
@@ -1333,15 +1352,14 @@ TEST_CASE("Runtime: Rename", "[runtime]")
     // Load in stdlib
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
-    mx::RtReadOptions options;
-    api->loadLibrary(TARGETS, options);
-    api->loadLibrary(STDLIB, options);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
 
     // Create a main stage
     mx::RtStagePtr stage = api->createStage(MAIN);
 
     // Create some nodes.
-    const mx::RtToken nodedefName("ND_add_float");
+    const mx::RtIdentifier nodedefName("ND_add_float");
     mx::RtNode node1 = stage->createPrim(nodedefName);
     mx::RtNode node2 = stage->createPrim(nodedefName);
     REQUIRE(node1);
@@ -1350,23 +1368,23 @@ TEST_CASE("Runtime: Rename", "[runtime]")
     REQUIRE(node2.getName() == "add1");
 
     // Test node renaming
-    mx::RtToken newName1 = stage->renamePrim(node1.getPath(), mx::RtToken("foo"));
-    mx::RtToken newName2 = stage->renamePrim(node2.getPath(), mx::RtToken("foo"));
+    mx::RtIdentifier newName1 = stage->renamePrim(node1.getPath(), mx::RtIdentifier("foo"));
+    mx::RtIdentifier newName2 = stage->renamePrim(node2.getPath(), mx::RtIdentifier("foo"));
     REQUIRE(node1.getName() == newName1);
     REQUIRE(node2.getName() == newName2);
     REQUIRE(node1.getName() == "foo");
     REQUIRE(node2.getName() == "foo1");
 
-    stage->renamePrim(node1.getPath(), mx::RtToken("add"));
+    stage->renamePrim(node1.getPath(), mx::RtIdentifier("add"));
     REQUIRE(node1.getName() == "add");
-    stage->renamePrim(node2.getPath(), mx::RtToken("foo"));
+    stage->renamePrim(node2.getPath(), mx::RtIdentifier("foo"));
     REQUIRE(node2.getName() == "foo");
-    stage->renamePrim(node2.getPath(), mx::RtToken("add1"));
+    stage->renamePrim(node2.getPath(), mx::RtIdentifier("add1"));
     REQUIRE(node2.getName() == "add1");
 
     // Test that a rename to existing "add" results in the
     // old name "add1" since that is still a unique name.
-    stage->renamePrim(node2.getPath(), mx::RtToken("add"));
+    stage->renamePrim(node2.getPath(), mx::RtIdentifier("add"));
     REQUIRE(node2.getName() == "add1");
 }
 
@@ -1376,23 +1394,23 @@ TEST_CASE("Runtime: Stage References", "[runtime]")
 
     // Load in stdlib
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
-    mx::RtReadOptions readOptions;
     api->setSearchPath(searchPath);
-    api->loadLibrary(TARGETS, readOptions);
-    api->loadLibrary(STDLIB, readOptions);
-    api->loadLibrary(PBRLIB, readOptions);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
+    api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH());
 
     // Create a main stage
     mx::RtStagePtr stage = api->createStage(MAIN);
 
     // Test access and usage of contents from the library.
-    mx::RtPrim nodedef = api->getLibrary()->getPrimAtPath("/ND_artistic_ior");
+    mx::RtPrim nodedef = api->getLibrary(PBRLIB_NAME)->getPrimAtPath("/ND_artistic_ior");
     REQUIRE(nodedef.isValid());
     mx::RtNode node1 = stage->createPrim("/nodeA", nodedef.getName());
     REQUIRE(node1.isValid());
 
     // Add a reference to all the loaded libraries.
-    stage->addReference(api->getLibrary());
+    stage->addReference(api->getLibrary(STDLIB_NAME));
+    stage->addReference(api->getLibrary(PBRLIB_NAME));
 
     // Write the main stage to a new document,
     // writing only the non-referenced content.
@@ -1424,19 +1442,15 @@ TEST_CASE("Runtime: Traversal", "[runtime]")
 
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
+    api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH());
 
-    mx::RtReadOptions options;
-
-    // Load in the standard libraries.
-    api->loadLibrary(TARGETS, options);
-    api->loadLibrary(STDLIB, options);
-    api->loadLibrary(PBRLIB, options);
-
-    // Count elements traversing the loaded libraries.
+    // Count elements traversing a loaded library.
     size_t nodeCount = 0, nodeDefCount = 0, nodeGraphCount = 0;
-    for (mx::RtPrim prim : api->getLibrary()->traverse())
+    for (mx::RtPrim prim : api->getLibrary(STDLIB_NAME)->traverse())
     {
-        const mx::RtToken& typeName = prim.getTypeName();
+        const mx::RtIdentifier& typeName = prim.getTypeName();
         if (typeName == mx::RtNode::typeName())
         {
             nodeCount++;
@@ -1451,10 +1465,10 @@ TEST_CASE("Runtime: Traversal", "[runtime]")
         }
     }
 
-    // Loading the same libraries into a MaterialX document
+    // Loading the same library into a MaterialX document
     // and tests the same element counts.
     mx::DocumentPtr doc = mx::createDocument();
-    loadLibraries({ "targets", "stdlib", "pbrlib" }, searchPath, doc);
+    loadLibraries({ "stdlib" }, searchPath, doc);
     const size_t libNodeCount = doc->getNodes().size();
     const size_t libNodeDefCount = doc->getNodeDefs().size();
     const size_t libNodeGraphCount = doc->getNodeGraphs().size();
@@ -1465,7 +1479,7 @@ TEST_CASE("Runtime: Traversal", "[runtime]")
     // Create a main stage
     mx::RtStagePtr stage = api->createStage(MAIN);
 
-    const mx::RtToken nodedefName("ND_subtract_vector3");
+    const mx::RtIdentifier nodedefName("ND_subtract_vector3");
     mx::RtObject nodeObj = stage->createPrim(nodedefName);
     REQUIRE(nodeObj);
 
@@ -1474,7 +1488,7 @@ TEST_CASE("Runtime: Traversal", "[runtime]")
     nodeCount = 0, nodeDefCount = 0, nodeGraphCount = 0;
     for (auto it = stage->traverse(nodeFilter); !it.isDone(); ++it)
     {
-        const mx::RtToken& typeName = (*it).getTypeName();
+        const mx::RtIdentifier& typeName = (*it).getTypeName();
         if (typeName == mx::RtNode::typeName())
         {
             nodeCount++;
@@ -1493,7 +1507,7 @@ TEST_CASE("Runtime: Traversal", "[runtime]")
     REQUIRE(nodeGraphCount == 0);
 
     // Traverse nodes on a nodegraph
-    mx::RtNodeGraph nodegraph = api->getLibrary()->getPrimAtPath("/NG_tiledimage_float");
+    mx::RtNodeGraph nodegraph = api->getLibrary(STDLIB_NAME)->getPrimAtPath("/NG_tiledimage_float");
     REQUIRE(nodegraph);
     nodeCount = 0;
     for (auto it = nodegraph.getNodes(); !it.isDone(); ++it)
@@ -1503,7 +1517,7 @@ TEST_CASE("Runtime: Traversal", "[runtime]")
     REQUIRE(nodeCount == 5);
 
     // Travers a nodedef finding all its inputs.
-    mx::RtNodeDef generalized_schlick_brdf = api->getLibrary()->getPrimAtPath("/ND_generalized_schlick_bsdf");
+    mx::RtNodeDef generalized_schlick_brdf = api->getLibrary(PBRLIB_NAME)->getPrimAtPath("/ND_generalized_schlick_bsdf");
     REQUIRE(generalized_schlick_brdf);
     size_t inputCount = 0;
     for (auto it : generalized_schlick_brdf.getPrim().getInputs())
@@ -1526,10 +1540,11 @@ TEST_CASE("Runtime: Traversal", "[runtime]")
 
     // Travers to find all nodedefs for BSDF nodes.
     size_t bsdfCount = 0;
-    for (auto it = api->getLibrary()->traverse(bsdfFilter); !it.isDone(); ++it)
+    for (auto it = api->getLibrary(PBRLIB_NAME)->traverse(bsdfFilter); !it.isDone(); ++it)
     {
         bsdfCount++;
     }
+    loadLibraries({ "pbrlib" }, searchPath, doc);
     size_t libBsdfCount = 0;
     for (auto it : doc->getNodeDefs())
     {
@@ -1592,12 +1607,11 @@ TEST_CASE("Runtime: Looks", "[runtime]")
     // Load libraries so we can create a material
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
-    mx::RtReadOptions libReadOptions;
-    api->loadLibrary(TARGETS, libReadOptions);
-    api->loadLibrary(STDLIB, libReadOptions);
-    api->loadLibrary(PBRLIB, libReadOptions);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
+    api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH());
 
-    const mx::RtToken matDef("ND_surfacematerial");
+    const mx::RtIdentifier matDef("ND_surfacematerial");
 
     mx::RtPath sm1Path("/surfacematerial1");
     mx::RtPrim sm1 = stage->createPrim(sm1Path, matDef);
@@ -1654,8 +1668,8 @@ TEST_CASE("Runtime: Looks", "[runtime]")
     lookgroup1.removeLook(lo1);
     REQUIRE(lookgroup1.getLooks().numConnections() == 1);
 
-    lookgroup1.setActiveLook("look1");
-    REQUIRE(lookgroup1.getActiveLook() == "look1");
+    lookgroup1.setEnabledLooks("look1");
+    REQUIRE(lookgroup1.getEnabledLooks() == "look1");
 
     lookgroup1.addLook(lo1);
 
@@ -1793,7 +1807,7 @@ TEST_CASE("Runtime: Looks", "[runtime]")
         REQUIRE((*iter) == lo1);
         ++iter;
         REQUIRE(iter.isDone());
-        REQUIRE(lookgroup1.getActiveLook() == "look1");
+        REQUIRE(lookgroup1.getEnabledLooks() == "look1");
 
         // Try again, with options.
         useOptions = true;
@@ -1814,20 +1828,20 @@ TEST_CASE("Runtime: Looks", "[runtime]")
     ++iter;
     REQUIRE(!iter.isDone());
     REQUIRE((*iter) == lo2);
-    lookgroup2.setActiveLook("child_lookgroup");
-    REQUIRE(lookgroup2.getActiveLook() == "child_lookgroup");
+    lookgroup2.setEnabledLooks("child_lookgroup");
+    REQUIRE(lookgroup2.getEnabledLooks() == "child_lookgroup");
 }
 
-mx::RtToken toTestResolver(const mx::RtToken& str, const mx::RtToken& type)
+mx::RtIdentifier toTestResolver(const mx::RtIdentifier& str, const mx::RtIdentifier& type)
 {
     mx::StringResolverPtr resolver = mx::StringResolver::create();
-    return mx::RtToken(resolver->resolve(str.str(), type.str()) + "_toTestResolver");
+    return mx::RtIdentifier(resolver->resolve(str.str(), type.str()) + "_toTestResolver");
 }
 
-mx::RtToken fromTestResolver(const mx::RtToken& str, const mx::RtToken& type)
+mx::RtIdentifier fromTestResolver(const mx::RtIdentifier& str, const mx::RtIdentifier& type)
 {
     mx::StringResolverPtr resolver = mx::StringResolver::create();
-    return mx::RtToken(resolver->resolve(str.str(), type.str()) + "_fromTestResolver");
+    return mx::RtIdentifier(resolver->resolve(str.str(), type.str()) + "_fromTestResolver");
 }
 
 TEST_CASE("Runtime: NameResolvers", "[runtime]")
@@ -1836,34 +1850,34 @@ TEST_CASE("Runtime: NameResolvers", "[runtime]")
     REQUIRE(registry);
 
     mx::RtNameResolverInfo geomInfo;
-    geomInfo.identifier = mx::RtToken("geom_resolver");
+    geomInfo.identifier = mx::RtIdentifier("geom_resolver");
     geomInfo.elementType = mx::RtNameResolverInfo::GEOMNAME_TYPE;
     geomInfo.toFunction = nullptr;
     geomInfo.fromFunction = nullptr;
-    mx::RtToken pipe("|");
-    mx::RtToken slash("/");
+    mx::RtIdentifier pipe("|");
+    mx::RtIdentifier slash("/");
     geomInfo.toSubstitutions.emplace(pipe, slash);
     geomInfo.fromSubstitutions.emplace(slash, pipe);
     registry->registerNameResolvers(geomInfo);
 
     mx::RtNameResolverInfo imageInfo;
-    imageInfo.identifier = mx::RtToken("image_resolver");
+    imageInfo.identifier = mx::RtIdentifier("image_resolver");
     imageInfo.elementType = mx::RtNameResolverInfo::FILENAME_TYPE;
     imageInfo.toFunction = toTestResolver;
     imageInfo.fromFunction = fromTestResolver;
     registry->registerNameResolvers(imageInfo);
     
-    mx::RtToken mayaPathToGeom("|path|to|geom");
-    mx::RtToken mxPathToGeom("/path/to/geom");
-    mx::RtToken result1 = registry->resolveIdentifier(mayaPathToGeom, mx::RtNameResolverInfo::GEOMNAME_TYPE, true);
+    mx::RtIdentifier mayaPathToGeom("|path|to|geom");
+    mx::RtIdentifier mxPathToGeom("/path/to/geom");
+    mx::RtIdentifier result1 = registry->resolveIdentifier(mayaPathToGeom, mx::RtNameResolverInfo::GEOMNAME_TYPE, true);
     REQUIRE(result1.str() == mxPathToGeom.str());
-    mx::RtToken result2 = registry->resolveIdentifier(result1, mx::RtNameResolverInfo::GEOMNAME_TYPE, false);
+    mx::RtIdentifier result2 = registry->resolveIdentifier(result1, mx::RtNameResolverInfo::GEOMNAME_TYPE, false);
     REQUIRE(result2.str() == mayaPathToGeom.str());
     
-    mx::RtToken pathToGeom("test");
-    mx::RtToken result3 = registry->resolveIdentifier(pathToGeom, mx::RtNameResolverInfo::FILENAME_TYPE, true);
+    mx::RtIdentifier pathToGeom("test");
+    mx::RtIdentifier result3 = registry->resolveIdentifier(pathToGeom, mx::RtNameResolverInfo::FILENAME_TYPE, true);
     REQUIRE(result3.str() == "test_toTestResolver");
-    mx::RtToken result4 = registry->resolveIdentifier(pathToGeom, mx::RtNameResolverInfo::FILENAME_TYPE, false);
+    mx::RtIdentifier result4 = registry->resolveIdentifier(pathToGeom, mx::RtNameResolverInfo::FILENAME_TYPE, false);
     REQUIRE(result4.str() == "test_fromTestResolver");
 }
 
@@ -1874,11 +1888,36 @@ TEST_CASE("Runtime: libraries", "[runtime]")
     // Load in all libraries required for materials
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
-    mx::RtReadOptions options;
-    api->loadLibrary(TARGETS, options);
-    api->loadLibrary(STDLIB, options);
-    api->loadLibrary(PBRLIB, options);
-    api->loadLibrary(BXDFLIB, options);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
+    api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH());
+    api->loadLibrary(BXDFLIB_NAME, RuntimeGlobals::BXDFLIB_PATH());
+
+    REQUIRE(api->numLibraries() == 4);
+    REQUIRE(api->getLibrary(0)->getName() == RuntimeGlobals::TARGETS_PATH());
+    REQUIRE(api->getLibrary(1)->getName() == RuntimeGlobals::STDLIB_PATH());
+    REQUIRE(api->getLibrary(2)->getName() == RuntimeGlobals::PBRLIB_PATH());
+    REQUIRE(api->getLibrary(3)->getName() == RuntimeGlobals::BXDFLIB_PATH());
+
+    // Loading an already loaded library should throw...
+    REQUIRE_THROWS(api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH()));
+    // ...unless we tell it to force reload.
+    REQUIRE_NOTHROW(api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH(), nullptr, true));
+
+    const mx::RtIdentifier shaderNodeDefName("ND_standard_surface_surfaceshader");
+    const mx::RtIdentifier shaderNodeGraphName("IMPL_standard_surface_surfaceshader");
+    REQUIRE(api->getDefinition<mx::RtNodeDef>(shaderNodeDefName));
+    REQUIRE(api->getImplementation<mx::RtNodeGraph>(shaderNodeGraphName));
+    api->unloadLibrary(BXDFLIB_NAME);
+    REQUIRE(!api->getDefinition<mx::RtNodeDef>(shaderNodeDefName));
+    REQUIRE(!api->getImplementation<mx::RtNodeGraph>(shaderNodeGraphName));
+    REQUIRE(api->numLibraries() == 3);
+    REQUIRE(api->getLibrary(0)->getName() == RuntimeGlobals::TARGETS_PATH());
+    REQUIRE(api->getLibrary(1)->getName() == RuntimeGlobals::STDLIB_PATH());
+    REQUIRE(api->getLibrary(2)->getName() == RuntimeGlobals::PBRLIB_PATH());
+
+    api->unloadLibraries();
+    REQUIRE(api->numLibraries() == 0);
 
     // Set and test search paths
     api->clearSearchPath();
@@ -1904,14 +1943,14 @@ TEST_CASE("Runtime: units", "[runtime]")
     // Load in all libraries required for materials
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
-    mx::RtReadOptions options;
-    api->loadLibrary(TARGETS, options);
-    api->loadLibrary(STDLIB, options);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
+    api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH());
+    api->loadLibrary(BXDFLIB_NAME, RuntimeGlobals::BXDFLIB_PATH());
+
     // Load in stdlib twice on purpose to ensure no exception is thrown when trying to add a duplicate unit 
     // definition 
-    api->loadLibrary(STDLIB, options);
-    api->loadLibrary(PBRLIB, options);
-    api->loadLibrary(BXDFLIB, options);
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH(), nullptr, true);
 
     // Read in test document with units
     mx::FileSearchPath testSearchPath(mx::FilePath::getCurrentPath() /
@@ -1927,11 +1966,11 @@ TEST_CASE("Runtime: units", "[runtime]")
                          "tiledimage_unit.mtlx" };
     for (auto test : tests)
     {
-        mx::RtStagePtr stage = api->createStage(mx::RtToken("stage: " + test));
+        mx::RtStagePtr stage = api->createStage(mx::RtIdentifier("stage: " + test));
         mx::RtFileIo fileIo(stage);
 
         // Test read will take into account units read in via library load
-        fileIo.read(test, testSearchPath, &options);
+        fileIo.read(test, testSearchPath);
 
         // Test that read and write of files with units works.
         std::stringstream inStream;
@@ -1979,8 +2018,8 @@ TEST_CASE("Runtime: Commands", "[runtime]")
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() / mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
     mx::RtReadOptions options;
-    api->loadLibrary(TARGETS, options);
-    api->loadLibrary(STDLIB, options);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
 
     mx::RtStagePtr stage = api->createStage(MAIN);
 
@@ -1995,7 +2034,7 @@ TEST_CASE("Runtime: Commands", "[runtime]")
     {
         ++(*reinterpret_cast<size_t*>(userData));
     };
-    auto renamePrimCB = [](const mx::RtStagePtr&, const mx::RtPrim&, const mx::RtToken&, void* userData)
+    auto renamePrimCB = [](const mx::RtStagePtr&, const mx::RtPrim&, const mx::RtIdentifier&, void* userData)
     {
         ++(*reinterpret_cast<size_t*>(userData));
     };
@@ -2050,14 +2089,14 @@ TEST_CASE("Runtime: Commands", "[runtime]")
     ng1.createInput(IN2, mx::RtType::FLOAT);
     ng1.createOutput(OUT, mx::RtType::FLOAT);
 
-    const mx::RtToken addFloatNode("ND_add_float");
+    const mx::RtIdentifier addFloatNode("ND_add_float");
 
-    mx::RtCommand::createPrim(stage, addFloatNode, graph1.getPath(), mx::EMPTY_TOKEN, result);
+    mx::RtCommand::createPrim(stage, addFloatNode, graph1.getPath(), mx::EMPTY_IDENTIFIER, result);
     REQUIRE(result);
     REQUIRE(result.getObject().isA<mx::RtPrim>());
     mx::RtPrim add1(result.getObject().asA<mx::RtPrim>());
 
-    mx::RtCommand::createPrim(stage, addFloatNode, graph1.getPath(), mx::EMPTY_TOKEN, result);
+    mx::RtCommand::createPrim(stage, addFloatNode, graph1.getPath(), mx::EMPTY_IDENTIFIER, result);
     REQUIRE(result);
     REQUIRE(result.getObject().isA<mx::RtPrim>());
     mx::RtPrim add2(result.getObject().asA<mx::RtPrim>());
@@ -2185,7 +2224,7 @@ TEST_CASE("Runtime: Commands", "[runtime]")
     REQUIRE(result);
     REQUIRE(result.getObject().isA<mx::RtPrim>());
     mx::RtPrim bob(result.getObject().asA<mx::RtPrim>());
-    mx::RtRelationship rel1 = bob.createRelationship(mx::RtToken("rel1"));
+    mx::RtRelationship rel1 = bob.createRelationship(mx::RtIdentifier("rel1"));
 
     mx::RtCommand::makeRelationship(rel1, add1, result);
     REQUIRE(result);
@@ -2355,34 +2394,34 @@ TEST_CASE("Runtime: Commands", "[runtime]")
 
     // Look management nodes must be created at the root level
     mx::RtCommandResult colResult;
-    mx::RtCommand::createPrim(stage, mx::RtToken("collection"), mx::RtPath("/test/"), mx::EMPTY_TOKEN, colResult);
+    mx::RtCommand::createPrim(stage, mx::RtIdentifier("collection"), mx::RtPath("/test/"), mx::EMPTY_IDENTIFIER, colResult);
     REQUIRE(!colResult);
 
     mx::RtCommandResult matAssignResult;
-    mx::RtCommand::createPrim(stage, mx::RtToken("materialassign"), mx::RtPath("/test/"), mx::EMPTY_TOKEN, matAssignResult);
+    mx::RtCommand::createPrim(stage, mx::RtIdentifier("materialassign"), mx::RtPath("/test/"), mx::EMPTY_IDENTIFIER, matAssignResult);
     REQUIRE(!matAssignResult);
 
     mx::RtCommandResult lookResult;
-    mx::RtCommand::createPrim(stage, mx::RtToken("look"), mx::RtPath("/test/"), mx::EMPTY_TOKEN, lookResult);
+    mx::RtCommand::createPrim(stage, mx::RtIdentifier("look"), mx::RtPath("/test/"), mx::EMPTY_IDENTIFIER, lookResult);
     REQUIRE(!lookResult);
 
     mx::RtCommandResult lookGroupResult;
-    mx::RtCommand::createPrim(stage, mx::RtToken("lookgroup"), mx::RtPath("/test/"), mx::EMPTY_TOKEN, lookGroupResult);
+    mx::RtCommand::createPrim(stage, mx::RtIdentifier("lookgroup"), mx::RtPath("/test/"), mx::EMPTY_IDENTIFIER, lookGroupResult);
     REQUIRE(!lookResult);
 
     // Unknown node types cannot be created. Must be a look managment node, a material node, or have a nodedef.
     mx::RtCommandResult unknownResult;
-    mx::RtCommand::createPrim(stage, mx::RtToken("unknown"), mx::RtPath("/"), mx::EMPTY_TOKEN, unknownResult);
+    mx::RtCommand::createPrim(stage, mx::RtIdentifier("unknown"), mx::RtPath("/"), mx::EMPTY_IDENTIFIER, unknownResult);
     REQUIRE(!unknownResult);
 
     //
     // Test setting attributes
     //
-    auto setAttributeCallback = [](const mx::RtObject&, const mx::RtToken&, const mx::RtValue&, void* userData)
+    auto setAttributeCallback = [](const mx::RtObject&, const mx::RtIdentifier&, const mx::RtValue&, void* userData)
     {
         ++(*reinterpret_cast<size_t*>(userData));
     };
-    auto removeAttributeCallback = [](const mx::RtObject&, const mx::RtToken&, void* userData)
+    auto removeAttributeCallback = [](const mx::RtObject&, const mx::RtIdentifier&, void* userData)
     {
         ++(*reinterpret_cast<size_t*>(userData));
     };
@@ -2392,12 +2431,12 @@ TEST_CASE("Runtime: Commands", "[runtime]")
     mx::RtCallbackId removeAttribute_id = mx::RtMessage::addRemoveAttributeCallback(removeAttributeCallback, &removeAttributeCount);
 
     mx::RtCommandResult attrResult;
-    mx::RtToken metadata("metadata");
+    mx::RtIdentifier metadata("metadata");
     std::string metadataValue("some_value");
     mx::RtCommand::setAttributeFromString(foo, metadata, metadataValue, attrResult);
     REQUIRE(attrResult);
     REQUIRE(foo.getAttribute(metadata));
-    REQUIRE(foo.getAttribute(metadata)->asToken() == metadataValue);
+    REQUIRE(foo.getAttribute(metadata)->asIdentifier() == metadataValue);
     REQUIRE(setAttributeCount == 1);
     REQUIRE(removeAttributeCount == 0);
 
@@ -2410,7 +2449,7 @@ TEST_CASE("Runtime: Commands", "[runtime]")
     mx::RtCommand::redo(result);
     REQUIRE(result);
     REQUIRE(foo.getAttribute(metadata));
-    REQUIRE(foo.getAttribute(metadata)->asToken() == metadataValue);
+    REQUIRE(foo.getAttribute(metadata)->asIdentifier() == metadataValue);
     REQUIRE(setAttributeCount == 2);
     REQUIRE(removeAttributeCount == 1);
 
@@ -2478,11 +2517,10 @@ TEST_CASE("Runtime: graph output connection", "[runtime]")
     mx::FileSearchPath searchPath(mx::FilePath::getCurrentPath() /
                                   mx::FilePath("libraries"));
     api->setSearchPath(searchPath);
-    mx::RtReadOptions options;
-    api->loadLibrary(TARGETS, options);
-    api->loadLibrary(STDLIB, options);
-    api->loadLibrary(PBRLIB, options);
-    api->loadLibrary(BXDFLIB, options);
+    api->loadLibrary(TARGETS_NAME, RuntimeGlobals::TARGETS_PATH());
+    api->loadLibrary(STDLIB_NAME, RuntimeGlobals::STDLIB_PATH());
+    api->loadLibrary(PBRLIB_NAME, RuntimeGlobals::PBRLIB_PATH());
+    api->loadLibrary(BXDFLIB_NAME, RuntimeGlobals::BXDFLIB_PATH());
 
     const std::string mtlxDoc =
         "<?xml version=\"1.0\"?>\n"
@@ -2494,11 +2532,11 @@ TEST_CASE("Runtime: graph output connection", "[runtime]")
         "    <input name=\"in\" type=\"color3\" nodegraph=\"Compound\" />\n"
         "  </clamp>\n"
         "</materialx>";
-    mx::RtStagePtr defaultStage = api->createStage(mx::RtToken("defaultStage"));
+    mx::RtStagePtr defaultStage = api->createStage(mx::RtIdentifier("defaultStage"));
     mx::RtFileIo   fileIo(defaultStage);
     std::stringstream ss;
     ss << mtlxDoc;
-    REQUIRE_NOTHROW(fileIo.read(ss, &options));
+    REQUIRE_NOTHROW(fileIo.read(ss));
 }
 
 using TestLoggerPtr = std::shared_ptr<class TestLogger>;
@@ -2512,15 +2550,15 @@ protected:
 
     void logImpl(mx::RtLogger::MessageType type, const std::string& msg) override
     {
-        if (type == mx::RtLogger::MessageType::ERROR)
+        if (type == mx::RtLogger::MessageType::ERROR_MESSAGE)
         {
             result = "Error: ";
         }
-        else if (type == mx::RtLogger::MessageType::WARNING)
+        else if (type == mx::RtLogger::MessageType::WARNING_MESSAGE)
         {
             result = "Warning: ";
         }
-        else if (type == mx::RtLogger::MessageType::INFO)
+        else if (type == mx::RtLogger::MessageType::INFO_MESSAGE)
         {
             result = "Info: ";
         }
@@ -2543,22 +2581,22 @@ TEST_CASE("Runtime: logging", "[runtime]")
     mx::RtApi& api = mx::RtApi::get();
     api.registerLogger(logger);
     std::string testMsg("Test");
-    api.log(mx::RtLogger::MessageType::ERROR, testMsg);
+    api.log(mx::RtLogger::MessageType::ERROR_MESSAGE, testMsg);
     REQUIRE("Error: Test" == logger->result);
-    api.log(mx::RtLogger::MessageType::WARNING, testMsg);
+    api.log(mx::RtLogger::MessageType::WARNING_MESSAGE, testMsg);
     REQUIRE("Warning: Test" == logger->result);
-    api.log(mx::RtLogger::MessageType::INFO, testMsg);
+    api.log(mx::RtLogger::MessageType::INFO_MESSAGE, testMsg);
     REQUIRE("Info: Test" == logger->result);
 
-    logger->enable(mx::RtLogger::MessageType::WARNING, false);
-    REQUIRE(logger->isEnabled(mx::RtLogger::MessageType::ERROR));
-    REQUIRE(!logger->isEnabled(mx::RtLogger::MessageType::WARNING));
-    REQUIRE(logger->isEnabled(mx::RtLogger::MessageType::INFO));
-    api.log(mx::RtLogger::MessageType::ERROR, testMsg);
+    logger->enable(mx::RtLogger::MessageType::WARNING_MESSAGE, false);
+    REQUIRE(logger->isEnabled(mx::RtLogger::MessageType::ERROR_MESSAGE));
+    REQUIRE(!logger->isEnabled(mx::RtLogger::MessageType::WARNING_MESSAGE));
+    REQUIRE(logger->isEnabled(mx::RtLogger::MessageType::INFO_MESSAGE));
+    api.log(mx::RtLogger::MessageType::ERROR_MESSAGE, testMsg);
     REQUIRE("Error: Test" == logger->result);
-    api.log(mx::RtLogger::MessageType::WARNING, testMsg);
+    api.log(mx::RtLogger::MessageType::WARNING_MESSAGE, testMsg);
     REQUIRE("Error: Test" == logger->result);
-    api.log(mx::RtLogger::MessageType::INFO, testMsg);
+    api.log(mx::RtLogger::MessageType::INFO_MESSAGE, testMsg);
     REQUIRE("Info: Test" == logger->result);
 }
 
@@ -2574,7 +2612,7 @@ TEST_CASE("Runtime: duplicate name", "[runtime]")
     addFloat.createInput(IN1, mx::RtType::FLOAT);
     addFloat.createInput(IN2, mx::RtType::FLOAT);
     addFloat.createOutput(OUT, mx::RtType::FLOAT);
-    api->registerNodeDef(addFloat.getPrim());
+    api->registerDefinition<mx::RtNodeDef>(addFloat.getPrim());
 
     // Create a nodegraph object.
     mx::RtNodeGraph graph1 = stage->createPrim("/graph1", mx::RtNodeGraph::typeName());
@@ -2592,13 +2630,13 @@ TEST_CASE("Runtime: duplicate name", "[runtime]")
     REQUIRE(graph1.getInputSocket(A));
     REQUIRE(graph1.getOutputSocket(OUT));
 
-    mx::RtToken ADD1("add1");
-    mx::RtToken ADD2("add2");
-    mx::RtToken ADD3("add3");
-    mx::RtToken ADD4("add4");
-    mx::RtToken ADD5("add5");
+    mx::RtIdentifier ADD1("add1");
+    mx::RtIdentifier ADD2("add2");
+    mx::RtIdentifier ADD3("add3");
+    mx::RtIdentifier ADD4("add4");
+    mx::RtIdentifier ADD5("add5");
 
-    auto duplicateCount = [graph1](const mx::RtToken& name)
+    auto duplicateCount = [graph1](const mx::RtIdentifier& name)
     {
         unsigned int count = 0;
         for (mx::RtInput input : graph1.getInputs())

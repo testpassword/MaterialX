@@ -46,16 +46,20 @@ void bindPyLook(py::module& mod)
         .def("getVisibilities", &mx::Look::getVisibilities)
         .def("getActiveVisibilities", &mx::Look::getActiveVisibilities)
         .def("removeVisibility", &mx::Look::removeVisibility)
+        .def("append", &mx::Look::append)
         .def_readonly_static("CATEGORY", &mx::Look::CATEGORY);
 
     py::class_<mx::LookGroup, mx::LookGroupPtr, mx::Element>(mod, "LookGroup")
         .def("getLooks", &mx::LookGroup::getLooks)
         .def("setLooks", &mx::LookGroup::setLooks)
-        .def("getActiveLook", &mx::LookGroup::getActiveLook)
-        .def("setActiveLook", &mx::LookGroup::setActiveLook)
+        .def("getEnabledLooksString", &mx::LookGroup::getEnabledLooksString)
+        .def("setEnabledLooks", &mx::LookGroup::setEnabledLooks)
+        .def("getEnabledLooks", &mx::LookGroup::getEnabledLooks)
+        .def("append", &mx::LookGroup::append)
+        .def("combineLooks", &mx::LookGroup::combineLooks)
         .def_readonly_static("CATEGORY", &mx::LookGroup::CATEGORY)
         .def_readonly_static("LOOKS_ATTRIBUTE", &mx::LookGroup::LOOKS_ATTRIBUTE)
-        .def_readonly_static("ACTIVE_ATTRIBUTE", &mx::LookGroup::ACTIVE_ATTRIBUTE);
+        .def_readonly_static("ENABLED_ATTRIBUTE", &mx::LookGroup::ENABLED_ATTRIBUTE);
 
     py::class_<mx::MaterialAssign, mx::MaterialAssignPtr, mx::GeomElement>(mod, "MaterialAssign")
         .def("setMaterial", &mx::MaterialAssign::setMaterial)

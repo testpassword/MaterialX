@@ -12,15 +12,15 @@
 namespace MaterialX
 {
 
-const RtToken PvtPort::DEFAULT_OUTPUT_NAME("out");
-const RtToken PvtPort::COLOR_SPACE("colorspace");
-const RtToken PvtPort::UNIT("unit");
-const RtToken PvtPort::UNIT_TYPE("unittype");
+const RtIdentifier PvtPort::DEFAULT_OUTPUT_NAME("out");
+const RtIdentifier PvtPort::COLOR_SPACE("colorspace");
+const RtIdentifier PvtPort::UNIT("unit");
+const RtIdentifier PvtPort::UNIT_TYPE("unittype");
 
 
 RT_DEFINE_RUNTIME_OBJECT(PvtPort, RtObjType::PORT, "PvtPort")
 
-PvtPort::PvtPort(const RtToken& name, const RtToken& type, uint32_t flags, PvtPrim* parent) :
+PvtPort::PvtPort(const RtIdentifier& name, const RtIdentifier& type, uint32_t flags, PvtPrim* parent) :
     PvtObject(name, parent),
     _value(type, RtValue::createNew(type, parent->prim())),
     _flags(flags)
@@ -31,7 +31,7 @@ PvtPort::PvtPort(const RtToken& name, const RtToken& type, uint32_t flags, PvtPr
 
 RT_DEFINE_RUNTIME_OBJECT(PvtInput, RtObjType::INPUT, "PvtInput")
 
-PvtInput::PvtInput(const RtToken& name, const RtToken& type, uint32_t flags, PvtPrim* parent) :
+PvtInput::PvtInput(const RtIdentifier& name, const RtIdentifier& type, uint32_t flags, PvtPrim* parent) :
     PvtPort(name, type, flags, parent)
 {
     setTypeBit<PvtInput>();
@@ -53,7 +53,7 @@ bool PvtInput::isConnectable(const PvtOutput* output) const
 void PvtInput::connect(PvtOutput* output)
 {
     // Check if this connection exists already.
-    if (_connection == output->hnd())
+    if (_connection.get() == output)
     {
         return;
     }
@@ -72,13 +72,13 @@ void PvtInput::connect(PvtOutput* output)
 
     // Make the connection.
     _connection = output->hnd();
-    output->_connections.push_back(this);
+    output->_connections.push_back(hnd());
 }
 
 void PvtInput::disconnect(PvtOutput* output)
 {
     // Make sure the connection exists, otherwise we can't break it.
-    if (_connection != output->hnd())
+    if (_connection.get() != output)
     {
         return;
     }
@@ -116,7 +116,7 @@ void PvtInput::clearConnection()
 
 RT_DEFINE_RUNTIME_OBJECT(PvtOutput, RtObjType::OUTPUT, "PvtOutput")
 
-PvtOutput::PvtOutput(const RtToken& name, const RtToken& type, uint32_t flags, PvtPrim* parent) :
+PvtOutput::PvtOutput(const RtIdentifier& name, const RtIdentifier& type, uint32_t flags, PvtPrim* parent) :
     PvtPort(name, type, flags, parent)
 {
     setTypeBit<PvtOutput>();
@@ -125,7 +125,7 @@ PvtOutput::PvtOutput(const RtToken& name, const RtToken& type, uint32_t flags, P
 void PvtOutput::clearConnections()
 {
     // Break connections to all destination inputs.
-    for (PvtObject* dest : _connections)
+    for (PvtObjHandle dest : _connections)
     {
         dest->asA<PvtInput>()->_connection = nullptr;
     }
