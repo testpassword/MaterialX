@@ -309,11 +309,13 @@ const FileSearchPath RtApi::getResolvedImagePaths(bool includeSubFolders) const
             imageSearchPath.append(childFolder);
         }
     }
-    // Add working stage Uris to search path
-    for (const FilePath& uri : stage->getSourceUri())
+
+    const FileSearchPath definitionPaths = getDefinitionPaths();
+    for (FileSearchPath::ConstIterator path=definitionPaths.begin(); path != definitionPaths.end(); ++path)
     {
-        imageSearchPath.append(uri);
+        imageSearchPath.append(*path);
     }
+    return imageSearchPath;
 }
 
 RtStagePtr RtApi::loadLibrary(const RtIdentifier& name, const FilePath& path, const RtReadOptions* options, bool forceReload)

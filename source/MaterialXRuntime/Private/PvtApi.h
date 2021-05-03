@@ -330,29 +330,30 @@ public:
     const FileSearchPath getDefinitionPaths(bool includeSubFolders=true) const
     {
         FileSearchPath definitionPaths;
+        FileSearchPath materialXCoreDefinitionPaths = getMaterialXCoreDefinitionPaths();
+        if (!materialXCoreDefinitionPaths.isEmpty())
+        {
+            definitionPaths.append(materialXCoreDefinitionPaths);
+        }
         FileSearchPath materialXDefinitionPaths = getMaterialXDefinitionPaths();
         if (!materialXDefinitionPaths.isEmpty())
         {
             definitionPaths.append(materialXDefinitionPaths);
-        }
-        FileSearchPath globalDefinitionPaths = getGlobalDefinitionPaths();
-        if (!globalDefinitionPaths.isEmpty())
-        {
-            definitionPaths.append(globalDefinitionPaths);
         }
         FileSearchPath localDefinitionPaths = getLocalDefinitionPaths();
         if (!localDefinitionPaths.isEmpty())
         {
             definitionPaths.append(localDefinitionPaths);
         }
-        FileSearchPath materialXCoreDefinitionPaths = getMaterialXCoreDefinitionPaths();
-        if (!materialXCoreDefinitionPaths.isEmpty())
+        FileSearchPath globalDefinitionPaths = getGlobalDefinitionPaths();
+        if (!globalDefinitionPaths.isEmpty())
         {
-            definitionPaths.append(materialXCoreDefinitionPaths);
+            definitionPaths.append(globalDefinitionPaths);
         }
 
         if (includeSubFolders)
         {
+            std::set<std::string> childDefinitionPathsSet;
             FileSearchPath childDefinitionPaths;
             for (FileSearchPath::Iterator path = definitionPaths.begin(); path != definitionPaths.end(); ++path)
             {
@@ -360,7 +361,11 @@ public:
                 FilePathVec subdirs = filePath.getSubDirectories();
                 for (FilePath subdirPath : subdirs)
                 {
-                    childDefinitionPaths.append(subdirPath);
+                    if (childDefinitionPathsSet.count(subdirPath.asString()) == 0)
+                    {
+                        childDefinitionPaths.append(subdirPath);
+                        childDefinitionPathsSet.emplace(subdirPath.asString());
+		    }
                 }
             }
             return childDefinitionPaths;
