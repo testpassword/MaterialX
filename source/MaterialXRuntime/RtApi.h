@@ -172,6 +172,33 @@ public:
     /// Get search path for implementations used by libraries.
     const FileSearchPath& getImplementationSearchPath() const;
 
+    /// Get the search path for MaterialX definitions.
+    const FileSearchPath& getMaterialXDefinitionPaths() const;
+
+    /// Get the search path for global definitions.
+    const FileSearchPath& getGlobalDefinitionPaths() const;
+
+    /// Set the search path for global definitions.
+    void setGlobalDefinitionPaths(const FileSearchPath& globalDefinitionPaths);
+
+    /// Get the search path for local definitions.
+    const FileSearchPath& getLocalDefinitionPaths() const;
+
+    /// Set the search path for local definitions.
+    void setLocalDefinitionPaths(const FileSearchPath& localDefinitionPaths);
+
+    /// Get the search path for MaterialX Core definitions.
+    const FileSearchPath& getMaterialXCoreDefinitionPaths() const;
+
+    /// Set the search path for MaterialX Core definitions
+    void setMaterialXCoreDefinitionPaths(const FileSearchPath& materialXCoreDefinitionPaths);
+
+    /// Get the search path for definitions.
+    const FileSearchPath getDefinitionPaths(bool includeSubFolders=true) const;
+
+    /// Get the resolved image paths
+    const FileSearchPath getResolvedImagePaths(bool includeSubFolders=true) const;
+
     /// @}
     /// @name Library management
     /// @{

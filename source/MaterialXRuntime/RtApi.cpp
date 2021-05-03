@@ -21,6 +21,8 @@
 #include <MaterialXRuntime/Private/PvtApi.h>
 #include <MaterialXRuntime/Private/PvtPrim.h>
 
+#include <MaterialXFormat/Util.h>
+
 namespace MaterialX
 {
 
@@ -199,6 +201,54 @@ void RtApi::clearImplementationSearchPath()
     _cast(_ptr)->clearImplementationSearchPath();
 }
 
+/// Get the search path for MaterialX definitions.
+const FileSearchPath& RtApi::getMaterialXDefinitionPaths() const
+{
+    return _cast(_ptr)->getMaterialXCoreDefinitionPaths();
+}
+
+/// Get the search path for global definitions.
+const FileSearchPath& RtApi::getGlobalDefinitionPaths() const
+{
+    return _cast(_ptr)->getGlobalDefinitionPaths();
+}
+
+/// Set the search path for global definitions.
+void RtApi::setGlobalDefinitionPaths(const FileSearchPath& globalDefinitionPaths)
+{
+    _cast(_ptr)->setGlobalDefinitionPaths(globalDefinitionPaths);
+}
+
+/// Get the search path for local definitions.
+const FileSearchPath& RtApi::getLocalDefinitionPaths() const
+{
+    return _cast(_ptr)->getLocalDefinitionPaths();
+}
+
+/// Set the search path for local definitions.
+void RtApi::setLocalDefinitionPaths(const FileSearchPath& localDefinitionPaths)
+{
+    _cast(_ptr)->setLocalDefinitionPaths(localDefinitionPaths);
+}
+
+/// Get the search path for MaterialX Core definitions.
+const FileSearchPath& RtApi::getMaterialXCoreDefinitionPaths() const
+{
+    return _cast(_ptr)->getMaterialXCoreDefinitionPaths();
+}
+
+/// Set the search path for MaterialX Core definitions
+void RtApi::setMaterialXCoreDefinitionPaths(const FileSearchPath& materialXCoreDefinitionPaths)
+{
+    _cast(_ptr)->setMaterialXCoreDefinitionPaths(materialXCoreDefinitionPaths);
+}
+
+/// Get the search path for definitions.
+const FileSearchPath RtApi::getDefinitionPaths(bool includeSubFolders) const
+{
+    return _cast(_ptr)->getDefinitionPaths(includeSubFolders);
+}
+
 void RtApi::setSearchPath(const FileSearchPath& searchPath)
 {
     _cast(_ptr)->setSearchPath(searchPath);
@@ -227,6 +277,43 @@ const FileSearchPath& RtApi::getTextureSearchPath() const
 const FileSearchPath& RtApi::getImplementationSearchPath() const
 {
     return _cast(_ptr)->getImplementationSearchPath();
+}
+
+const FileSearchPath RtApi::getResolvedImagePaths(bool includeSubFolders) const
+{
+    RtStagePtr stage = getStage(0);
+    // Image search path building.
+    FileSearchPath imageSearchPath;
+    for (const FilePath& uri : stage->getSourceUri())
+    {
+        FilePath path(uri);
+        if (stringEndsWith(uri.asString(), ".mtlx"))
+        {
+            path = path.getParentPath();
+        }
+        imageSearchPath.append(path);
+    }
+    FileSearchPath searchPath = getTextureSearchPath();
+    FilePathVec libraryFolders;
+    for (size_t i=0; i<searchPath.size(); i++)
+    {
+        libraryFolders.push_back(searchPath[i]);
+    }
+    if (includeSubFolders)
+    {
+        FilePathVec childFolders;
+        getSubdirectories(libraryFolders, searchPath, childFolders);
+        libraryFolders.insert(std::end(libraryFolders), std::begin(childFolders), std::end(childFolders));
+        for (const auto& childFolder : childFolders)
+        {
+            imageSearchPath.append(childFolder);
+        }
+    }
+    // Add working stage Uris to search path
+    for (const FilePath& uri : stage->getSourceUri())
+    {
+        imageSearchPath.append(uri);
+    }
 }
 
 RtStagePtr RtApi::loadLibrary(const RtIdentifier& name, const FilePath& path, const RtReadOptions* options, bool forceReload)

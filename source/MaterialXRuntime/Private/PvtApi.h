@@ -277,6 +277,21 @@ public:
         _implementationSearchPaths.append(searchPath);
     }
 
+    void setGlobalDefinitionPaths(const FileSearchPath& globalDefinitionPaths)
+    {
+        _globalDefinitionPaths = globalDefinitionPaths;
+    }
+
+    void setLocalDefinitionPaths(const FileSearchPath& localDefinitionPaths)
+    {
+        _localDefinitionPaths = localDefinitionPaths;
+    }
+
+    void setMaterialXCoreDefinitionPaths(const FileSearchPath& materialXCoreDefinitionPaths)
+    {
+        _materialXCoreDefinitionPaths = materialXCoreDefinitionPaths;
+    }
+
     const FileSearchPath& getSearchPath() const
     {
         return _searchPaths;
@@ -290,6 +305,70 @@ public:
     const FileSearchPath& getImplementationSearchPath() const
     {
         return _implementationSearchPaths;
+    }
+
+    const FileSearchPath& getMaterialXDefinitionPaths() const
+    {
+        return _materialXDefinitionPaths;
+    }
+
+    const FileSearchPath& getGlobalDefinitionPaths() const
+    {
+        return _globalDefinitionPaths;
+    }
+
+    const FileSearchPath& getLocalDefinitionPaths() const
+    {
+        return _localDefinitionPaths;
+    }
+
+    const FileSearchPath& getMaterialXCoreDefinitionPaths() const
+    {
+        return _materialXCoreDefinitionPaths;
+    }
+
+    const FileSearchPath getDefinitionPaths(bool includeSubFolders=true) const
+    {
+        FileSearchPath definitionPaths;
+        FileSearchPath materialXDefinitionPaths = getMaterialXDefinitionPaths();
+        if (!materialXDefinitionPaths.isEmpty())
+        {
+            definitionPaths.append(materialXDefinitionPaths);
+        }
+        FileSearchPath globalDefinitionPaths = getGlobalDefinitionPaths();
+        if (!globalDefinitionPaths.isEmpty())
+        {
+            definitionPaths.append(globalDefinitionPaths);
+        }
+        FileSearchPath localDefinitionPaths = getLocalDefinitionPaths();
+        if (!localDefinitionPaths.isEmpty())
+        {
+            definitionPaths.append(localDefinitionPaths);
+        }
+        FileSearchPath materialXCoreDefinitionPaths = getMaterialXCoreDefinitionPaths();
+        if (!materialXCoreDefinitionPaths.isEmpty())
+        {
+            definitionPaths.append(materialXCoreDefinitionPaths);
+        }
+
+        if (includeSubFolders)
+        {
+            FileSearchPath childDefinitionPaths;
+            for (FileSearchPath::Iterator path = definitionPaths.begin(); path != definitionPaths.end(); ++path)
+            {
+                FilePath filePath = *path;
+                FilePathVec subdirs = filePath.getSubDirectories();
+                for (FilePath subdirPath : subdirs)
+                {
+                    childDefinitionPaths.append(subdirPath);
+                }
+            }
+            return childDefinitionPaths;
+        }
+        else
+        {
+            return definitionPaths;
+        }
     }
 
     RtStagePtr loadLibrary(const RtIdentifier& name, const FilePath& path, const RtReadOptions* options = nullptr, bool forceReload = false);
@@ -394,6 +473,10 @@ public:
     FileSearchPath _searchPaths;
     FileSearchPath _implementationSearchPaths;
     FileSearchPath _textureSearchPaths;
+    FileSearchPath _materialXDefinitionPaths;
+    FileSearchPath _globalDefinitionPaths;
+    FileSearchPath _localDefinitionPaths;
+    FileSearchPath _materialXCoreDefinitionPaths;
     FilePath _userDefinitionPath;
 
     UnitConverterRegistryPtr _unitDefinitions;
