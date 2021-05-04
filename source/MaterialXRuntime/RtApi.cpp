@@ -201,49 +201,41 @@ void RtApi::clearImplementationSearchPath()
     _cast(_ptr)->clearImplementationSearchPath();
 }
 
-/// Get the search path for MaterialX definitions.
 const FileSearchPath& RtApi::getMaterialXDefinitionPaths() const
 {
-    return _cast(_ptr)->getMaterialXCoreDefinitionPaths();
+    return _cast(_ptr)->getMaterialXDefinitionPaths();
 }
 
-/// Get the search path for global definitions.
 const FileSearchPath& RtApi::getGlobalDefinitionPaths() const
 {
     return _cast(_ptr)->getGlobalDefinitionPaths();
 }
 
-/// Set the search path for global definitions.
 void RtApi::setGlobalDefinitionPaths(const FileSearchPath& globalDefinitionPaths)
 {
     _cast(_ptr)->setGlobalDefinitionPaths(globalDefinitionPaths);
 }
 
-/// Get the search path for local definitions.
-const FileSearchPath& RtApi::getLocalDefinitionPaths() const
+const FileSearchPath& RtApi::getUserDefinitionPaths() const
 {
-    return _cast(_ptr)->getLocalDefinitionPaths();
+    return _cast(_ptr)->getUserDefinitionPaths();
 }
 
-/// Set the search path for local definitions.
-void RtApi::setLocalDefinitionPaths(const FileSearchPath& localDefinitionPaths)
+void RtApi::setUserDefinitionPaths(const FileSearchPath& userDefinitionPaths)
 {
-    _cast(_ptr)->setLocalDefinitionPaths(localDefinitionPaths);
+    _cast(_ptr)->setUserDefinitionPaths(userDefinitionPaths);
 }
 
-/// Get the search path for MaterialX Core definitions.
 const FileSearchPath& RtApi::getMaterialXCoreDefinitionPaths() const
 {
     return _cast(_ptr)->getMaterialXCoreDefinitionPaths();
 }
 
-/// Set the search path for MaterialX Core definitions
 void RtApi::setMaterialXCoreDefinitionPaths(const FileSearchPath& materialXCoreDefinitionPaths)
 {
     _cast(_ptr)->setMaterialXCoreDefinitionPaths(materialXCoreDefinitionPaths);
 }
 
-/// Get the search path for definitions.
 const FileSearchPath RtApi::getDefinitionPaths(bool includeSubFolders) const
 {
     return _cast(_ptr)->getDefinitionPaths(includeSubFolders);

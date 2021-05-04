@@ -181,11 +181,11 @@ public:
     /// Set the search path for global definitions.
     void setGlobalDefinitionPaths(const FileSearchPath& globalDefinitionPaths);
 
-    /// Get the search path for local definitions.
-    const FileSearchPath& getLocalDefinitionPaths() const;
+    /// Get the search path for user definitions.
+    const FileSearchPath& getUserDefinitionPaths() const;
 
-    /// Set the search path for local definitions.
-    void setLocalDefinitionPaths(const FileSearchPath& localDefinitionPaths);
+    /// Set the search path for user definitions.
+    void setUserDefinitionPaths(const FileSearchPath& userDefinitionPaths);
 
     /// Get the search path for MaterialX Core definitions.
     const FileSearchPath& getMaterialXCoreDefinitionPaths() const;

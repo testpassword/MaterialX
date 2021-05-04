@@ -282,9 +282,14 @@ public:
         _globalDefinitionPaths = globalDefinitionPaths;
     }
 
-    void setLocalDefinitionPaths(const FileSearchPath& localDefinitionPaths)
+    void setUserDefinitionPaths(const FileSearchPath& userDefinitionPaths)
     {
-        _localDefinitionPaths = localDefinitionPaths;
+        _userDefinitionPaths = userDefinitionPaths;
+    }
+
+    void setMaterialXDefinitionPaths(const FileSearchPath& materialXDefinitionPaths)
+    {
+        _materialXDefinitionPaths = materialXDefinitionPaths;
     }
 
     void setMaterialXCoreDefinitionPaths(const FileSearchPath& materialXCoreDefinitionPaths)
@@ -317,9 +322,9 @@ public:
         return _globalDefinitionPaths;
     }
 
-    const FileSearchPath& getLocalDefinitionPaths() const
+    const FileSearchPath& getUserDefinitionPaths() const
     {
-        return _localDefinitionPaths;
+        return _userDefinitionPaths;
     }
 
     const FileSearchPath& getMaterialXCoreDefinitionPaths() const
@@ -340,10 +345,10 @@ public:
         {
             definitionPaths.append(materialXDefinitionPaths);
         }
-        FileSearchPath localDefinitionPaths = getLocalDefinitionPaths();
-        if (!localDefinitionPaths.isEmpty())
+        FileSearchPath userDefinitionPaths = getUserDefinitionPaths();
+        if (!userDefinitionPaths.isEmpty())
         {
-            definitionPaths.append(localDefinitionPaths);
+            definitionPaths.append(userDefinitionPaths);
         }
         FileSearchPath globalDefinitionPaths = getGlobalDefinitionPaths();
         if (!globalDefinitionPaths.isEmpty())
@@ -480,7 +485,7 @@ public:
     FileSearchPath _textureSearchPaths;
     FileSearchPath _materialXDefinitionPaths;
     FileSearchPath _globalDefinitionPaths;
-    FileSearchPath _localDefinitionPaths;
+    FileSearchPath _userDefinitionPaths;
     FileSearchPath _materialXCoreDefinitionPaths;
     FilePath _userDefinitionPath;
 
