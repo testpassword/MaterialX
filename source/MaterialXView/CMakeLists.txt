@@ -77,6 +77,9 @@ endif()
 if (MATERIALX_BUILD_GEN_ARNOLD)
     LIST(APPEND LIBS MaterialXGenArnold)
 endif()
+if (MATERIALX_BUILD_GEN_GLES)
+    LIST(APPEND LIBS MaterialXGenGLES)
+endif()
 
 target_link_libraries(
      ${LIBS}
@@ -101,6 +104,11 @@ install(TARGETS MaterialXView
     RUNTIME DESTINATION bin)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/MaterialXView.pdb"
     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/" OPTIONAL)
+
+if(MATERIALX_BUILD_GEN_GLES)
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../../source/MaterialXGenGLES/libraries/"
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/libraries/)
+endif()
     
 # Copy over libraries and resources to local build area
 add_custom_command(TARGET MaterialXView POST_BUILD

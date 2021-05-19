@@ -17,6 +17,9 @@
 #ifdef MATERIALX_BUILD_GEN_ARNOLD
 #include <MaterialXGenArnold/ArnoldShaderGenerator.h>
 #endif
+#ifdef MATERIALX_BUILD_GEN_GLES
+#include <MaterialXGenGLES/GLESShaderGenerator.h>
+#endif
 
 #include <MaterialXFormat/Environ.h>
 #include <MaterialXFormat/Util.h>
@@ -239,6 +242,9 @@ Viewer::Viewer(const std::string& materialFilename,
 #if MATERIALX_BUILD_GEN_ARNOLD
     _genContextArnold(mx::ArnoldShaderGenerator::create()),
 #endif
+#if MATERIALX_BUILD_GEN_GLES
+    _genContextGLES(mx::GLESShaderGenerator::create()),
+#endif
     _unitRegistry(mx::UnitConverterRegistry::create()),
     _splitByUdims(true),
     _mergeMaterials(false),
@@ -283,6 +289,11 @@ Viewer::Viewer(const std::string& materialFilename,
     _genContextArnold.getOptions().targetColorSpaceOverride = "lin_rec709";
     _genContextArnold.getOptions().fileTextureVerticalFlip = false;
 #endif
+#if MATERIALX_BUILD_GEN_GLES
+    _genContextGLES.getOptions().targetColorSpaceOverride = "lin_rec709";
+    _genContextGLES.getOptions().fileTextureVerticalFlip = false;
+#endif
+    
 
     // Register the GLSL implementation for <viewdir> used by the environment shader.
     _genContext.getShaderGenerator().registerImplementation("IM_viewdir_vector3_" + mx::GlslShaderGenerator::TARGET, ViewDirGlsl::create);
@@ -744,6 +755,9 @@ void Viewer::createAdvancedSettings(Widget* parent)
 #if MATERIALX_BUILD_GEN_ARNOLD
         _genContextArnold.getOptions().targetDistanceUnit = _distanceUnitOptions[index];
 #endif
+#if MATERIALX_BUILD_GEN_GLES
+        _genContextGLES.getOptions().targetDistanceUnit = _distanceUnitOptions[index];
+#endif        
         for (MaterialPtr material : _materials)
         {
             material->bindShader();
@@ -1448,6 +1462,17 @@ void Viewer::saveShaderSource(mx::GenContext& context)
                     new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved Arnold OSL source: ", baseName);
                 }
 #endif
+#if MATERIALX_BUILD_GEN_GLES
+                else if (context.getShaderGenerator().getTarget() == mx::GLESShaderGenerator::TARGET)
+                {
+                    const std::string& pixelShader = shader->getSourceCode(mx::Stage::PIXEL);
+                    writeTextFile(pixelShader, baseName + "_gles.ps");
+                    const std::string& vertexShader = shader->getSourceCode(mx::Stage::VERTEX);
+                    writeTextFile(vertexShader, baseName + "_gles.vs");
+                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved GLES source: ", baseName);
+                }
+#endif
+                
             }
         }
     }
@@ -1590,6 +1615,9 @@ void Viewer::loadStandardLibraries()
 #if MATERIALX_BUILD_GEN_ARNOLD
     initContext(_genContextArnold);
 #endif
+#if MATERIALX_BUILD_GEN_GLES
+    initContext(_genContextGLES);
+#endif
 }
 
 bool Viewer::keyboardEvent(int key, int scancode, int action, int modifiers)
@@ -1657,6 +1685,15 @@ bool Viewer::keyboardEvent(int key, int scancode, int action, int modifiers)
     if (key == GLFW_KEY_A && action == GLFW_PRESS)
     {
         saveShaderSource(_genContextArnold);
+        return true;
+    }
+#endif
+
+#if MATERIALX_BUILD_GEN_GLES
+    // Save GLES shader source to file.
+    if (key == GLFW_KEY_G && action == GLFW_PRESS)
+    {
+        saveShaderSource(_genContextGLES);
         return true;
     }
 #endif

@@ -316,6 +316,9 @@ class Viewer : public ng::Screen
 #if MATERIALX_BUILD_GEN_ARNOLD
     mx::GenContext _genContextArnold;
 #endif
+#if MATERIALX_BUILD_GEN_GLES
+    mx::GenContext _genContextGLES;
+#endif    
 
     // Unit registry
     mx::UnitConverterRegistryPtr _unitRegistry;
