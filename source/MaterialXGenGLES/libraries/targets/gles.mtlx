@@ -9,6 +9,6 @@
   <!-- ======================================================================== -->
   <!-- Target definition for GLES target. Derives from base GLSL target         -->
   <!-- ======================================================================== -->
-  <targetdef name="gles" inherit="glsl" />
+  <targetdef name="gles" inherit="genglsl" />
 
 </materialx>
