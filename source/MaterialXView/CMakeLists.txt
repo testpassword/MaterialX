@@ -105,10 +105,6 @@ install(TARGETS MaterialXView
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/MaterialXView.pdb"
     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/" OPTIONAL)
 
-if(MATERIALX_BUILD_GEN_GLES)
-    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../../source/MaterialXGenGLES/libraries/"
-        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/libraries/)
-endif()
     
 # Copy over libraries and resources to local build area
 add_custom_command(TARGET MaterialXView POST_BUILD
@@ -117,3 +113,9 @@ add_custom_command(TARGET MaterialXView POST_BUILD
 add_custom_command(TARGET MaterialXView POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 	${CMAKE_CURRENT_SOURCE_DIR}/../../resources ${CMAKE_CURRENT_BINARY_DIR}/resources)
+
+if(MATERIALX_BUILD_GEN_GLES)
+    add_custom_command(TARGET MaterialXView POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../source/MaterialXGenGLES/libraries ${CMAKE_CURRENT_BINARY_DIR}/libraries)
+endif()
