@@ -11,6 +11,9 @@
 #include <MaterialXFormat/File.h>
 #include <MaterialXFormat/XmlIo.h>
 
+#ifdef MATERIALX_BUILD_OCIO
+#include <MaterialXGenShader/OCIOColorManagementSystem.h>
+#endif
 #include <MaterialXGenShader/DefaultColorManagementSystem.h>
 #include <MaterialXGenShader/HwShaderGenerator.h>
 #include <MaterialXGenShader/TypeDesc.h>

@@ -8,6 +8,27 @@ add_library(MaterialXGenShader ${materialx_source} ${materialx_headers})
 
 add_definitions(-DMATERIALX_GENSHADER_EXPORTS)
 
+target_link_libraries(
+    MaterialXGenShader
+    MaterialXCore
+    MaterialXFormat
+    ${CMAKE_DL_LIBS})
+
+if(MATERIALX_BUILD_OCIO)
+    set(MATERIALX_OCIO_DIR ${MATERIALX_OCIO_DIR})
+    message(STATUS "OCIO root path: ${MATERIALX_OCIO_DIR}")
+
+    message(STATUS "OCIO include path: ${MATERIALX_OCIO_DIR}/include")
+    include_directories("${MATERIALX_OCIO_DIR}/include")
+ 
+    message(STATUS "OCIO library path: ${MATERIALX_OCIO_DIR}/lib")
+    file(GLOB OCIO_LIBRARIES "${MATERIALX_OCIO_DIR}/lib/*.lib") # ${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    message(STATUS "OCIO library files: ${OCIO_LIBRARIES}")
+    target_link_libraries(MaterialXGenShader "${OCIO_LIBRARIES}")
+    # Expose to other libraries
+    set(MATERIALX_OCIO_LIBRARIES ${OCIO_LIBRARIES} PARENT_SCOPE)
+endif()
+
 set_target_properties(
     MaterialXGenShader PROPERTIES
     OUTPUT_NAME MaterialXGenShader
@@ -15,12 +36,6 @@ set_target_properties(
     LINK_FLAGS "${EXTERNAL_LINK_FLAGS}"
     VERSION "${MATERIALX_LIBRARY_VERSION}"
     SOVERSION "${MATERIALX_MAJOR_VERSION}")
-
-target_link_libraries(
-    MaterialXGenShader
-    MaterialXCore
-    MaterialXFormat
-    ${CMAKE_DL_LIBS})
 
 target_include_directories(MaterialXGenShader
     PUBLIC

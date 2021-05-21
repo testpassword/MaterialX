@@ -449,6 +449,15 @@ void ShaderGeneratorTester::addColorManagement()
     if (!_colorManagementSystem && _shaderGenerator)
     {
         const std::string& target = _shaderGenerator->getTarget();
+
+#ifdef MATERIALX_BUILD_OCIO
+        mx::OCIOColorManagementSystemPtr ocio = mx::OCIOColorManagementSystem::create(target);
+        if (ocio)
+        {
+            ocio->setConfigFile("D:/Work/materialx/OpenColorIO-Config-ACES-1.2/aces_1.2/config.ocio");
+        }
+#endif
+
         _colorManagementSystem = mx::DefaultColorManagementSystem::create(target);
         if (!_colorManagementSystem)
         {
