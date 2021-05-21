@@ -31,6 +31,13 @@ class MX_GENSHADER_API OCIOColorManagementSystem : public ColorManagementSystem
     /// Create a new OCIOColorManagementSystem
     static OCIOColorManagementSystemPtr create(const string& target);
 
+    /// Returns whether this color management system supports a provided transform
+    bool supportsTransform(const ColorSpaceTransform& transform) const override;
+
+    /// Create a node to use to perform the given color space transformation.
+    ShaderNodePtr createNode(const ShaderGraph* parent, const ColorSpaceTransform& transform, const string& name,
+                             GenContext& context) const override;
+
     /// Set the current configuration file to use
     bool setConfigFile(const FilePath& configFile);
 

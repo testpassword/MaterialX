@@ -59,11 +59,11 @@ class MX_GENSHADER_API ColorManagementSystem
     virtual void loadLibrary(DocumentPtr document);
 
     /// Returns whether this color management system supports a provided transform
-    bool supportsTransform(const ColorSpaceTransform& transform) const;
+    virtual bool supportsTransform(const ColorSpaceTransform& transform) const;
 
     /// Create a node to use to perform the given color space transformation.
-    ShaderNodePtr createNode(const ShaderGraph* parent, const ColorSpaceTransform& transform, const string& name,
-                             GenContext& context) const;
+    virtual ShaderNodePtr createNode(const ShaderGraph* parent, const ColorSpaceTransform& transform, const string& name,
+                                     GenContext& context) const;
 
   protected:
     /// Protected constructor

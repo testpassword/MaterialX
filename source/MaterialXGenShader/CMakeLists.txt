@@ -1,6 +1,10 @@
 file(GLOB_RECURSE materialx_source "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB_RECURSE materialx_headers "${CMAKE_CURRENT_SOURCE_DIR}/*.h*")
 
+if(NOT MATERIALX_BUILD_OCIO)
+    list(REMOVE_ITEM materialx_source "${CMAKE_CURRENT_SOURCE_DIR}/OCIOColorManagementSystem.cpp")
+endif()
+
 assign_source_group("Source Files" ${materialx_source})
 assign_source_group("Header Files" ${materialx_headers})
 
