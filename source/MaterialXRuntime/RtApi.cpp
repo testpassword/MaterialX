@@ -229,9 +229,9 @@ const FileSearchPath& RtApi::getImplementationSearchPath() const
     return _cast(_ptr)->getImplementationSearchPath();
 }
 
-RtStagePtr RtApi::loadLibrary(const RtString& name, const FilePath& path, const RtReadOptions* options, bool forceReload)
+RtStagePtr RtApi::loadLibrary(const RtString& name, const FilePath& path, const RtReadOptions* options, bool forceReload, bool importLibrary)
 {
-    return _cast(_ptr)->loadLibrary(name, path, options, forceReload);
+    return _cast(_ptr)->loadLibrary(name, path, options, forceReload, importLibrary);
 }
 
 void RtApi::unloadLibrary(const RtString& name)

@@ -657,28 +657,6 @@ namespace
         }
     }
 
-    void writeDocument(DocumentPtr& doc, PvtStage* stage, const RtWriteOptions* options)
-    {
-        writeAttributes(stage->getRootPrim(), doc, RtStringSet(), options);
-
-        // Write out any dependent includes
-        if (options && options->writeIncludes)
-        {
-            writeSourceUris(stage, doc);
-        }
-
-        std::vector<NodePtr> materialElements;
-        for (RtPrim child : stage->getRootPrim()->getChildren(options ? options->objectFilter : nullptr))
-        {
-            writePrimData(doc, child, options);
-        }
-
-        // Write the existing look information
-        writeCollections(stage, *doc, options);
-        writeLooks(stage, *doc, options);
-        writeLookGroups(stage, *doc, options);
-    }
-
     void writeNodeDefAndImplementation(DocumentPtr document, PvtStage* stage, PvtPrim* prim, const RtWriteOptions* options)
     {
         if (!prim || prim->isDisposed())
@@ -711,6 +689,41 @@ namespace
                 break;
             }
         }
+    }
+
+    void writeImportedNodeDefs(DocumentPtr document, PvtStage* stage, const RtWriteOptions* options)
+    {
+        PvtApi* api = PvtApi::cast(RtApi::get());
+        const RtStringVec& importedNodeDefNames = api->getImportedNodeDefNames();
+	for (const RtString& importedNodeDefName : importedNodeDefNames)
+        {
+            PvtPrim* prim = api->getNodeDef(importedNodeDefName)->asA<PvtPrim>();
+            writeNodeDefAndImplementation(document, stage, prim, options);
+        }
+    }
+
+    void writeDocument(DocumentPtr& doc, PvtStage* stage, const RtWriteOptions* options)
+    {
+        writeAttributes(stage->getRootPrim(), doc, RtStringSet(), options);
+
+        // Write out any dependent includes
+        if (options && options->writeIncludes)
+        {
+            writeSourceUris(stage, doc);
+        }
+
+        writeImportedNodeDefs(doc, stage, options);
+
+        std::vector<NodePtr> materialElements;
+        for (RtPrim child : stage->getRootPrim()->getChildren(options ? options->objectFilter : nullptr))
+        {
+            writePrimData(doc, child, options);
+        }
+
+        // Write the existing look information
+        writeCollections(stage, *doc, options);
+        writeLooks(stage, *doc, options);
+        writeLookGroups(stage, *doc, options);
     }
 
     void writeNodeDefs(DocumentPtr document, PvtStage* stage, const RtStringVec& names, const RtWriteOptions* options)

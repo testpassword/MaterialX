@@ -34,7 +34,7 @@ void PvtApi::reset()
     _unitDefinitions = UnitConverterRegistry::create();
 }
 
-RtStagePtr PvtApi::loadLibrary(const RtString& name, const FilePath& path, const RtReadOptions* options, bool forceReload)
+RtStagePtr PvtApi::loadLibrary(const RtString& name, const FilePath& path, const RtReadOptions* options, bool forceReload, bool importLibrary)
 {
     auto it = _libraries.find(name);
     if (it != _libraries.end())
@@ -62,9 +62,9 @@ RtStagePtr PvtApi::loadLibrary(const RtString& name, const FilePath& path, const
     }
 
     // Register any definitions and implementations.
-    registerPrims(stage);
+    registerPrims(stage, importLibrary);
 
-    // Reset nodeimpl relationsships since the registry of
+    // Reset nodeimpl relationships since the registry of
     // definitions and implementations have changed.
     setupNodeImplRelationships();
 
@@ -98,13 +98,13 @@ void PvtApi::unloadLibraries()
     _librariesOrder.clear();
 }
 
-void PvtApi::registerPrims(RtStagePtr stage)
+void PvtApi::registerPrims(RtStagePtr stage, bool importLibrary)
 {
     for (RtPrim prim : stage->traverse())
     {
         if (prim.hasApi<RtNodeDef>())
         {
-            registerNodeDef(prim);
+            registerNodeDef(prim, importLibrary);
         }
         else if (prim.hasApi<RtNodeGraph>())
         {
@@ -150,6 +150,7 @@ void PvtApi::unregisterPrims(RtStagePtr stage)
             unregisterTargetDef(prim.getName());
         }
     }
+    _importedNodeDefNames.clear();
 }
 
 void PvtApi::setupNodeImplRelationships()

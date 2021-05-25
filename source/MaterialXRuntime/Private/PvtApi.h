@@ -95,7 +95,7 @@ public:
         return it != _createFunctions.end() ? it->second : nullptr;
     }
 
-    void registerNodeDef(const RtPrim& prim)
+    void registerNodeDef(const RtPrim& prim, bool importLibrary = false)
     {
         if (!prim.hasApi<RtNodeDef>())
         {
@@ -106,6 +106,10 @@ public:
             _nodedefs.remove(prim.getName());
         }
         _nodedefs.add(PvtObject::cast(prim));
+        if (importLibrary)
+        {
+            _importedNodeDefNames.push_back(prim.getName());
+        }
     }
 
     void unregisterNodeDef(const RtString& name)
@@ -131,6 +135,11 @@ public:
     PvtObject* getNodeDef(size_t index)
     {
         return _nodedefs[index];
+    }
+
+    const RtStringVec& getImportedNodeDefNames() const
+    {
+        return _importedNodeDefNames;
     }
 
     void registerNodeGraph(const RtPrim& prim)
@@ -292,7 +301,7 @@ public:
         return _implementationSearchPaths;
     }
 
-    RtStagePtr loadLibrary(const RtString& name, const FilePath& path, const RtReadOptions* options = nullptr, bool forceReload = false);
+    RtStagePtr loadLibrary(const RtString& name, const FilePath& path, const RtReadOptions* options = nullptr, bool forceReload = false, bool importLibrary = false);
     void unloadLibrary(const RtString& name);
     void unloadLibraries();
 
@@ -348,7 +357,7 @@ public:
         _stagesOrder.clear();
     }
 
-    void registerPrims(RtStagePtr stage);
+    void registerPrims(RtStagePtr stage, bool importLibrary);
     void unregisterPrims(RtStagePtr stage);
 
     size_t numStages() const
@@ -408,6 +417,7 @@ public:
     PvtObjectList _nodegraphs;
     PvtObjectList _nodeimpls;
     PvtObjectList _targetdefs;
+    RtStringVec _importedNodeDefNames;
 };
 
 }
