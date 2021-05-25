@@ -10,6 +10,7 @@
 /// Color management system which used the OCIO library
 
 #include <MaterialXFormat/File.h>
+#include <MaterialXGenShader/Nodes/SourceCodeNode.h>
 #include <MaterialXGenShader/ColorManagementSystem.h>
 
 namespace MaterialX
@@ -30,6 +31,8 @@ class MX_GENSHADER_API OCIOColorManagementSystem : public ColorManagementSystem
 
     /// Create a new OCIOColorManagementSystem
     static OCIOColorManagementSystemPtr create(const string& target);
+
+    void loadLibrary(DocumentPtr document) override;
 
     /// Returns whether this color management system supports a provided transform
     bool supportsTransform(const ColorSpaceTransform& transform) const override;
@@ -65,8 +68,23 @@ class MX_GENSHADER_API OCIOColorManagementSystem : public ColorManagementSystem
     FilePath _configFile;
     OCIOInformation*  _ocioInfo;
     StringSet _colorSpaceNames;
+
     string _target;
+    bool _targetSupported;
 };
+
+
+/// Extending the SourceCodeNode with requirements for OCIO.
+class MX_GENSHADER_API OCIOSourceCodeNode : public SourceCodeNode
+{
+public:
+    // TODO: Add more methods as needed...
+    static ShaderNodeImplPtr create();
+
+    void emitFunctionDefinition(const ShaderNode& node, GenContext& context, ShaderStage& stage) const override;
+    void emitFunctionCall(const ShaderNode& node, GenContext& context, ShaderStage& stage) const override;
+};
+
 
 } // namespace MaterialX
 

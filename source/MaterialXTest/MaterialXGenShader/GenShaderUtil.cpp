@@ -455,6 +455,7 @@ void ShaderGeneratorTester::addColorManagement()
         if (ocio)
         {
             ocio->setConfigFile("D:/Work/materialx/OpenColorIO-Config-ACES-1.2/aces_1.2/config.ocio");
+            ocio->loadLibrary(_dependLib);
             mx::GenContext context(_shaderGenerator);
             mx::ColorSpaceTransform transform("acescg", "lin_rec709", mx::Type::COLOR3);
             ocio->createNode(nullptr, transform, "blah", context);
