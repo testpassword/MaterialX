@@ -695,7 +695,7 @@ namespace
     {
         PvtApi* api = PvtApi::cast(RtApi::get());
         const RtStringVec& importedNodeDefNames = api->getImportedNodeDefNames();
-	for (const RtString& importedNodeDefName : importedNodeDefNames)
+        for (const RtString& importedNodeDefName : importedNodeDefNames)
         {
             PvtPrim* prim = api->getNodeDef(importedNodeDefName)->asA<PvtPrim>();
             writeNodeDefAndImplementation(document, stage, prim, options);
