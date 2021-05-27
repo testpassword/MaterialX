@@ -12,6 +12,10 @@
 
 #include <MaterialXRender/Image.h>
 
+#ifdef MATERIALX_BUILD_OCIO
+#include <MaterialXGenShader/OCIOColorManagementSystem.h>
+#endif
+
 namespace mx = MaterialX;
 
 namespace RenderUtil
@@ -175,7 +179,16 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
 
     createRenderer(log);
 
-    mx::ColorManagementSystemPtr colorManagementSystem = mx::DefaultColorManagementSystem::create(_shaderGenerator->getTarget());
+    mx::ColorManagementSystemPtr colorManagementSystem = nullptr;
+#ifdef MATERIALX_BUILD_OCIO    
+    mx::OCIOColorManagementSystemPtr ocio = mx::OCIOColorManagementSystem::create(_shaderGenerator->getTarget());
+    ocio->setConfigFile("D:/Work/materialx/OpenColorIO-Config-ACES-1.2/aces_1.2/config.ocio");
+    colorManagementSystem = ocio;
+#endif
+    if (!colorManagementSystem)
+    {
+        colorManagementSystem = mx::DefaultColorManagementSystem::create(_shaderGenerator->getTarget());
+    }
     colorManagementSystem->loadLibrary(dependLib);
     _shaderGenerator->setColorManagementSystem(colorManagementSystem);
 

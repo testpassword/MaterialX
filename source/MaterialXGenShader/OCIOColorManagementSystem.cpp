@@ -203,7 +203,8 @@ ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceT
         }
 
         shaderDesc->setLanguage(static_cast<OCIO::GpuLanguage>(_ocioInfo->language));
-        std::string transformFunctionName = "IM_" + transform.sourceSpace + "_to_" + transform.targetSpace + "_" + transform.type->getName() + "_ocio";
+        const std::string& typeName = transform.type->getName();
+        std::string transformFunctionName = "IM_" + transform.sourceSpace + "_to_" + transform.targetSpace + "_" + typeName + "_ocio";
         shaderDesc->setFunctionName(transformFunctionName.c_str());
 
         // TODO : OR Instead of GpuShaderDesc, the may need to derive from GpuShaderCreator
@@ -245,8 +246,8 @@ ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceT
         if (impl)
         {
             // Q: How to parse inputs ?
-            impl->addInput("inPixel", transform.type->getName());
-            impl->addOutput(outputName, transform.type->getName());
+            impl->addInput("inPixel", typeName);
+            impl->addOutput(outputName, typeName);
             impl->setAttribute("sourcecode", fullFunction);
             impl->setAttribute("function", functionName);
             impl->setAttribute("target", _ocioInfo->target);

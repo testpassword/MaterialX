@@ -454,15 +454,16 @@ void ShaderGeneratorTester::addColorManagement()
         mx::OCIOColorManagementSystemPtr ocio = mx::OCIOColorManagementSystem::create(target);
         if (ocio)
         {
+            _colorManagementSystem = ocio;
             ocio->setConfigFile("D:/Work/materialx/OpenColorIO-Config-ACES-1.2/aces_1.2/config.ocio");
-            ocio->loadLibrary(_dependLib);
-            mx::GenContext context(_shaderGenerator);
-            mx::ColorSpaceTransform transform("acescg", "lin_rec709", mx::Type::COLOR3);
-            ocio->createNode(nullptr, transform, "blah", context);
+            //ocio->loadLibrary(_dependLib);
+            //mx::GenContext context(_shaderGenerator);
+            //mx::ColorSpaceTransform transform("acescg", "lin_rec709", mx::Type::COLOR3);
+            //ocio->createNode(nullptr, transform, "blah", context);
         }
-#endif
-
+#else
         _colorManagementSystem = mx::DefaultColorManagementSystem::create(target);
+#endif
         if (!_colorManagementSystem)
         {
             _logFile << ">> Failed to create color management system for target: " << target << std::endl;

@@ -252,7 +252,7 @@ class ShaderGeneratorTester
 
     mx::ShaderGeneratorPtr _shaderGenerator;
     const std::string _targetString;
-    mx::DefaultColorManagementSystemPtr _colorManagementSystem;
+    mx::ColorManagementSystemPtr _colorManagementSystem;
 
     // Unit system 
     mx::UnitSystemPtr _unitSystem;
