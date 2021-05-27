@@ -205,6 +205,10 @@ class ShaderGeneratorTester
 
     // Add color management
     virtual void addColorManagement();
+    void setColorManagementConfigFile(const mx::FilePath& path)
+    {
+        _colorManagementConfigFile = path;
+    }
 
     // Add unit system
     virtual void addUnitSystem();
@@ -253,6 +257,7 @@ class ShaderGeneratorTester
     mx::ShaderGeneratorPtr _shaderGenerator;
     const std::string _targetString;
     mx::ColorManagementSystemPtr _colorManagementSystem;
+    mx::FilePath _colorManagementConfigFile;
 
     // Unit system 
     mx::UnitSystemPtr _unitSystem;

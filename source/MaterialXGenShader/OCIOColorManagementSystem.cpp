@@ -21,19 +21,22 @@ namespace MaterialX
 {
 
 const string OCIOColorManagementSystem::CMS_NAME = "ocio_cms";
+
+// Defines an unsupported language.
 const int OCIO_UNSUPPORT_LANGUAGE = -1;
 
+// Mapping from supported MaterialX targets to OCIO shading languages
 using OCIOLanguageMap = std::unordered_map<std::string, OCIO::GpuLanguage>;
 
 // OCIO related information
 class OCIOInformation
 {
-public:
+  public:
     // OCIO config file to use
     OCIO::ConstConfigRcPtr config = nullptr;
-    // Mapping from supported MaterialX targets to OCIO shading languages
+    // Target to language map
     OCIOLanguageMap languageMap;
-    // Language used to code generate with (is a OCIO::GpuLanguage)
+    // Language used for code generation (is a OCIO::GpuLanguage)
     int language = OCIO_UNSUPPORT_LANGUAGE;
     // MaterialX target
     std::string target;
@@ -48,15 +51,26 @@ OCIOColorManagementSystem::OCIOColorManagementSystem(const string& target) :
     _target(target)
 {
     _ocioInfo = new OCIOInformation();
+    _ocioInfo->language = OCIO_UNSUPPORT_LANGUAGE;
     _ocioInfo->config = nullptr;
+    _ocioInfo->target = EMPTY_STRING;
     _ocioInfo->languageMap["genglsl"] = OCIO::GPU_LANGUAGE_GLSL_4_0;
+}
 
-    _targetSupported = false;
+OCIOColorManagementSystem::~OCIOColorManagementSystem()
+{
+    delete _ocioInfo;
+}
+
+bool OCIOColorManagementSystem::isValid() const
+{
+    return (_document && _ocioInfo->config && _ocioInfo->language != OCIO_UNSUPPORT_LANGUAGE);
 }
 
 void OCIOColorManagementSystem::loadLibrary(DocumentPtr document) 
 {
     _ocioInfo->language = OCIO_UNSUPPORT_LANGUAGE;
+    _ocioInfo->target = EMPTY_STRING;
 
     _document = document;
     if (!_document)
@@ -71,6 +85,8 @@ void OCIOColorManagementSystem::loadLibrary(DocumentPtr document)
     {
         if (_ocioInfo->languageMap.count(target))
         {
+            // Note that we store the "base" target it instead of any derived target
+            // as this is the actual shading language.
             _ocioInfo->language = static_cast<int>(OCIO::GPU_LANGUAGE_GLSL_4_0);
             _ocioInfo->target = target;
             break;                
@@ -78,27 +94,34 @@ void OCIOColorManagementSystem::loadLibrary(DocumentPtr document)
     }
 }
 
-bool OCIOColorManagementSystem::setConfigFile(const FilePath& configFile)
+bool OCIOColorManagementSystem::readConfigFile(const FilePath& configFile)
 {
-    if (_configFile != configFile && configFile.size())
+    if (_configFile != configFile && configFile.exists())
     {
-        _configFile = configFile;
+        _configFile = EMPTY_STRING;
         _colorSpaceNames.clear();
+        _ocioInfo->config = nullptr;
 
-        _ocioInfo->config = OCIO::Config::CreateFromFile(_configFile.asString().c_str());
-        if (!_ocioInfo->config)
+        try
         {
-            OCIO::GetCurrentConfig();
-        }
-        if (_ocioInfo->config)
-        {
-            OCIO::ColorSpaceSetRcPtr colorSpaces = _ocioInfo->config->getColorSpaces(nullptr);
-            int colorSpaceCount = colorSpaces->getNumColorSpaces();
-            for (int i = 0; i < colorSpaceCount; i++)
+            _ocioInfo->config = OCIO::Config::CreateFromFile(configFile.asString().c_str());
+            if (_ocioInfo->config)
             {
-                _colorSpaceNames.insert(colorSpaces->getColorSpaceNameByIndex(i));
+                OCIO::ColorSpaceSetRcPtr colorSpaces = _ocioInfo->config->getColorSpaces(nullptr);
+                int colorSpaceCount = colorSpaces->getNumColorSpaces();
+                for (int i = 0; i < colorSpaceCount; i++)
+                {
+                    _colorSpaceNames.insert(colorSpaces->getColorSpaceNameByIndex(i));
+                }
+                _configFile = configFile;
+
+                return true;
             }
-            return true;
+        }
+        catch (const OCIO::Exception& e)
+        {
+            std::cout << "Error reading config file: '" + configFile.asString() + "' Error : " + e.what() << std::endl;
+            // Do not continue to throw an exception but instead use return status code
         }
     }
     return false;
@@ -107,7 +130,7 @@ bool OCIOColorManagementSystem::setConfigFile(const FilePath& configFile)
 /// Returns whether this color management system supports a provided transform
 bool OCIOColorManagementSystem::supportsTransform(const ColorSpaceTransform& transform) const
 {
-    if (_ocioInfo->language == OCIO_UNSUPPORT_LANGUAGE)
+    if (!isValid())
     {
         return false;
     }
@@ -117,8 +140,14 @@ bool OCIOColorManagementSystem::supportsTransform(const ColorSpaceTransform& tra
 }
 
 /// Create a node to use to perform the given color space transformation.
-ShaderNodePtr OCIOColorManagementSystem::createNode(const ShaderGraph* parent, const ColorSpaceTransform& transform, const string& name, GenContext& context) const
+ShaderNodePtr OCIOColorManagementSystem::createNode(const ShaderGraph* parent, const ColorSpaceTransform& transform, 
+                                                    const string& name, GenContext& context) const
 {
+    if (!isValid())
+    {
+        return false;
+    }
+
     if (transform.type != Type::COLOR3 && transform.type != Type::COLOR4)
     {
         throw ExceptionShaderGenError("Invalid type specified to color transform: '" + transform.type->getName() + "'");
@@ -165,19 +194,12 @@ ShaderNodePtr OCIOColorManagementSystem::createNode(const ShaderGraph* parent, c
 
 ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceTransform& transform) const
 {
-    if (!_document)
+    if (!isValid())
     {
-        return nullptr;
+        return false;
     }
-    if (_ocioInfo->language == OCIO_UNSUPPORT_LANGUAGE)
-    {
-        return nullptr;
-    }
+
     OCIO::ConstConfigRcPtr config = _ocioInfo->config;
-    if (!config)
-    {
-        return nullptr;
-    }
 
     // Set up process for a color space transform
     try
@@ -196,6 +218,11 @@ ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceT
         }
 
         // Create a shader descriptor
+        //
+        // TODO: Determine if deriving from GpuShaderCreator is required for transforms which produce additional 
+        // support functions and samplers. For now this using a GpuShaderDesc is suffient for all non-LUT single 
+        // function setup.
+        //
         OCIO::GpuShaderDescRcPtr shaderDesc = OCIO::GpuShaderDesc::CreateShaderDesc();
         if (!shaderDesc)
         {
@@ -207,8 +234,6 @@ ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceT
         std::string transformFunctionName = "IM_" + transform.sourceSpace + "_to_" + transform.targetSpace + "_" + typeName + "_ocio";
         shaderDesc->setFunctionName(transformFunctionName.c_str());
 
-        // TODO : OR Instead of GpuShaderDesc, the may need to derive from GpuShaderCreator
-
         // Retrieve information
         gpu->extractGpuShaderInfo(shaderDesc);
 
@@ -216,11 +241,13 @@ ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceT
         std::string functionName = shaderDesc->getFunctionName();
         std::string outputName = shaderDesc->getPixelName();
 
-        std::cout << "Created function: " + functionName << std::endl;
-        std::cout << "Function body: " + fullFunction << std::endl;
-        std::cout << "Output name: " + outputName << std::endl;
-
-        // Produces this for acescg to lin_rec709:
+        // The following is an example of output returned in "fullFunction" 
+        //
+        // In this example "acescg" to "lin_rec709" are the source and target space strings passed in.
+        // - setFunctionName() is used to in place of the default function name
+        // - There is no need to replace the output variable name.
+        // - getShaderText() returns the contents shown here verbatim
+        //  - This includes all comment strings.
         /*
         // Declaration of the OCIO shader function
 
@@ -238,14 +265,11 @@ ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceT
         }
         */
 
-        // TODO : Create an implementation based on source code
-        // Note: A separate utility could take OCIO shader code and generate a set of MTLX implementations.
-        //       This could be useful to update the DefaultColorSystems implementations to maintain 
-        //       consistency with OCIO.
+        // Create an implementation based on source code
         ImplementationPtr impl = _document->addImplementation(transformFunctionName);
         if (impl)
         {
-            // Q: How to parse inputs ?
+            // Note: There is only one input so we just use the default name: "inPixel".
             impl->addInput("inPixel", typeName);
             impl->addOutput(outputName, typeName);
             impl->setAttribute("sourcecode", fullFunction);
@@ -287,40 +311,37 @@ void OCIOSourceCodeNode::emitFunctionDefinition(const ShaderNode&, GenContext& c
 
 void OCIOSourceCodeNode::emitFunctionCall(const ShaderNode& node, GenContext& context, ShaderStage& stage) const
 {
-    // TODO: Put in correct code here. Just a copy of HwSourceCode
+    // The main variation from the default "hardware source code node" logic is that OCIO always returns
+    // a value from function invocation, so modify caller logic to declare an local variable and assign it
+    // the return value from the OCIO shader function.
+    //
     BEGIN_SHADER_STAGE(stage, Stage::PIXEL)
-    if (_inlined)
+
+    const ShaderGenerator& shadergen = context.getShaderGenerator();
+
+    // Declare the output variable
+    shadergen.emitLineBegin(stage);
+    shadergen.emitOutput(node.getOutput(0), true, false, context, stage);
+    shadergen.emitString(" = ", stage);
+
+    // Emit function name. 
+    // TODO : add vec3/vec4 conversion as needed
+    shadergen.emitString(_functionName + "(", stage);
+
+    // Emit all inputs.
+    string delim = "";
+    for (ShaderInput* input : node.getInputs())
     {
-        SourceCodeNode::emitFunctionCall(node, context, stage);
+        shadergen.emitString(delim, stage);
+        shadergen.emitInput(input, context, stage);
+        delim = ", ";
     }
-    else
-    {
-        const ShaderGenerator& shadergen = context.getShaderGenerator();
 
-        // Declare the output variable
-        shadergen.emitLineBegin(stage);
-        shadergen.emitOutput(node.getOutput(0), true, false, context, stage);
-        shadergen.emitString(" = ", stage);
+    // End function call
+    shadergen.emitString(")", stage);
+    shadergen.emitLineEnd(stage);
 
-        // Emit function name. TODO add vec3/vec4 conversion as needed
-        shadergen.emitString(_functionName + "(", stage);
-
-        // Emit all inputs.
-        string delim = "";
-        for (ShaderInput* input : node.getInputs())
-        {
-            shadergen.emitString(delim, stage);
-            shadergen.emitInput(input, context, stage);
-            delim = ", ";
-        }
-
-        // End function call
-        shadergen.emitString(")", stage);
-        shadergen.emitLineEnd(stage);
-    }
     END_SHADER_STAGE(stage, Stage::PIXEL)
 }
-
-
 
 } // namespace MaterialX

@@ -27,7 +27,7 @@ using OCIOColorManagementSystemPtr = shared_ptr<class OCIOColorManagementSystem>
 class MX_GENSHADER_API OCIOColorManagementSystem : public ColorManagementSystem
 {
   public:
-    virtual ~OCIOColorManagementSystem() { }
+    virtual ~OCIOColorManagementSystem();
 
     /// Create a new OCIOColorManagementSystem
     static OCIOColorManagementSystemPtr create(const string& target);
@@ -41,9 +41,10 @@ class MX_GENSHADER_API OCIOColorManagementSystem : public ColorManagementSystem
     ShaderNodePtr createNode(const ShaderGraph* parent, const ColorSpaceTransform& transform, const string& name,
                              GenContext& context) const override;
 
-    /// Set the current configuration file to use
-    bool setConfigFile(const FilePath& configFile);
+    /// Read a configuration file
+    bool readConfigFile(const FilePath& configFile);
 
+    /// Get the configuration file name
     const FilePath& getConfigFile() const
     {
         return _configFile;
@@ -64,13 +65,14 @@ class MX_GENSHADER_API OCIOColorManagementSystem : public ColorManagementSystem
     /// Protected constructor
     OCIOColorManagementSystem(const string& target);
 
+    /// Setup is valid
+    bool isValid() const;
+
   private:
-    FilePath _configFile;
     OCIOInformation*  _ocioInfo;
     StringSet _colorSpaceNames;
-
+    FilePath _configFile;
     string _target;
-    bool _targetSupported;
 };
 
 

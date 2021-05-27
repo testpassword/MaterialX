@@ -452,21 +452,22 @@ void ShaderGeneratorTester::addColorManagement()
 
 #ifdef MATERIALX_BUILD_OCIO
         mx::OCIOColorManagementSystemPtr ocio = mx::OCIOColorManagementSystem::create(target);
-        if (ocio)
+        if (ocio->readConfigFile(_colorManagementConfigFile))
         {
             _colorManagementSystem = ocio;
-            ocio->setConfigFile("D:/Work/materialx/OpenColorIO-Config-ACES-1.2/aces_1.2/config.ocio");
-            //ocio->loadLibrary(_dependLib);
-            //mx::GenContext context(_shaderGenerator);
-            //mx::ColorSpaceTransform transform("acescg", "lin_rec709", mx::Type::COLOR3);
-            //ocio->createNode(nullptr, transform, "blah", context);
         }
-#else
-        _colorManagementSystem = mx::DefaultColorManagementSystem::create(target);
+        else
+        {
+            _logFile << ">> Failed to setup OCIO color management configuration: '" + _colorManagementConfigFile.asString() + "'" << std::endl;
+        }
 #endif
         if (!_colorManagementSystem)
         {
-            _logFile << ">> Failed to create color management system for target: " << target << std::endl;
+            _colorManagementSystem = mx::DefaultColorManagementSystem::create(target);
+        }
+        if (!_colorManagementSystem)
+        {
+            _logFile << ">> Failed to initialize color management system for target: " << target << std::endl;
         }
         else
         {
@@ -672,6 +673,8 @@ void ShaderGeneratorTester::validate(const mx::GenOptions& generateOptions, cons
     mx::StringMap filenameRemap;
     filenameRemap[":"] = "_";
 
+    const std::string OCIO_STRING("ocio");
+
     size_t documentIndex = 0;
     for (const auto& doc : _documents)
     {
@@ -735,6 +738,19 @@ void ShaderGeneratorTester::validate(const mx::GenOptions& generateOptions, cons
             WARN(msg);
         }
         CHECK(docValid);
+
+#ifdef MATERIALX_BUILD_OCIO
+        // TODO: For OCIO if there is a configuration file specified on the document
+        // then this should be used instead of the default one used for testing
+        if (doc->getColorManagementSystem() == OCIO_STRING)
+        {
+            mx::FilePath configFile = doc->getColorManagementConfig();
+            if (configFile.exists())
+            {
+                setColorManagementConfigFile(configFile);                
+            }
+        }
+#endif
 
         // Traverse the renderable elements and run the validation step
         int missingNodeDefs = 0;
