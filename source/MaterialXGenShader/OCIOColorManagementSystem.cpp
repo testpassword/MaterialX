@@ -135,7 +135,16 @@ bool OCIOColorManagementSystem::supportsTransform(const ColorSpaceTransform& tra
         return false;
     }
 
-    OCIO::ConstProcessorRcPtr processor = _ocioInfo->config->getProcessor(transform.sourceSpace.c_str(), transform.targetSpace.c_str());
+    OCIO::ConstProcessorRcPtr processor = nullptr;
+    try
+    {
+        processor = _ocioInfo->config->getProcessor(transform.sourceSpace.c_str(), transform.targetSpace.c_str());
+    }
+    catch (const OCIO::Exception&)
+    {
+        // Do not throw an exception here but just return a status
+        return false;
+    }
     return (nullptr != processor);
 }
 

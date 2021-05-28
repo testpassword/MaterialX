@@ -32,7 +32,7 @@
   <!-- Render test Suite Options -->
   <nodedef name="TestSuiteOptions">
     <!-- List of comma separated file names acts as a filter to only test documents with these names -->
-    <input name="overrideFiles" type="string" value="" />
+    <input name="overrideFiles" type="string" value="ocio_color_management.mtlx" />
 
     <!-- Comma separated list of light setup files. Only used for hardware shading languages  -->
     <input name="lightFiles" type="string" value="light_rig_test_2.mtlx" />
@@ -111,6 +111,9 @@
 
     <!-- External testing: extra comma separated list of test root paths -->
     <input name="externalTestPaths" type="string" value="" />
+     
+    <!-- Color management configuration file. Only applicable if building with OCIO -->
+    <input name="colorManagementConfigFile" type="string" value="" />
 
     <!-- Wedge rendering options -->
     <wedgerender name="wedge_conductor">

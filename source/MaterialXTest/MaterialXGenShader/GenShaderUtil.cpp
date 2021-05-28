@@ -942,6 +942,7 @@ void TestSuiteOptions::print(std::ostream& output) const
     output << "\tIrradiance IBL File Path: " << irradianceIBLPath.asString() << std::endl;
     output << "\tExternal library paths: " << externalLibraryPaths.asString() << std::endl;
     output << "\tExternal test root paths: " << externalTestPaths.asString() << std::endl;
+    output << "\tColor management config file: " << colorManagementConfigFile.asString() << std::endl;
 }
 
 bool TestSuiteOptions::readOptions(const std::string& optionFile)
@@ -975,6 +976,7 @@ bool TestSuiteOptions::readOptions(const std::string& optionFile)
     const std::string SHADERBALL_OBJ("shaderball.obj");
     const std::string EXTERNAL_LIBRARY_PATHS("externalLibraryPaths");
     const std::string EXTERNAL_TEST_PATHS("externalTestPaths");
+    const std::string COLORMANAGEMENT_CONFIG_FILE("colorManagementConfigFile");
     const std::string WEDGE_SETTING("wedgerender");
     const std::string BAKER_SETTINGS("baker");
 
@@ -1168,6 +1170,10 @@ bool TestSuiteOptions::readOptions(const std::string& optionFile)
                         {
                             externalTestPaths.append(mx::FilePath(l));
                         }
+                    }
+                    else if (name == COLORMANAGEMENT_CONFIG_FILE)
+                    {
+                        colorManagementConfigFile = p->getValueString();
                     }
                 }
             }

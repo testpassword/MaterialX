@@ -143,6 +143,9 @@ class TestSuiteOptions
     // Additional testPaths paths
     mx::FileSearchPath externalTestPaths;
 
+    // Color management configuration file.Only applicable if building with OCIO
+    mx::FilePath colorManagementConfigFile;
+
     // Wedge parameters
     struct WedgeSetting {
         std::string wedgeFile = mx::EMPTY_STRING;

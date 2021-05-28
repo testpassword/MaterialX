@@ -141,7 +141,6 @@ static void generateGlslCode(bool generateLayout = false)
     const mx::FilePath logPath(generateLayout ? "genglsl_glsl420_layout_generate_test.txt" : "genglsl_glsl400_generate_test.txt");
 
     GlslShaderGeneratorTester tester(mx::GlslShaderGenerator::create(), testRootPaths, libSearchPath, srcSearchPath, logPath, writeShadersToDisk);
-    tester.setColorManagementConfigFile("D:/Work/materialx/OpenColorIO-Config-ACES-1.2/aces_1.2/config.ocio");
 
     if (generateLayout)
     {
@@ -149,6 +148,11 @@ static void generateGlslCode(bool generateLayout = false)
         tester.addUserData(mx::HW::USER_DATA_BINDING_CONTEXT, mx::GlslResourceBindingContext::create());
     }
 
+    GenShaderUtil::TestSuiteOptions options;
+    if (options.readOptions(optionsFilePath))
+    {
+        tester.setColorManagementConfigFile(options.colorManagementConfigFile);
+    }
     tester.validate(genOptions, optionsFilePath);
 }
 

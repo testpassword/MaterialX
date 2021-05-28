@@ -743,6 +743,10 @@ TEST_CASE("Render: GLSL TestSuite", "[renderglsl]")
 
     mx::FilePath optionsFilePath = testRootPath / mx::FilePath("_options.mtlx");
 
-    renderTester.setColorManagementConfigFile("D:/Work/materialx/OpenColorIO-Config-ACES-1.2/aces_1.2/config.ocio");
+    GenShaderUtil::TestSuiteOptions options;
+    if (options.readOptions(optionsFilePath))
+    {
+        renderTester.setColorManagementConfigFile(options.colorManagementConfigFile);
+    }
     renderTester.validate(testRootPaths, optionsFilePath);
 }
