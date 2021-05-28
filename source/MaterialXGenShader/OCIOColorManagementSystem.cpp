@@ -145,7 +145,7 @@ ShaderNodePtr OCIOColorManagementSystem::createNode(const ShaderGraph* parent, c
 {
     if (!isValid())
     {
-        return false;
+        return nullptr;
     }
 
     if (transform.type != Type::COLOR3 && transform.type != Type::COLOR4)
@@ -174,20 +174,9 @@ ShaderNodePtr OCIOColorManagementSystem::createNode(const ShaderGraph* parent, c
     ShaderNodePtr shaderNode = ShaderNode::create(parent, name, nodeImpl, ShaderNode::Classification::TEXTURE);
 
     // Create ports on the node.
-    ShaderInput* input = shaderNode->addInput("in", transform.type);
-    if (transform.type == Type::COLOR3)
-    {
-        input->setValue(Value::createValue(Color3(0.0f, 0.0f, 0.0f)));
-    }
-    else if (transform.type == Type::COLOR4)
-    {
-        input->setValue(Value::createValue(Color4(0.0f, 0.0f, 0.0f, 1.0)));
-    }
-    else
-    {
-        throw ExceptionShaderGenError("Invalid type specified to color transform: '" + transform.type->getName() + "'");
-    }
-    shaderNode->addOutput("out", transform.type);
+    ShaderInput* input = shaderNode->addInput("in", Type::COLOR4);
+    input->setValue(Value::createValue(Color4(0.0f, 0.0f, 0.0f, 1.0)));
+    shaderNode->addOutput("out", Type::COLOR4);
 
     return shaderNode;
 }
@@ -233,7 +222,7 @@ ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceT
         const std::string& typeName = transform.type->getName();
         std::string transformFunctionName = "IM_" + transform.sourceSpace + "_to_" + transform.targetSpace + "_" + typeName + "_ocio";
         shaderDesc->setFunctionName(transformFunctionName.c_str());
-
+        
         // Retrieve information
         gpu->extractGpuShaderInfo(shaderDesc);
 
@@ -266,9 +255,11 @@ ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceT
         */
 
         // Create an implementation based on source code
-        ImplementationPtr impl = _document->addImplementation(transformFunctionName);
-        if (impl)
+        ImplementationPtr impl = _document->getImplementation(transformFunctionName);
+        if (!impl)
         {
+            impl = _document->addImplementation(transformFunctionName);
+
             // Note: There is only one input so we just use the default name: "inPixel".
             impl->addInput("inPixel", typeName);
             impl->addOutput(outputName, typeName);
@@ -300,12 +291,12 @@ void OCIOSourceCodeNode::emitFunctionDefinition(const ShaderNode&, GenContext& c
 {
     // Write source code as is
     BEGIN_SHADER_STAGE(stage, Stage::PIXEL)
-    if (!_functionSource.empty())
-    {
-        const ShaderGenerator& shadergen = context.getShaderGenerator();
-        shadergen.emitBlock(_functionSource, context, stage);
-        shadergen.emitLineBreak(stage);
-    }
+        if (!_functionSource.empty())
+        {
+            const ShaderGenerator& shadergen = context.getShaderGenerator();
+            shadergen.emitBlock(_functionSource, context, stage);
+            shadergen.emitLineBreak(stage);
+        }
     END_SHADER_STAGE(stage, Stage::PIXEL)
 }
 
@@ -317,7 +308,7 @@ void OCIOSourceCodeNode::emitFunctionCall(const ShaderNode& node, GenContext& co
     //
     BEGIN_SHADER_STAGE(stage, Stage::PIXEL)
 
-    const ShaderGenerator& shadergen = context.getShaderGenerator();
+        const ShaderGenerator& shadergen = context.getShaderGenerator();
 
     // Declare the output variable
     shadergen.emitLineBegin(stage);
@@ -325,20 +316,46 @@ void OCIOSourceCodeNode::emitFunctionCall(const ShaderNode& node, GenContext& co
     shadergen.emitString(" = ", stage);
 
     // Emit function name. 
-    // TODO : add vec3/vec4 conversion as needed
-    shadergen.emitString(_functionName + "(", stage);
+    // If the input is a 3-component then a conversion to promote to 4-channel is required
+    // to make the call to the shader code. Then a conversion back to 3-component is required.
+    ShaderInput* input = node.getInputs()[0];
+    bool conversionRequired = input->getType() == Type::COLOR3;
+    const MaterialX::Syntax &syntax = shadergen.getSyntax();
+    const string color4Syntax = syntax.getTypeSyntax(Type::COLOR4).getName();
+    const string color3Syntax = syntax.getTypeSyntax(Type::COLOR3).getName();
+    conversionRequired = false;
 
-    // Emit all inputs.
-    string delim = "";
-    for (ShaderInput* input : node.getInputs())
+    // Insert conversion from color4 to color3
+    if (conversionRequired)
     {
-        shadergen.emitString(delim, stage);
+        shadergen.emitString(color3Syntax + "(", stage);
+        shadergen.emitString(_functionName + "(", stage);
+    }
+    else
+    {
+        shadergen.emitString(_functionName + "(", stage);
+    }
+
+    // Emit input. 
+    // Promote to color4 type if required, assuming the fourth channel is alpha and equal to 1.
+    if (conversionRequired)
+    {
+        shadergen.emitString(color4Syntax + "(", stage);
         shadergen.emitInput(input, context, stage);
-        delim = ", ";
+        shadergen.emitString(", 1.0)", stage);
+    }
+    else
+    {
+        shadergen.emitInput(input, context, stage);
     }
 
     // End function call
     shadergen.emitString(")", stage);
+    if (conversionRequired)
+    {
+        shadergen.emitString(")", stage);
+        //shadergen.emitString("." + syntax.getSwizzledVariable(EMPTY_STRING, Type::COLOR4, "rgb", Type::COLOR3), stage);
+    }
     shadergen.emitLineEnd(stage);
 
     END_SHADER_STAGE(stage, Stage::PIXEL)

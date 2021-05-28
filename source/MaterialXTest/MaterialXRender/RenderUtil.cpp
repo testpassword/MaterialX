@@ -179,16 +179,19 @@ bool ShaderRenderTester::validate(const mx::FilePathVec& testRootPaths, const mx
 
     createRenderer(log);
 
-#ifdef MATERIALX_BUILD_OCIO
     _colorManagementSystem = nullptr;
-    mx::OCIOColorManagementSystemPtr ocio = mx::OCIOColorManagementSystem::create(_shaderGenerator->getTarget());
-    if (ocio->readConfigFile(_colorManagementConfigFile))
-    { 
-        _colorManagementSystem = ocio;
-    }
-    else
-    { 
-        docValidLog << ">> Failed to setup OCIO color management configuration: '" + _colorManagementConfigFile.asString() + "'" << std::endl;
+#ifdef MATERIALX_BUILD_OCIO
+    if (!_colorManagementConfigFile.isEmpty())
+    {
+        mx::OCIOColorManagementSystemPtr ocio = mx::OCIOColorManagementSystem::create(_shaderGenerator->getTarget());
+        if (ocio->readConfigFile(_colorManagementConfigFile))
+        {
+            _colorManagementSystem = ocio;
+        }
+        else
+        {
+            docValidLog << ">> Failed to setup OCIO color management configuration: '" + _colorManagementConfigFile.asString() + "'" << std::endl;
+        }
     }
 #endif
     if (!_colorManagementSystem)

@@ -450,15 +450,19 @@ void ShaderGeneratorTester::addColorManagement()
     {
         const std::string& target = _shaderGenerator->getTarget();
 
+        _colorManagementSystem = nullptr;
 #ifdef MATERIALX_BUILD_OCIO
-        mx::OCIOColorManagementSystemPtr ocio = mx::OCIOColorManagementSystem::create(target);
-        if (ocio->readConfigFile(_colorManagementConfigFile))
+        if (!_colorManagementConfigFile.isEmpty())
         {
-            _colorManagementSystem = ocio;
-        }
-        else
-        {
-            _logFile << ">> Failed to setup OCIO color management configuration: '" + _colorManagementConfigFile.asString() + "'" << std::endl;
+            mx::OCIOColorManagementSystemPtr ocio = mx::OCIOColorManagementSystem::create(target);
+            if (ocio->readConfigFile(_colorManagementConfigFile))
+            {
+                _colorManagementSystem = ocio;
+            }
+            else
+            {
+                _logFile << ">> Failed to setup OCIO color management configuration: '" + _colorManagementConfigFile.asString() + "'" << std::endl;
+            }
         }
 #endif
         if (!_colorManagementSystem)
