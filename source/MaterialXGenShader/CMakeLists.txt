@@ -24,9 +24,9 @@ if(MATERIALX_BUILD_OCIO)
 
     message(STATUS "OCIO include path: ${MATERIALX_OCIO_DIR}/include")
     include_directories("${MATERIALX_OCIO_DIR}/include")
- 
+
     message(STATUS "OCIO library path: ${MATERIALX_OCIO_DIR}/lib")
-    file(GLOB OCIO_LIBRARIES "${MATERIALX_OCIO_DIR}/lib/*.lib") # ${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    file(GLOB OCIO_LIBRARIES "${MATERIALX_OCIO_DIR}/lib/*${CMAKE_STATIC_LIBRARY_SUFFIX}")
     message(STATUS "OCIO library files: ${OCIO_LIBRARIES}")
     target_link_libraries(MaterialXGenShader "${OCIO_LIBRARIES}")
     # Expose to other libraries

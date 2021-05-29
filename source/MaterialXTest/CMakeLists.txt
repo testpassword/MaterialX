@@ -43,8 +43,6 @@ target_link_libraries(MaterialXTest MaterialXCore)
 add_subdirectory(MaterialXFormat)
 target_link_libraries(MaterialXTest MaterialXFormat)
 
-message(STATUS "********************** OCIO LIBRARIES: ${MATERIALX_OCIO_LIBRARIES}")
-
 if(MATERIALX_BUILD_GEN)
   if (MATERIALX_BUILD_OCIO)
      target_link_libraries(MaterialXTest ${MATERIALX_OCIO_LIBRARIES})

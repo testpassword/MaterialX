@@ -317,7 +317,7 @@ void OCIOSourceCodeNode::emitFunctionCall(const ShaderNode& node, GenContext& co
     //
     BEGIN_SHADER_STAGE(stage, Stage::PIXEL)
 
-        const ShaderGenerator& shadergen = context.getShaderGenerator();
+    const ShaderGenerator& shadergen = context.getShaderGenerator();
 
     // Declare the output variable
     shadergen.emitLineBegin(stage);
@@ -325,46 +325,14 @@ void OCIOSourceCodeNode::emitFunctionCall(const ShaderNode& node, GenContext& co
     shadergen.emitString(" = ", stage);
 
     // Emit function name. 
-    // If the input is a 3-component then a conversion to promote to 4-channel is required
-    // to make the call to the shader code. Then a conversion back to 3-component is required.
-    ShaderInput* input = node.getInputs()[0];
-    bool conversionRequired = input->getType() == Type::COLOR3;
-    const MaterialX::Syntax &syntax = shadergen.getSyntax();
-    const string color4Syntax = syntax.getTypeSyntax(Type::COLOR4).getName();
-    const string color3Syntax = syntax.getTypeSyntax(Type::COLOR3).getName();
-    conversionRequired = false;
-
-    // Insert conversion from color4 to color3
-    if (conversionRequired)
-    {
-        shadergen.emitString(color3Syntax + "(", stage);
-        shadergen.emitString(_functionName + "(", stage);
-    }
-    else
-    {
-        shadergen.emitString(_functionName + "(", stage);
-    }
+    shadergen.emitString(_functionName + "(", stage);
 
     // Emit input. 
-    // Promote to color4 type if required, assuming the fourth channel is alpha and equal to 1.
-    if (conversionRequired)
-    {
-        shadergen.emitString(color4Syntax + "(", stage);
-        shadergen.emitInput(input, context, stage);
-        shadergen.emitString(", 1.0)", stage);
-    }
-    else
-    {
-        shadergen.emitInput(input, context, stage);
-    }
+    ShaderInput* input = node.getInputs()[0];
+    shadergen.emitInput(input, context, stage);
 
     // End function call
     shadergen.emitString(")", stage);
-    if (conversionRequired)
-    {
-        shadergen.emitString(")", stage);
-        //shadergen.emitString("." + syntax.getSwizzledVariable(EMPTY_STRING, Type::COLOR4, "rgb", Type::COLOR3), stage);
-    }
     shadergen.emitLineEnd(stage);
 
     END_SHADER_STAGE(stage, Stage::PIXEL)
