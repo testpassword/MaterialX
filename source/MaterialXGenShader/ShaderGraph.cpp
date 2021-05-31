@@ -274,61 +274,13 @@ void ShaderGraph::addColorTransformNode(ShaderInput* input, const ColorSpaceTran
         // allowed to have colorspaces specified.
         return;
     }
+
     const string colorTransformNodeName = input->getFullName() + "_cm";
     ShaderNodePtr colorTransformNodePtr = colorManagementSystem->createNode(this, transform, colorTransformNodeName, context);
-
     if (colorTransformNodePtr)
     {
         addNode(colorTransformNodePtr);
-
-        ShaderNode* colorTransformNode = colorTransformNodePtr.get();
-        ShaderOutput* colorTransformNodeOutput = colorTransformNode->getOutput(0);
-
-        ShaderInput* colorTransformInput = colorTransformNode->getInput(0);
-        colorTransformInput->setVariable(input->getFullName());
-        colorTransformInput->setPath(input->getPath());
-        colorTransformInput->setUnit(EMPTY_STRING);
-
-        // Create conversion + transform triplet
-        ShaderInput* inputToConnect = colorTransformInput;
-        ShaderOutput* outputToConnect = colorTransformNodeOutput;
-        if (colorTransformInput->getType() == Type::COLOR4 && transform.type == Type::COLOR3)
-        {
-            // Add conversion nodes
-            const string convertToColor4String = "c3_to_" + colorTransformNodeName;
-            ShaderNode* convertToColor4Ptr = getNode(convertToColor4String);
-            if (!convertToColor4Ptr)
-            {
-                NodeDefPtr toColor4NodeDef = _document->getNodeDef("ND_convert_color3_color4");
-                ShaderNodePtr convertToColor4 = ShaderNode::create(this, convertToColor4String, *toColor4NodeDef, context);
-                addNode(convertToColor4);
-                convertToColor4Ptr = convertToColor4.get();
-            }
-            const string convertToColor3String = colorTransformNodeName + "_to_c3";
-            ShaderNode* convertToColor3Ptr = getNode(convertToColor3String);
-            if (!convertToColor3Ptr)
-            {
-                NodeDefPtr toColor3NodeDef = _document->getNodeDef("ND_convert_color4_color3");
-                ShaderNodePtr convertToColor3 = ShaderNode::create(this, convertToColor3String, *toColor3NodeDef, context);
-                addNode(convertToColor3);
-                convertToColor3Ptr = convertToColor3.get();
-            }
-            // Connect up converstion nodes + transform node
-            colorTransformInput->makeConnection(convertToColor4Ptr->getOutput(0));
-            convertToColor3Ptr->getInput(0)->makeConnection(colorTransformNodeOutput);
-            outputToConnect = convertToColor3Ptr->getOutput(0);
-            inputToConnect = convertToColor4Ptr->getInput(0);
-        }
-
-        inputToConnect->setValue(input->getValue());
-
-        if (input->isBindInput())
-        {
-            ShaderOutput* oldConnection = input->getConnection();
-            inputToConnect->makeConnection(oldConnection);
-        }
-
-        input->makeConnection(outputToConnect);
+        colorManagementSystem->connectNodeToShaderInput(this, colorTransformNodePtr, input, context);
     }
 }
 
@@ -346,50 +298,7 @@ void ShaderGraph::addColorTransformNode(ShaderOutput* output, const ColorSpaceTr
     if (colorTransformNodePtr)
     {
         addNode(colorTransformNodePtr);
-
-        ShaderNode* colorTransformNode = colorTransformNodePtr.get();
-        ShaderOutput* colorTransformNodeOutput = colorTransformNode->getOutput(0);
-        ShaderInput* colorTransformNodeInput = colorTransformNode->getInput(0);
-
-        ShaderOutput* outputToConnect = colorTransformNodeOutput;
-        ShaderInput* inputToConnect = colorTransformNodeInput;
-        if (colorTransformNodeInput->getType() == Type::COLOR4 && transform.type == Type::COLOR3)
-        {
-            // Add conversion nodes
-            const string convertToColor4String = "c3_to_" + colorTransformNodeName;
-            ShaderNode* convertToColor4Ptr = getNode(convertToColor4String);
-            if (!convertToColor4Ptr)
-            {
-                NodeDefPtr toColor4NodeDef = _document->getNodeDef("ND_convert_color3_color4");
-                ShaderNodePtr convertToColor4 = ShaderNode::create(this, convertToColor4String, *toColor4NodeDef, context);
-                addNode(convertToColor4);
-                convertToColor4Ptr = convertToColor4.get();
-            }
-            const string convertToColor3String = colorTransformNodeName + "_to_c3";
-            ShaderNode* convertToColor3Ptr = getNode(convertToColor3String);
-            if (!convertToColor3Ptr)
-            {
-                NodeDefPtr toColor3NodeDef = _document->getNodeDef("ND_convert_color4_color3");
-                ShaderNodePtr convertToColor3 = ShaderNode::create(this, convertToColor3String, *toColor3NodeDef, context);
-                addNode(convertToColor3);
-                convertToColor3Ptr = convertToColor3.get();
-            }
-
-            colorTransformNodeInput->makeConnection(convertToColor4Ptr->getOutput(0));
-            convertToColor3Ptr->getInput(0)->makeConnection(colorTransformNodeOutput);
-            inputToConnect = convertToColor4Ptr->getInput(0);
-            outputToConnect = convertToColor3Ptr->getOutput(0);
-        }
-
-        ShaderInputSet downStreamInputs = output->getConnections();
-        for (ShaderInput* downStreamInput : downStreamInputs)
-        {
-            downStreamInput->breakConnection();
-            downStreamInput->makeConnection(outputToConnect);
-        }
-
-        // Connect the node to the upstream output.
-        inputToConnect->makeConnection(output);
+        colorManagementSystem->connectNodeToShaderOutput(this, colorTransformNodePtr, output, context);
     }
 }
 

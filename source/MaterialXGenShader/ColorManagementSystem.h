@@ -65,12 +65,35 @@ class MX_GENSHADER_API ColorManagementSystem
     virtual ShaderNodePtr createNode(const ShaderGraph* parent, const ColorSpaceTransform& transform, const string& name,
                                      GenContext& context) const;
 
+    /// Connect node to graph input
+    void connectNodeToShaderInput(ShaderGraph* graph, ShaderNodePtr node, ShaderInput* shasderInput, GenContext& context);
+
+    /// Connect node to graph output
+    void connectNodeToShaderOutput(ShaderGraph* graph, ShaderNodePtr node, ShaderOutput* shaderOutput, GenContext& context);
+
   protected:
     /// Protected constructor
     ColorManagementSystem();
       
     /// Returns an implementation for a given transform
     virtual ImplementationPtr getImplementation(const ColorSpaceTransform& transform) const = 0;
+
+    /// For a given transform node and a target port type to connect to, determine the appropriate
+    /// input and output ports. If the transform node's port type does not match the target type
+    /// additional "conversion" nodes will created and the appropriate input and output ports on these 
+    /// nodes will be returned.
+    ///
+    /// Possible configirations include the first two cases where no additional conversion nodes are required, and
+    /// the latter two cases where conversions are required
+    /// 
+    ///  color3 input  -> color3 transform node -> color3 output
+    ///  color4 input  -> color4 transform node -> color3 output
+    ///  color3 input -> color3-to-color4 conversion -> color4 transform node -> color4_to_color3 conversion -> color3 output
+    ///  color4 input -> color4_to_color3 conversion -> color3 transform node -> color3-to-color4 conversion -> color4 output
+    ///
+    virtual void getPortConnections(ShaderGraph* graph, ShaderNode* colorTransformNode,
+                                    const TypeDesc* targetType, GenContext& context,
+                                    ShaderInput*& inputToConnect, ShaderOutput*& outputToConnect);
 
   protected:
     DocumentPtr _document;

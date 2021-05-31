@@ -290,12 +290,12 @@ void OCIOSourceCodeNode::emitFunctionDefinition(const ShaderNode&, GenContext& c
 {
     // Write source code as is
     BEGIN_SHADER_STAGE(stage, Stage::PIXEL)
-        if (!_functionSource.empty())
-        {
-            const ShaderGenerator& shadergen = context.getShaderGenerator();
-            shadergen.emitBlock(_functionSource, context, stage);
-            shadergen.emitLineBreak(stage);
-        }
+    if (!_functionSource.empty())
+    {
+        const ShaderGenerator& shadergen = context.getShaderGenerator();
+        shadergen.emitBlock(_functionSource, context, stage);
+        shadergen.emitLineBreak(stage);
+    }
     END_SHADER_STAGE(stage, Stage::PIXEL)
 }
 

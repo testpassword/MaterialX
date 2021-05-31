@@ -88,4 +88,107 @@ ShaderNodePtr ColorManagementSystem::createNode(const ShaderGraph* parent, const
     return shaderNode;
 }
 
+
+void ColorManagementSystem::getPortConnections(ShaderGraph* graph, ShaderNode* colorTransformNode,
+                                               const TypeDesc* targetType, GenContext& context,
+                                               ShaderInput*& inputToConnect, ShaderOutput*& outputToConnect)
+{
+    const std::string colorTransformNodeName = colorTransformNode->getName();
+    ShaderOutput* colorTransformNodeOutput = colorTransformNode->getOutput(0);
+    ShaderInput* colorTransformNodeInput = colorTransformNode->getInput(0);
+
+    outputToConnect = colorTransformNodeOutput;
+    inputToConnect = colorTransformNodeInput;
+    if ((colorTransformNodeInput->getType() == Type::COLOR4 && targetType == Type::COLOR3) ||
+        (colorTransformNodeInput->getType() == Type::COLOR3 && targetType == Type::COLOR4))
+    {
+        const string convertToColor4String = "c3_to_" + colorTransformNodeName;
+        ShaderNode* convertToColor4Ptr = graph->getNode(convertToColor4String);
+        if (!convertToColor4Ptr)
+        {
+            NodeDefPtr toColor4NodeDef = _document->getNodeDef("ND_convert_color3_color4");
+            ShaderNodePtr convertToColor4 = ShaderNode::create(graph, convertToColor4String, *toColor4NodeDef, context);
+            graph->addNode(convertToColor4);
+            convertToColor4Ptr = convertToColor4.get();
+        }
+        const string convertToColor3String = colorTransformNodeName + "_to_c3";
+        ShaderNode* convertToColor3Ptr = graph->getNode(convertToColor3String);
+        if (!convertToColor3Ptr)
+        {
+            NodeDefPtr toColor3NodeDef = _document->getNodeDef("ND_convert_color4_color3");
+            ShaderNodePtr convertToColor3 = ShaderNode::create(graph, convertToColor3String, *toColor3NodeDef, context);
+            graph->addNode(convertToColor3);
+            convertToColor3Ptr = convertToColor3.get();
+        }
+
+        if (targetType == Type::COLOR3)
+        {
+            colorTransformNodeInput->makeConnection(convertToColor4Ptr->getOutput(0));
+            convertToColor3Ptr->getInput(0)->makeConnection(colorTransformNodeOutput);
+            inputToConnect = convertToColor4Ptr->getInput(0);
+            outputToConnect = convertToColor3Ptr->getOutput(0);
+        }
+        else
+        {
+            colorTransformNodeInput->makeConnection(convertToColor3Ptr->getOutput(0));
+            convertToColor4Ptr->getInput(0)->makeConnection(colorTransformNodeOutput);
+            inputToConnect = convertToColor3Ptr->getInput(0);
+            outputToConnect = convertToColor4Ptr->getOutput(0);
+        }
+    }
+}
+
+void ColorManagementSystem::connectNodeToShaderInput(ShaderGraph* graph, ShaderNodePtr colorTransformNodePtr, ShaderInput* shaderInput, GenContext& context)
+{
+    if (!graph || !colorTransformNodePtr || !shaderInput)
+    {
+        throw ExceptionShaderGenError("Cannot connect color management node to shader input");
+    }
+
+    ShaderNode* colorTransformNode = colorTransformNodePtr.get();
+    ShaderInput* inputToConnect = nullptr;
+    ShaderOutput* outputToConnect = nullptr;
+
+    getPortConnections(graph, colorTransformNode, shaderInput->getType(), context, inputToConnect, outputToConnect);
+    if (inputToConnect && outputToConnect)
+
+
+    inputToConnect->setValue(shaderInput->getValue());
+
+    if (shaderInput->isBindInput())
+    {
+        ShaderOutput* oldConnection = shaderInput->getConnection();
+        inputToConnect->makeConnection(oldConnection);
+    }
+
+    shaderInput->makeConnection(outputToConnect);
+}
+
+
+void ColorManagementSystem::connectNodeToShaderOutput(ShaderGraph* graph, ShaderNodePtr colorTransformNodePtr, ShaderOutput* shaderOutput, GenContext& context)
+{
+    if (!graph || !colorTransformNodePtr || !shaderOutput)
+    {
+        throw ExceptionShaderGenError("Cannot connect color management node to shader output");
+    }
+
+    ShaderNode* colorTransformNode = colorTransformNodePtr.get();
+    ShaderInput* inputToConnect = nullptr;
+    ShaderOutput* outputToConnect = nullptr;
+
+    getPortConnections(graph, colorTransformNode, shaderOutput->getType(), context, inputToConnect, outputToConnect);
+    if (inputToConnect && outputToConnect)
+    {
+        ShaderInputSet downStreamInputs = shaderOutput->getConnections();
+        for (ShaderInput* downStreamInput : downStreamInputs)
+        {
+            downStreamInput->breakConnection();
+            downStreamInput->makeConnection(outputToConnect);
+        }
+
+        // Connect the node to the upstream output.
+        inputToConnect->makeConnection(shaderOutput);
+    }
+}
+
 } // namespace MaterialX
