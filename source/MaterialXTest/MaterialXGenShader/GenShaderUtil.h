@@ -255,12 +255,13 @@ class ShaderGeneratorTester
 
     // Get implementation "whitelist" for those implementations that have
     // been skipped for checking
-    virtual void getImplementationWhiteList(mx::StringSet& whiteList) = 0;
+    virtual void getImplementationWhiteList(mx::StringSet& whiteList);
 
     mx::ShaderGeneratorPtr _shaderGenerator;
     const std::string _targetString;
     mx::ColorManagementSystemPtr _colorManagementSystem;
     mx::FilePath _colorManagementConfigFile;
+    mx::StringSet _colorManagementImplWhiteList;
 
     // Unit system 
     mx::UnitSystemPtr _unitSystem;

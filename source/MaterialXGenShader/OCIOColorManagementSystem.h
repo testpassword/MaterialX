@@ -70,9 +70,8 @@ class MX_GENSHADER_API OCIOColorManagementSystem : public ColorManagementSystem
 
   private:
     OCIOInformation*  _ocioInfo;
-    StringSet _colorSpaceNames;
-    FilePath _configFile;
-    string _target;
+    FilePath          _configFile;
+    string            _target;
 };
 
 
@@ -80,7 +79,6 @@ class MX_GENSHADER_API OCIOColorManagementSystem : public ColorManagementSystem
 class MX_GENSHADER_API OCIOSourceCodeNode : public SourceCodeNode
 {
 public:
-    // TODO: Add more methods as needed...
     static ShaderNodeImplPtr create();
 
     void emitFunctionDefinition(const ShaderNode& node, GenContext& context, ShaderStage& stage) const override;

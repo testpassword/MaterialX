@@ -99,7 +99,6 @@ bool OCIOColorManagementSystem::readConfigFile(const FilePath& configFile)
     if (_configFile != configFile && configFile.exists())
     {
         _configFile = EMPTY_STRING;
-        _colorSpaceNames.clear();
         _ocioInfo->config = nullptr;
 
         try
@@ -107,15 +106,8 @@ bool OCIOColorManagementSystem::readConfigFile(const FilePath& configFile)
             _ocioInfo->config = OCIO::Config::CreateFromFile(configFile.asString().c_str());
             if (_ocioInfo->config)
             {
-                OCIO::ColorSpaceSetRcPtr colorSpaces = _ocioInfo->config->getColorSpaces(nullptr);
-                int colorSpaceCount = colorSpaces->getNumColorSpaces();
-                for (int i = 0; i < colorSpaceCount; i++)
-                {
-                    _colorSpaceNames.insert(colorSpaces->getColorSpaceNameByIndex(i));
-                }
                 _configFile = configFile;
-
-                return true;
+                return (_ocioInfo->config->getNumColorSpaces() > 0);
             }
         }
         catch (const OCIO::Exception& e)
@@ -217,10 +209,6 @@ ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceT
 
         // Create a shader descriptor
         //
-        // TODO: Determine if deriving from GpuShaderCreator is required for transforms which produce additional 
-        // support functions and samplers. For now this using a GpuShaderDesc is suffient for all non-LUT single 
-        // function setup.
-        //
         OCIO::GpuShaderDescRcPtr shaderDesc = OCIO::GpuShaderDesc::CreateShaderDesc();
         if (!shaderDesc)
         {
@@ -229,7 +217,9 @@ ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceT
 
         shaderDesc->setLanguage(static_cast<OCIO::GpuLanguage>(_ocioInfo->language));
         const std::string& typeName = transform.type->getName();
-        std::string transformFunctionName = "IM_" + transform.sourceSpace + "_to_" + transform.targetSpace + "_" + typeName + "_ocio";
+        // Note that the source and target space strings may contain invalid characters so we need to ensure that
+        // a valid function name is created here
+        std::string transformFunctionName = "IM_" + createValidName(transform.sourceSpace) + "_to_" + createValidName(transform.targetSpace) + "_" + typeName + "_ocio";
         shaderDesc->setFunctionName(transformFunctionName.c_str());
         
         // Retrieve information

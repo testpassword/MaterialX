@@ -329,6 +329,10 @@ void testUniqueNames(mx::GenContext& context, const std::string& stage)
     REQUIRE(sgNode1->getOutput()->getVariable() == "unique_names_out");
 }
 
+void ShaderGeneratorTester::getImplementationWhiteList(mx::StringSet& whiteList)
+{
+    whiteList.insert(_colorManagementImplWhiteList.begin(), _colorManagementImplWhiteList.end());
+}
 
 void ShaderGeneratorTester::checkImplementationUsage(const mx::StringSet& usedImpls,
                                                      const mx::GenContext& context,
@@ -467,7 +471,27 @@ void ShaderGeneratorTester::addColorManagement()
 #endif
         if (!_colorManagementSystem)
         {
+            _colorManagementImplWhiteList.clear();
             _colorManagementSystem = mx::DefaultColorManagementSystem::create(target);
+        }
+        else
+        {
+            // Ignore any implementations from the default color management system
+            _colorManagementImplWhiteList =
+            {
+                "srgb_texture_to_lin_rec709_color4",
+                "gamma22_to_lin_rec709_color3",
+                "acescg_to_lin_rec709_color3",
+                "acescg_to_lin_rec709_color4",
+                "gamma18_to_lin_rec709_color3",
+                "gamma18_to_lin_rec709_color4",
+                "gamma22_to_lin_rec709_color4",
+                "gamma24_to_lin_rec709_color3",
+                "gamma24_to_lin_rec709_color4",
+                "g22_ap1_to_lin_rec709_color3",
+                "g22_ap1_to_lin_rec709_color4",
+                "srgb_texture_to_lin_rec709_color3"
+            };
         }
         if (!_colorManagementSystem)
         {
