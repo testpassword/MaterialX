@@ -79,17 +79,18 @@ void OCIOColorManagementSystem::loadLibrary(DocumentPtr document)
     }
 
     TargetDefPtr targetDef = _document->getTargetDef(_target);
-    const StringVec targets = targetDef->getMatchingTargets();
-
-    for (const string& target : targets)
-    {
-        if (_ocioInfo->languageMap.count(target))
+    if (targetDef)
+    { 
+        for (const string& target : targetDef->getMatchingTargets())
         {
-            // Note that we store the "base" target it instead of any derived target
-            // as this is the actual shading language.
-            _ocioInfo->language = static_cast<int>(OCIO::GPU_LANGUAGE_GLSL_4_0);
-            _ocioInfo->target = target;
-            break;                
+            if (_ocioInfo->languageMap.count(target))
+            {
+                // Note that we store the "base" target instead of any derived target
+                // as this is the actual shading language.
+                _ocioInfo->language = static_cast<int>(OCIO::GPU_LANGUAGE_GLSL_4_0);
+                _ocioInfo->target = target;
+                break;
+            }
         }
     }
 }
@@ -302,7 +303,7 @@ void OCIOSourceCodeNode::emitFunctionDefinition(const ShaderNode&, GenContext& c
 void OCIOSourceCodeNode::emitFunctionCall(const ShaderNode& node, GenContext& context, ShaderStage& stage) const
 {
     // The main variation from the default "hardware source code node" logic is that OCIO always returns
-    // a value from function invocation, so modify caller logic to declare an local variable and assign it
+    // a value from function invocation, so modify caller logic to declare a local variable and assign it
     // the return value from the OCIO shader function.
     //
     BEGIN_SHADER_STAGE(stage, Stage::PIXEL)

@@ -138,41 +138,39 @@ void ColorManagementSystem::getPortConnections(ShaderGraph* graph, ShaderNode* c
     }
 }
 
-void ColorManagementSystem::connectNodeToShaderInput(ShaderGraph* graph, ShaderNodePtr colorTransformNodePtr, ShaderInput* shaderInput, GenContext& context)
+void ColorManagementSystem::connectNodeToShaderInput(ShaderGraph* graph, ShaderNode* colorTransformNode, ShaderInput* shaderInput, GenContext& context)
 {
-    if (!graph || !colorTransformNodePtr || !shaderInput)
+    if (!graph || !colorTransformNode|| !shaderInput)
     {
         throw ExceptionShaderGenError("Cannot connect color management node to shader input");
     }
 
-    ShaderNode* colorTransformNode = colorTransformNodePtr.get();
     ShaderInput* inputToConnect = nullptr;
     ShaderOutput* outputToConnect = nullptr;
 
     getPortConnections(graph, colorTransformNode, shaderInput->getType(), context, inputToConnect, outputToConnect);
     if (inputToConnect && outputToConnect)
-
-
-    inputToConnect->setValue(shaderInput->getValue());
-
-    if (shaderInput->isBindInput())
     {
-        ShaderOutput* oldConnection = shaderInput->getConnection();
-        inputToConnect->makeConnection(oldConnection);
-    }
+        inputToConnect->setValue(shaderInput->getValue());
 
-    shaderInput->makeConnection(outputToConnect);
+        if (shaderInput->isBindInput())
+        {
+            ShaderOutput* oldConnection = shaderInput->getConnection();
+            inputToConnect->makeConnection(oldConnection);
+        }
+
+        shaderInput->makeConnection(outputToConnect);
+    }
 }
 
 
-void ColorManagementSystem::connectNodeToShaderOutput(ShaderGraph* graph, ShaderNodePtr colorTransformNodePtr, ShaderOutput* shaderOutput, GenContext& context)
+void ColorManagementSystem::connectNodeToShaderOutput(ShaderGraph* graph, ShaderNode* colorTransformNode, ShaderOutput* shaderOutput, GenContext& context)
 {
-    if (!graph || !colorTransformNodePtr || !shaderOutput)
+    if (!graph || !colorTransformNode || !shaderOutput)
     {
         throw ExceptionShaderGenError("Cannot connect color management node to shader output");
     }
 
-    ShaderNode* colorTransformNode = colorTransformNodePtr.get();
     ShaderInput* inputToConnect = nullptr;
     ShaderOutput* outputToConnect = nullptr;
 

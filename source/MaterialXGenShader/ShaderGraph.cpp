@@ -280,7 +280,7 @@ void ShaderGraph::addColorTransformNode(ShaderInput* input, const ColorSpaceTran
     if (colorTransformNodePtr)
     {
         addNode(colorTransformNodePtr);
-        colorManagementSystem->connectNodeToShaderInput(this, colorTransformNodePtr, input, context);
+        colorManagementSystem->connectNodeToShaderInput(this, colorTransformNodePtr.get(), input, context);
     }
 }
 
@@ -298,7 +298,7 @@ void ShaderGraph::addColorTransformNode(ShaderOutput* output, const ColorSpaceTr
     if (colorTransformNodePtr)
     {
         addNode(colorTransformNodePtr);
-        colorManagementSystem->connectNodeToShaderOutput(this, colorTransformNodePtr, output, context);
+        colorManagementSystem->connectNodeToShaderOutput(this, colorTransformNodePtr.get(), output, context);
     }
 }
 
