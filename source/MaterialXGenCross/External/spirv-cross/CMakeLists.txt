@@ -2,6 +2,7 @@
 # SPIRV-CROSS Configuration
 # 
 include(ExternalProject)
+set_property(DIRECTORY PROPERTY EP_BASE ${KHR_TOOLS_DIR})
 set(SPIRVCROSS_GIT_REPO  https://github.com/KhronosGroup/SPIRV-Cross  CACHE STRING "spirv-cross Git repo")
 ExternalProject_Add(khr_spirv-cross
     GIT_REPOSITORY  ${SPIRVCROSS_GIT_REPO}

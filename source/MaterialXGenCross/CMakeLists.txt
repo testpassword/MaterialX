@@ -12,14 +12,7 @@ add_subdirectory(External/spirv-cross)
 add_library(MaterialXGenCross ${materialx_source} ${materialx_header})
 
 # add glslang and spirv-cross dependencies.
-add_library(spirvCrossLib INTERFACE)
-add_dependencies(spirvCrossLib spirv-cross)
-
-add_library(glslangLib INTERFACE)
-add_dependencies(glslangLib glslang) 
-
-add_dependencies(MaterialXGenCross glslangLib spirvCrossLib)
-
+add_dependencies(MaterialXGenCross khr_spirv-cross khr_glslang)
 add_definitions(-DMATERIALX_GENCROSS_EXPORTS)
 
 set_target_properties(

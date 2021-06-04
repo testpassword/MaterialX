@@ -2,6 +2,7 @@
 # GLSLANG Configuration
 #
 include(ExternalProject)
+set_property(DIRECTORY PROPERTY EP_BASE ${KHR_TOOLS_DIR})
 set(GLSLANG_GIT_REPO     https://github.com/KhronosGroup/glslang CACHE STRING "glslang Git repo")
 ExternalProject_Add(khr_glslang
     GIT_REPOSITORY   ${GLSLANG_GIT_REPO}
