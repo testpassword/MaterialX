@@ -16,7 +16,7 @@ ExternalProject_Add(khr_glslang
         -DENABLE_CTEST=OFF
         -DBUILD_TESTING=OFF
         -DENABLE_OPT=OFF
-        -DCMAKE_DEBUG_POSTFIX=d
+        -DCMAKE_DEBUG_POSTFIX=${CMAKE_DEBUG_POSTFIX}
         -DCMAKE_INSTALL_PREFIX=${KHR_TOOLS_DIR}
     UPDATE_COMMAND "" # Skip updates
 )
