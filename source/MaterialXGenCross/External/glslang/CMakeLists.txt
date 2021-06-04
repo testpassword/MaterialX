@@ -5,7 +5,7 @@ include(ExternalProject)
 set(GLSLANG_GIT_REPO     https://github.com/KhronosGroup/glslang CACHE STRING "glslang Git repo")
 ExternalProject_Add(khr_glslang
     GIT_REPOSITORY   ${GLSLANG_GIT_REPO}
-    GIT_TAG 6bdcb4be344d7903bd92fd464e496c3199b91484
+    GIT_TAG 11.4.0
     GIT_SHALLOW  ON
     GIT_PROGRESS OFF
     BUILD_ALWAYS OFF
