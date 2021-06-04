@@ -4,35 +4,22 @@ file(GLOB_RECURSE materialx_header "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 assign_source_group("Header Files" ${materialx_header})
 assign_source_group("Source Files" ${materialx_source})
 
-include(FetchContent)
-include(ExternalProject)
-#set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/khronos-tools)
-
+# setup location for khronos tools
+set(KHR_TOOLS_DIR ${CMAKE_BINARY_DIR}/khr_tools)
 add_subdirectory(External/glslang)
 add_subdirectory(External/spirv-cross)
 
-#[[
-ExternalProject_Add_Step(
-  spriv-cross CopyToBin
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${GLOBAL_OUTPUT_PATH}/humblelogging/bin ${GLOBAL_OUTPUT_PATH}
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${GLOBAL_OUTPUT_PATH}/humblelogging/lib ${GLOBAL_OUTPUT_PATH}
-  DEPENDEES install
-)]]
-ExternalProject_Get_Property(khr_glslang install_dir)
-get_filename_component(GLSLANG_DIR ${install_dir}/.. ABSOLUTE)
-message (STATUS glsldir ${GLSLANG_DIR})
+add_library(MaterialXGenCross ${materialx_source} ${materialx_header})
 
-ExternalProject_Get_Property(khr_spirv-cross install_dir)
-set (SPIRVCROSS_DIR ${install_dir}/..)
-get_filename_component(SPIRVCROSS_DIR ${install_dir}/.. ABSOLUTE)
+# add glslang and spirv-cross dependencies.
+add_library(spirvCrossLib INTERFACE)
+add_dependencies(spirvCrossLib spirv-cross)
 
-add_library(MaterialXGenCross 
-            ${materialx_source} 
-            ${materialx_header}
-            )
+add_library(glslangLib INTERFACE)
+add_dependencies(glslangLib glslang) 
 
-add_dependencies(MaterialXGenCross khr_glslang)
-add_dependencies(MaterialXGenCross khr_spirv-cross)
+add_dependencies(MaterialXGenCross glslangLib spirvCrossLib)
+
 add_definitions(-DMATERIALX_GENCROSS_EXPORTS)
 
 set_target_properties(
@@ -45,38 +32,48 @@ set_target_properties(
 
 target_link_directories(MaterialXGenCross
     PRIVATE
-        $<BUILD_INTERFACE:${GLSLANG_DIR}/lib>
-        $<BUILD_INTERFACE:${SPIRVCROSS_DIR}/lib>
+        $<BUILD_INTERFACE:${KHR_TOOLS_DIR}/lib>
 )
-#[[
+
+set(GLSLANG_LIBS
+                optimized OGLCompiler 
+                debug     OGLCompilerd  
+                optimized OSDependent 
+                debug     OSDependentd 
+                optimized GenericCodeGen
+                debug     GenericCodeGend
+                optimized MachineIndependent
+                debug     MachineIndependentd
+                optimized glslang
+                debug     glslangd
+                optimized SPIRV
+                debug     SPIRVd
+                )
+
+set(SPIRV_CROSS_LIBS 
+                optimized spirv-cross-core 
+                debug     spirv-cross-cored
+                optimized spirv-cross-glsl 
+                debug     spirv-cross-glsld
+                optimized spirv-cross-hlsl
+                debug     spirv-cross-hlsld
+                )
+
 target_link_libraries(
     MaterialXGenCross 
-    $<BUILD_INTERFACE:${GLSLANG_DIR}/lib/glslang
-    $<BUILD_INTERFACE:${GLSLANG_DIR}/lib/OSDependent 
-    $<BUILD_INTERFACE:${GLSLANG_DIR}/lib/OGLCompiler 
-    $<BUILD_INTERFACE:${GLSLANG_DIR}/lib/HLSL 
-    $<BUILD_INTERFACE:${SPIRVCROSS_DIR}/lib/SPIRV
-    $<BUILD_INTERFACE:${SPIRVCROSS_DIR}/spirv-cross-core 
-    $<BUILD_INTERFACE:${SPIRVCROSS_DIR}/spirv-cross-hlsl
+    ${GLSLANG_LIBS}
+    ${SPIRV_CROSS_LIBS}
     ${CMAKE_DL_LIBS})
-]]
-target_link_libraries(
-    MaterialXGenCross 
-    glslang
-    spirv-cross-core
-    spirv-cross-hlsl
-    ${CMAKE_DL_LIBS})
+
 target_include_directories(MaterialXGenCross
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../>
         $<INSTALL_INTERFACE:${MATERIALX_INSTALL_INCLUDE_PATH}>
     PRIVATE
-        $<BUILD_INTERFACE:${GLSLANG_DIR}/include>
-        $<BUILD_INTERFACE:${SPIRVCROSS_DIR}/include>
+        $<BUILD_INTERFACE:${KHR_TOOLS_DIR}/include>
 )
 
 # install
-#[[
 install(TARGETS MaterialXGenCross
     EXPORT MaterialX
     ARCHIVE DESTINATION ${MATERIALX_INSTALL_LIB_PATH}
@@ -91,5 +88,5 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/MaterialXGenCross
     DESTINATION "${CMAKE_INSTALL_PREFIX}/${MATERIALX_INSTALL_LIB_PATH}/" OPTIONAL)
 
 # install Khronos tools to MaterialX install        
-install(DIRECTORY ${EXTERNAL_INSTALL_LOCATION} DESTINATION ".") 
-]]
+install(DIRECTORY ${KHR_TOOLS_DIR} DESTINATION ".") 
+
