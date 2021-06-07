@@ -10,6 +10,10 @@
 #include <MaterialXGenShader/GenContext.h>
 #include <MaterialXGenShader/ShaderGraph.h>
 
+#ifdef MATERIALX_BUILD_OCIO
+#include <MaterialXGenShader/OCIOColorManagementSystem.h>
+#endif
+
 namespace py = pybind11;
 namespace mx = MaterialX;
 
@@ -58,4 +62,12 @@ void bindPyColorManagement(py::module& mod)
     py::class_<mx::DefaultColorManagementSystem, mx::DefaultColorManagementSystemPtr, mx::ColorManagementSystem>(mod, "DefaultColorManagementSystem")
         .def_static("create", &mx::DefaultColorManagementSystem::create)
         .def("getName", &mx::DefaultColorManagementSystem::getName);
+
+#ifdef MATERIALX_BUILD_OCIO
+    py::class_<mx::OCIOColorManagementSystem, mx::OCIOColorManagementSystemPtr, mx::ColorManagementSystem>(mod, "OCIOColorManagementSystem")
+        .def_static("create", &mx::OCIOColorManagementSystem::create)
+        .def("getName", &mx::OCIOColorManagementSystem::getName)
+        .def("readConfigFile", &mx::OCIOColorManagementSystem::readConfigFile)
+        .def("getConfigFile", &mx::OCIOColorManagementSystem::getConfigFile);
+#endif
 }
