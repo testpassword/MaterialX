@@ -1,9 +1,10 @@
+#if 0
 //
 // TM & (c) 2019 Lucasfilm Entertainment Company Ltd. and Lucasfilm Ltd.
 // All rights reserved.  See LICENSE.txt for license.
 //
 
-#include "Cross.h"
+#include "MaterialXGenCross.h"
 //#include "MaterialXCore/Library.h"
 //#include "MaterialXGenShader/HwShaderGenerator.h"
 
@@ -243,7 +244,7 @@ std::string spirvToHlsl(
     const std::string& /*fragmentName*/
 )
 {
-    auto crossCompiler = std::make_shared<HlslFragmentCrossCompiler>(std::move(spirv));
+    auto crossCompiler = std::make_unique<HlslFragmentCrossCompiler>(std::move(spirv));
     crossCompiler->set_entry_point("main", spv::ExecutionModelFragment);
 
     spirv_cross::CompilerHLSL::Options hlslOptions = crossCompiler->get_hlsl_options();
@@ -286,3 +287,4 @@ std::string glslToHlsl(
 
 }
 }
+#endif

@@ -9,7 +9,6 @@ ExternalProject_Add(khr_spirv-cross
     GIT_TAG 2021-01-15
     GIT_SHALLOW  ON
     GIT_PROGRESS OFF
-    BUILD_ALWAYS OFF
     CMAKE_ARGS
         -DSPIRV_CROSS_ENABLE_TESTS=OFF
         -DSPIRV_CROSS_FORCE_PIC=ON

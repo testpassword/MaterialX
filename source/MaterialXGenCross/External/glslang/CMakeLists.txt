@@ -9,7 +9,6 @@ ExternalProject_Add(khr_glslang
     GIT_TAG 11.4.0
     GIT_SHALLOW  ON
     GIT_PROGRESS OFF
-    BUILD_ALWAYS OFF
     CMAKE_ARGS
         -DBUILD_EXTERNAL=OFF
         -DENABLE_HLSL=OFF

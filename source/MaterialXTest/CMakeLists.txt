@@ -36,7 +36,9 @@ add_executable(MaterialXTest ${materialx_source} ${materialx_headers})
 
 target_include_directories( MaterialXTest PUBLIC
     ${EXTERNAL_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../
+    PRIVATE
+        $<BUILD_INTERFACE:${KHR_TOOLS_DIR}/include>)
 
 add_subdirectory(MaterialXCore)
 target_link_libraries(MaterialXTest MaterialXCore)
@@ -103,6 +105,10 @@ if(MATERIALX_BUILD_RENDER) # MATERIALX_BUILD_GEN is implied; can assume relevant
   if(MATERIALX_BUILD_GEN_ARNOLD)
     add_subdirectory(MaterialXRenderArnold)
   endif()
+
+  add_subdirectory(MaterialXGenCross)
+  target_link_libraries(MaterialXTest MaterialXGenCross ${GLSLANG_LIBS} ${SPIRV_CROSS_LIBS})
+
   if(MATERIALX_BUILD_OIIO AND OPENIMAGEIO_ROOT_DIR)
       add_custom_command(TARGET MaterialXTest POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_directory
