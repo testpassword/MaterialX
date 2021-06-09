@@ -25,12 +25,13 @@ namespace MaterialX
 
     class MX_GENCROSS_API SPIRVShaderGenerator : public GlslShaderGenerator
     {
+    private:
+        void crosscompile(ShaderStage& stage, std::string& crosscompileSource) const;
 
     public:
         SPIRVShaderGenerator();
         
         static ShaderGeneratorPtr create() { return std::make_shared<SPIRVShaderGenerator>(); }
-
         ShaderPtr generate(const string& name, ElementPtr element, GenContext& context) const;
     };
 }

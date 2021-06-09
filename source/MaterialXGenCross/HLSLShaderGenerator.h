@@ -6,7 +6,7 @@
 #define MATERIALX_GENCROSS_HLSL_H
 
 #include <MaterialXGenCross/Export.h>
-#include <MaterialXGenShader/ShaderGenerator.h>
+#include <MaterialXGenGlsl/GlslShaderGenerator.h>
 
 namespace MaterialX
 {
@@ -24,11 +24,16 @@ namespace MaterialX
         const string& getSourceFileExtension() const override { return EMPTY_STRING; };
     };
 
-    class MX_GENCROSS_API HLSLShaderGenerator : public ShaderGenerator
+    class MX_GENCROSS_API HLSLShaderGenerator : public GlslShaderGenerator
     {
+    private:
+        void crosscompile(ShaderStage& stage, std::string& crosscompileSource) const;
+
+    public:
         HLSLShaderGenerator();
+
+        static ShaderGeneratorPtr create() { return std::make_shared<HLSLShaderGenerator>(); }
         ShaderPtr generate(const string& name, ElementPtr element, GenContext& context) const;
     };
-
 }
 #endif //MATERIALX_GENCROSS_HLSL_H
