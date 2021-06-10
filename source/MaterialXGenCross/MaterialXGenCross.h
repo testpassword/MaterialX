@@ -8,6 +8,8 @@
 
 #include <MaterialXGenCross/Export.h>
 #include <string>
+#include <vector>
+#include <utility>
 
 namespace MaterialX
 {
@@ -38,31 +40,15 @@ namespace MaterialX
         ///     from arbitrary MaterialX-generated functions.
         /// @param glslFragment The GLSL code included in the fragment.
         /// @return HLSL fragment code to be included in the fragment.
-        ///
-        std::string glslToHlsl(
-            const std::string& glslUniforms,
-            const std::string& glslFragment,
-            const std::string& fragmentName
-        );
+        
 
-        std::vector<uint32_t> glslToSpirv(
-            const std::string& glslUniforms,
-            const std::string& glslFragment
-        );
+        std::pair<std::string, std::string> glslToHlsl(const std::string& glslFragment, const std::string& fragmentName);
 
-        std::string spirvToHlsl(
-            std::vector<uint32_t>&& spirv,
-            const std::string& /*fragmentName*/
-        );
+        std::vector<uint32_t> glslToSpirv(const std::string& glslFragment, const std::string& glslFragmentEntryPoint);
+
+        std::pair<std::string, std::string> spirvToHlsl(std::vector<uint32_t>&& spirv, const std::string& fragmentEntryPoint);
+
     }
-
-    class MX_GENCROSS_API CrossCompiler
-    {
-    public:
-        /// Destructor
-        virtual ~CrossCompiler() { }
-        CrossCompiler::CrossCompiler() {}
-    };
 }
 
 #endif //MATERIALX_GENCROSS_H

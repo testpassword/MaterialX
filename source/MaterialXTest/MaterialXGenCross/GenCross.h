@@ -3,8 +3,8 @@
 // All rights reserved.  See LICENSE.txt for license.
 //
 
-#ifndef GENOSL_H
-#define GENOSL_H
+#ifndef GENCROSS_H
+#define GENCROSS_H
 
 #include <MaterialXTest/Catch/catch.hpp>
 #include <MaterialXTest/MaterialXGenShader/GenShaderUtil.h>
@@ -13,12 +13,12 @@
 
 namespace mx = MaterialX;
 
-class SPIRVShaderGeneratorTester : public GenShaderUtil::ShaderGeneratorTester
+class CrossShaderGeneratorTester : public GenShaderUtil::ShaderGeneratorTester
 {
   public:
     using ParentClass = GenShaderUtil::ShaderGeneratorTester;
 
-    SPIRVShaderGeneratorTester(mx::ShaderGeneratorPtr shaderGenerator, const std::vector<mx::FilePath>& testRootPaths,
+    CrossShaderGeneratorTester(mx::ShaderGeneratorPtr shaderGenerator, const std::vector<mx::FilePath>& testRootPaths,
                              const mx::FilePath& libSearchPath, const mx::FileSearchPath& srcSearchPath,
                              const mx::FilePath& logFilePath, bool writeShadersToDisk) :
         GenShaderUtil::ShaderGeneratorTester(shaderGenerator, testRootPaths, libSearchPath, srcSearchPath, logFilePath, writeShadersToDisk)
@@ -68,4 +68,4 @@ class SPIRVShaderGeneratorTester : public GenShaderUtil::ShaderGeneratorTester
     }
 };
 
-#endif // GENOSL_H
+#endif // GENCROSS_H

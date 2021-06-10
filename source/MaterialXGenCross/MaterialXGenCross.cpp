@@ -5,9 +5,15 @@
 //
 
 #include "MaterialXGenCross.h"
+
+// glslang headers.
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
+
+// SPIRV-Cross headers.
 #include <spirv_cross/spirv_hlsl.hpp>
+#include <spirv_cross/spirv_parser.hpp>
+#include <spirv_cross/spirv_reflect.hpp>
 
 namespace MaterialX
 {
@@ -127,36 +133,21 @@ namespace MaterialX
         /// Parse GLSL sources with glslang API and generate a SPIR-V binary blob.
         /// See glslToHlsl() for parameter meanings.
         ///
-        std::vector<uint32_t> glslToSpirv(
-            const std::string& glslUniforms,
-            const std::string& glslFragment
-        )
+        std::vector<uint32_t> glslToSpirv(const std::string& glslFragment,
+                                          const std::string& glslFragmentEntryPoint)
         {
-            static const std::string versionstring = "#version 450\n";
-
-            // All tools in the SPIR-V ecosystem operate on complete shader stages
-            // with valid entry points. When providing source code for parsing, the
-            // easiest workaround for this is to provide a dummy entry point.
-            static const std::string dummyMain =
-                "void main()\n"
-                "{\n"
-                "}\n\n";
-
             const char* shaderStrings[]{
-                glslUniforms.data(),
                 glslFragment.data(),
-                dummyMain.data()
             };
 
             const int stringLengths[]{
-                static_cast<int>(glslUniforms.size()),
                 static_cast<int>(glslFragment.size()),
-                static_cast<int>(dummyMain.size())
             };
 
             glslang::TShader shader(EShLangFragment);
-            shader.setStringsWithLengths(shaderStrings, stringLengths, 3);
-            shader.setEntryPoint("main");
+            shader.setStringsWithLengths(shaderStrings, stringLengths, 1);
+            shader.setEntryPoint(glslFragmentEntryPoint.c_str());
+            shader.setSourceEntryPoint(glslFragmentEntryPoint.c_str());
 
             // Permits uniforms without explicit layout locations
             shader.setAutoMapLocations(true);
@@ -174,15 +165,12 @@ namespace MaterialX
                 // Don't support includes in the GLSL source.
                 glslang::TShader::ForbidIncluder forbidIncluder;
 
-                if (!shader.parse(
-                    &defaultTBuiltInResource, defaultVersion, forwardCompatible,
-                    messages, forbidIncluder
-                ))
+                if (!shader.parse(&defaultTBuiltInResource, defaultVersion, forwardCompatible,
+                    messages, forbidIncluder))
                 {
                     const char* const log = shader.getInfoLog();
-                    std::string error = "glslang failed to parse the GLSL fragment:\n";
-                    error.append(log);
-                    throw error;
+                    throw std::runtime_error(
+                        std::string("glslang failed to parse the GLSL fragment:\n") + log);
                 }
             }
 
@@ -191,76 +179,64 @@ namespace MaterialX
             if (!program.link(messages))
             {
                 const char* const log = program.getInfoLog();
-                std::string error = "glslang failed to parse the GLSL fragment:\n";
-                error.append(log);
-                throw error;
+                throw std::runtime_error(std::string("glslang failed to link the GLSL fragment:\n") + log);
             }
 
             std::vector<uint32_t> spirv;
-
             {
                 glslang::SpvOptions options;
                 options.generateDebugInfo = true;   // necessary to preserve symbols
                 options.disableOptimizer = true;
                 options.optimizeSize = false;
 
-                glslang::GlslangToSpv(
-                    *program.getIntermediate(EShLangFragment), spirv, &options
-                );
+                glslang::GlslangToSpv(*program.getIntermediate(EShLangFragment), spirv, &options);
             }
 
             return spirv;
         }
 
-        class HlslFragmentCrossCompiler : public spirv_cross::CompilerHLSL
-        {
-        public:
-            using spirv_cross::CompilerHLSL::CompilerHLSL;
-
-            /// Override this method to omit all uniforms except light data in the HLSL
-            /// fragment. VP2 will generate these uniforms in the final HLSL shader
-            /// based on XML wrapper properties, so emitting these would lead to double
-            /// definition compilation errors.
-            /// Please note that the base class method had to be made protected in our
-            /// SPIRV-Cross fork to be able to delegate to it.
-            /// The light data uniform needs to be emitted because it's not part of the
-            /// fragment's XML interface. It's not actually used in the fragment so
-            /// future Maya lighting integration work may remove the need for the
-            /// SPIRV-Cross change.
-            void emit_uniform(const spirv_cross::SPIRVariable& /*var*/) override
-            {
-                /*
-                if (to_name(var.self) == HW::LIGHT_DATA_INSTANCE)
-                {
-                    spirv_cross::CompilerHLSL::emit_uniform(var);
-                }
-                */
-            }
-        };
-
         /// Generate HLSL fragment code from a SPIR-V binary blob.
-        std::string spirvToHlsl(
-            std::vector<uint32_t>&& spirv,
-            const std::string& /*fragmentName*/
-        )
+        std::pair<std::string, std::string> spirvToHlsl(std::vector<uint32_t>&& spirv, const std::string& fragmentEntryPoint)
         {
-            auto crossCompiler = std::make_unique<HlslFragmentCrossCompiler>(std::move(spirv));
-            crossCompiler->set_entry_point("main", spv::ExecutionModelFragment);
+            std::string hlslsource;
+            std::string reflection;
+            auto crossCompiler = std::make_unique<spirv_cross::CompilerHLSL>(spirv);
+            crossCompiler->set_entry_point(fragmentEntryPoint, spv::ExecutionModelFragment);
+
+            crossCompiler->set_resource_binding_flags(spirv_cross::HLSL_BINDING_AUTO_NONE_BIT);
 
             spirv_cross::CompilerHLSL::Options hlslOptions = crossCompiler->get_hlsl_options();
 
-            // Shader model 5.0 is required by DirectX 11
-            hlslOptions.shader_model = 50;
+            hlslOptions.shader_model = 51;
+
+            // Custom modification in our SPIRV-Cross fork to skip register assignment
+            //TODO: Fixme
+            //hlslOptions.assign_register_slots = true;
 
             // Another custom modification in our SPIRV-Cross fork. The cross-compiler
             // will generate code for call graphs rooted at the functions specified in
             // this list even if they are not called from the entry point.
             // The default behavior is to traverse from the entry point only.
+            // hlslOptions.exported_functions.insert(fragmentName);
+            try
+            {
+                crossCompiler->set_hlsl_options(hlslOptions);
+                hlslsource = crossCompiler->compile();
 
-            //hlslOptions.exported_functions.insert(fragmentName);
+                // Reflect
+                spirv_cross::Parser spirv_parser(spirv);
+                spirv_parser.parse();
 
-            crossCompiler->set_hlsl_options(hlslOptions);
-            return crossCompiler->compile();
+                spirv_cross::CompilerReflection compiler(std::move(spirv_parser.get_parsed_ir()));
+                compiler.set_format("json");
+                reflection = compiler.compile();
+            }
+            catch (const std::exception& exc)
+            {
+                // catch anything thrown within try block that derives from std::exception
+                printf("Cross Compiler error %s\n", exc.what());
+            }
+            return { hlslsource, reflection };
         }
 
         void initialize()
@@ -273,13 +249,9 @@ namespace MaterialX
             glslang::FinalizeProcess();
         }
 
-        std::string glslToHlsl(
-            const std::string& glslUniforms,
-            const std::string& glslFragment,
-            const std::string& fragmentName
-        )
+        std::pair<std::string, std::string> glslToHlsl(const std::string& glslFragment, const std::string& fragmentName)
         {
-            std::vector<uint32_t> spirv = Cross::glslToSpirv(glslUniforms, glslFragment);
+            std::vector<uint32_t> spirv = Cross::glslToSpirv(glslFragment, fragmentName);
             return spirvToHlsl(std::move(spirv), fragmentName);
         }
     }

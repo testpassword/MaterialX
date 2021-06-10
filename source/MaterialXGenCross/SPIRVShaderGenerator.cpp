@@ -4,6 +4,7 @@
 //
 #include <MaterialXGenCross/MaterialXGenCross.h>
 #include <MaterialXGenCross/SPIRVShaderGenerator.h>
+#include <MaterialXGenGlsl/GlslResourceBindingContext.h>
 #include <MaterialXGenShader/HwShaderGenerator.h>
 #include <MaterialXGenShader/Shader.h>
 
@@ -17,7 +18,21 @@ namespace MaterialX
         GenContext& context) const
     {
 
+        // Add user-data for custom binding
+        // b0 is reserved, so begin with b1 for uniform blocks
+        size_t initialCbufferRegister = 1;
+        // begin with t0 for sampler uniform blocks
+        size_t initialSamplerRegister = 0;
+
+        MaterialX::GlslResourceBindingContextPtr bindCtx =
+            std::make_shared<MaterialX::GlslResourceBindingContext>(
+                initialCbufferRegister, initialSamplerRegister);
+        context.pushUserData(MaterialX::HW::USER_DATA_BINDING_CONTEXT, bindCtx);
+
         MaterialX::ShaderPtr hwShader = GlslShaderGenerator::generate(name, element, context);
+
+        context.popUserData(MaterialX::HW::USER_DATA_BINDING_CONTEXT);
+
         MaterialX::ShaderStage& ps = hwShader->getStage(MaterialX::Stage::PIXEL);
         std::string crosscompileSource;
 
@@ -37,7 +52,7 @@ namespace MaterialX
     {
         Cross::initialize();
         const std::string functionName(stage.getFunctionName());
-        std::vector<uint32_t> spirvCode = Cross::glslToSpirv("", stage.getSourceCode());
+        std::vector<uint32_t> spirvCode = Cross::glslToSpirv(stage.getSourceCode(), functionName);
         Cross::finalize();
 
         // TODO: Performance Encode as string 

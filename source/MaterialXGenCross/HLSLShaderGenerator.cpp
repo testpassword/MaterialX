@@ -32,8 +32,6 @@ namespace MaterialX
 
         context.popUserData(MaterialX::HW::USER_DATA_BINDING_CONTEXT);
 
-
-
         MaterialX::ShaderStage& ps = hwShader->getStage(MaterialX::Stage::PIXEL);
         std::string crosscompileSource;
 
@@ -53,7 +51,9 @@ namespace MaterialX
     {
         Cross::initialize();
         const std::string functionName(stage.getFunctionName());
-        crosscompileSource = Cross::glslToHlsl("", stage.getSourceCode(), functionName);
+        std::pair<std::string, std::string> crosscompileData = Cross::glslToHlsl(stage.getSourceCode(), functionName);
+
+        crosscompileSource = crosscompileData.first;
         Cross::finalize();
     }
 
