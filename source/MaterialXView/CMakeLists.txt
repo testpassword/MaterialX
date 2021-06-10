@@ -77,8 +77,8 @@ endif()
 if (MATERIALX_BUILD_GEN_ARNOLD)
     LIST(APPEND LIBS MaterialXGenArnold)
 endif()
-if (MATERIALX_BUILD_GEN_GLES)
-    LIST(APPEND LIBS MaterialXGenGLES)
+if (MATERIALX_BUILD_GEN_ESSL)
+    LIST(APPEND LIBS MaterialXGenEssl)
 endif()
 
 target_link_libraries(
@@ -114,8 +114,8 @@ add_custom_command(TARGET MaterialXView POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 	${CMAKE_CURRENT_SOURCE_DIR}/../../resources ${CMAKE_CURRENT_BINARY_DIR}/resources)
 
-if(MATERIALX_BUILD_GEN_GLES)
+if(MATERIALX_BUILD_GEN_ESSL)
     add_custom_command(TARGET MaterialXView POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../source/MaterialXGenGLES/libraries ${CMAKE_CURRENT_BINARY_DIR}/libraries)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../source/MaterialXGenEssl/libraries ${CMAKE_CURRENT_BINARY_DIR}/libraries)
 endif()

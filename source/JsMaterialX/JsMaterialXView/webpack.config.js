@@ -11,7 +11,8 @@ module.exports = {
   plugins: [
     new CopyPlugin({
       patterns: [
-        { from: "../../../resources/Geometry/shaderball.obj" },
+        { from: "../../../resources/Geometry" },
+        { from: "../../../resources/Lights" },
       ],
     }),
   ]

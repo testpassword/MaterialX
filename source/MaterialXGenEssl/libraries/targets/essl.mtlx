@@ -7,8 +7,8 @@
 <materialx version="1.38">
 
   <!-- ======================================================================== -->
-  <!-- Target definition for GLES target. Derives from base GLSL target         -->
+  <!-- Target definition for ESSL target. Derives from base GLSL target         -->
   <!-- ======================================================================== -->
-  <targetdef name="gles" inherit="genglsl" />
+  <targetdef name="essl" inherit="genglsl" />
 
 </materialx>

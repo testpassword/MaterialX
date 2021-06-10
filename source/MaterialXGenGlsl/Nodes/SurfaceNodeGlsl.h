@@ -12,7 +12,7 @@ namespace MaterialX
 {
 
 /// Surface node implementation for GLSL
-class SurfaceNodeGlsl : public GlslImplementation
+class MX_GENGLSL_API SurfaceNodeGlsl : public GlslImplementation
 {
   public:
     SurfaceNodeGlsl();

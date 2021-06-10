@@ -3,7 +3,7 @@
 // All rights reserved.  See LICENSE.txt for license.
 //
 
-#include <MaterialXGenGLES/GLESSyntax.h>
+#include <MaterialXGenEssl/EsslSyntax.h>
 
 #include <MaterialXGenShader/Shader.h>
 #include <MaterialXGenShader/ShaderGenerator.h>
@@ -13,11 +13,8 @@
 namespace MaterialX
 {
 
-    GLESSyntax::GLESSyntax()
+EsslSyntax::EsslSyntax()
 {
-    //
-    // Override the GLSL syntax as needed
-    // ...
 }
 
 }

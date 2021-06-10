@@ -36,16 +36,21 @@ class MX_GENGLSL_API GlslShaderGenerator : public HwShaderGenerator
 
     /// Return the version string for the GLSL version this generator is for
     virtual const string& getVersion() const { return VERSION; }
+  
+    // Return the math include path for the GLSL shader
+    virtual const string& getMathIncludePath() const { return MATH_INCLUDE_PATH; }
 
     /// Emit function definitions for all nodes
     void emitFunctionDefinitions(const ShaderGraph& graph, GenContext& context, ShaderStage& stage) const override;
 
-    /// Emit all functon calls constructing the shader body
+    /// Emit all function calls constructing the shader body
     void emitFunctionCalls(const ShaderGraph& graph, GenContext& context, ShaderStage& stage) const override;
 
     /// Emit a shader variable.
     void emitVariableDeclaration(const ShaderPort* variable, const string& qualifier, GenContext& context, ShaderStage& stage,
                                  bool assignValue = true) const override;
+
+    virtual const string getVertexDataPrefix(const VariableBlock& vertexData) const;
 
   public:
     /// Unique identifier for this generator target
@@ -54,14 +59,26 @@ class MX_GENGLSL_API GlslShaderGenerator : public HwShaderGenerator
     /// Version string for the generator target
     static const string VERSION;
 
+    /// Include paths to shaders
+    static const string MATH_INCLUDE_PATH;
+
   protected:
     virtual void emitVertexStage(const ShaderGraph& graph, GenContext& context, ShaderStage& stage) const;
     virtual void emitPixelStage(const ShaderGraph& graph, GenContext& context, ShaderStage& stage) const;
 
-    bool requiresLighting(const ShaderGraph& graph) const;
+    virtual void emitDirectives(GenContext& context, ShaderStage& stage) const;
+    virtual void emitConstants(GenContext& context, ShaderStage& stage) const;
+    virtual void emitUniforms(GenContext& context, ShaderStage& stage, HwResourceBindingContextPtr &resourceBindingCtx) const;
+    virtual void emitLightData(GenContext& context, ShaderStage& stage, HwResourceBindingContextPtr& resourceBindingCtx) const;
+    virtual void emitInputs(GenContext& context, ShaderStage& stage) const;
+    virtual void emitOutpus(GenContext& context, ShaderStage& stage) const;
+
+    virtual const string getPixelStageOutputVariable(const ShaderGraphOutputSocket& outputSocket) const;
+
+    virtual bool requiresLighting(const ShaderGraph& graph) const;
 
     /// Emit specular environment lookup code
-    void emitSpecularEnvironment(GenContext& context, ShaderStage& stage) const;
+    virtual void emitSpecularEnvironment(GenContext& context, ShaderStage& stage) const;
 
     /// Override the compound implementation creator in order to handle light compounds.
     ShaderNodeImplPtr createCompoundImplementation(const NodeGraph& impl) const override;

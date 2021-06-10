@@ -128,8 +128,8 @@ if(MATERIALX_BUILD_GEN_MDL)
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${MATERIALX_INSTALL_MDL_MODULE_PATH}/mdl)
 endif()
 
-if(MATERIALX_BUILD_GEN_GLES)
-    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../../source/MaterialXGenGLES/libraries/"
+if(MATERIALX_BUILD_GEN_ESSL)
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../../source/MaterialXGenEssl/libraries/"
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/libraries/)
 endif()
 
