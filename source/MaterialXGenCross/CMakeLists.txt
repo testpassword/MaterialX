@@ -52,6 +52,7 @@ set(SPIRV_CROSS_LIBS
 target_link_libraries(
     MaterialXGenCross
     MaterialXGenShader
+    MaterialXGenGlsl
     MaterialXCore
     ${GLSLANG_LIBS}
     ${SPIRV_CROSS_LIBS}

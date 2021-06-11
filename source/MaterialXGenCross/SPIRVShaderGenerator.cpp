@@ -7,6 +7,7 @@
 #include <MaterialXGenGlsl/GlslResourceBindingContext.h>
 #include <MaterialXGenShader/HwShaderGenerator.h>
 #include <MaterialXGenShader/Shader.h>
+#include <iterator>
 
 namespace MaterialX
 {
