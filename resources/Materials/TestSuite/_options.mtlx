@@ -39,7 +39,7 @@
 
     <!-- Comma separated list of target" specifiers to indicate which
          code generators to use. -->
-    <input name="targets" type="string" value="genglsl,genosl,genmdl,arnold,ogsfx,ogsxml,spirv" />
+    <input name="targets" type="string" value="genglsl,genosl,genmdl,arnold,ogsfx,ogsxml" />
 
     <!-- Check the count of number of implementations used for a given generator -->
     <input name="checkImplCount" type="boolean" value="true" />

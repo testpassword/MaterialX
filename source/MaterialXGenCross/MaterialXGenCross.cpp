@@ -200,7 +200,7 @@ namespace MaterialX
         {
             std::string hlslsource;
             std::string reflection;
-            auto crossCompiler = std::make_unique<spirv_cross::CompilerHLSL>(spirv);
+            auto crossCompiler = std::make_shared<spirv_cross::CompilerHLSL>(spirv);
             crossCompiler->set_entry_point(fragmentEntryPoint, spv::ExecutionModelFragment);
 
             crossCompiler->set_resource_binding_flags(spirv_cross::HLSL_BINDING_AUTO_NONE_BIT);
