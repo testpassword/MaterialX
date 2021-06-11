@@ -24,7 +24,6 @@
 #include <MaterialXFormat/Environ.h>
 #include <MaterialXFormat/Util.h>
 
-#include <nanogui/combobox.h>
 #include <nanogui/glutil.h>
 #include <nanogui/messagedialog.h>
 #include <nanogui/vscrollpanel.h>
@@ -248,6 +247,7 @@ Viewer::Viewer(const std::string& materialFilename,
     _unitRegistry(mx::UnitConverterRegistry::create()),
     _splitByUdims(true),
     _mergeMaterials(false),
+    _showAllInputs(false),
     _renderTransparency(true),
     _renderDoubleSided(true),
     _outlineSelection(false),
@@ -580,8 +580,23 @@ void Viewer::assignMaterial(mx::MeshPartitionPtr geometry, MaterialPtr material)
     if (geometry == getSelectedGeometry())
     {
         setSelectedMaterial(material);
-        updateDisplayedProperties();
+        if (material)
+        {
+            updateDisplayedProperties();
+        }
     }
+}
+
+mx::FilePath Viewer::getBaseOutputPath()
+{
+    mx::FilePath baseFilename = _searchPath.find(_materialFilename);
+    baseFilename.removeExtension();
+    mx::FilePath outputPath = mx::getEnviron("MATERIALX_VIEW_OUTPUT_PATH");
+    if (!outputPath.isEmpty())
+    {
+        baseFilename = outputPath / baseFilename.getBaseName();
+    }
+    return baseFilename;
 }
 
 void Viewer::createLoadMeshInterface(Widget* parent, const std::string& label)
@@ -619,7 +634,6 @@ void Viewer::createLoadMaterialsInterface(Widget* parent, const std::string& lab
         if (!filename.empty())
         {
             _materialFilename = filename;
-            assignMaterial(getSelectedGeometry(), nullptr);
             loadDocument(_materialFilename, _stdLib);
         }
         mProcessEvents = true;
@@ -735,6 +749,13 @@ void Viewer::createAdvancedSettings(Widget* parent)
     {
         _mergeMaterials = enable;
     });
+
+    ng::CheckBox* showInputsBox = new ng::CheckBox(advancedPopup, "Show All Inputs");
+    showInputsBox->setChecked(_showAllInputs);
+    showInputsBox->setCallback([this](bool enable)
+    {
+        _showAllInputs = enable;
+    });    
 
     Widget* unitGroup = new Widget(advancedPopup);
     unitGroup->setLayout(new ng::BoxLayout(ng::Orientation::Horizontal));
@@ -1441,48 +1462,52 @@ void Viewer::saveShaderSource(mx::GenContext& context)
             mx::ShaderPtr shader = createShader(elem->getNamePath(), context, elem);
             if (shader)
             {
-                const std::string path = mx::getEnviron("MATERIALX_VIEW_OUTPUT_PATH");
-                const std::string baseName = (path.empty() ? _searchPath[0] : mx::FilePath(path)) / elem->getName();
+                mx::FilePath sourceFilename = getBaseOutputPath();
                 if (context.getShaderGenerator().getTarget() == mx::GlslShaderGenerator::TARGET)
                 {
-                    const std::string& vertexShader = shader->getSourceCode(mx::Stage::VERTEX);
                     const std::string& pixelShader = shader->getSourceCode(mx::Stage::PIXEL);
-                    writeTextFile(vertexShader, baseName + "_vs.glsl");
-                    writeTextFile(pixelShader, baseName + "_ps.glsl");
-                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved GLSL source: ", baseName);
+                    const std::string& vertexShader = shader->getSourceCode(mx::Stage::VERTEX);
+                    writeTextFile(pixelShader, sourceFilename.asString() + "_ps.glsl");
+                    writeTextFile(vertexShader, sourceFilename.asString() + "_vs.glsl");
+                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved GLSL source: ",
+                        sourceFilename.asString() + "_*.glsl");
                 }
 #if MATERIALX_BUILD_GEN_OSL
                 else if (context.getShaderGenerator().getTarget() == mx::OslShaderGenerator::TARGET)
                 {
                     const std::string& pixelShader = shader->getSourceCode(mx::Stage::PIXEL);
-                    writeTextFile(pixelShader, baseName + ".osl");
-                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved OSL source: ", baseName);
+                    sourceFilename.addExtension("osl");
+                    writeTextFile(pixelShader, sourceFilename);
+                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved OSL source: ", sourceFilename);
                 }
 #endif
 #if MATERIALX_BUILD_GEN_MDL
                 else if (context.getShaderGenerator().getTarget() == mx::MdlShaderGenerator::TARGET)
                 {
                     const std::string& pixelShader = shader->getSourceCode(mx::Stage::PIXEL);
-                    writeTextFile(pixelShader, baseName + ".mdl");
-                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved MDL source: ", baseName);
+                    sourceFilename.addExtension("mdl");
+                    writeTextFile(pixelShader, sourceFilename);
+                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved MDL source: ", sourceFilename);
                 }
 #endif
 #if MATERIALX_BUILD_GEN_ARNOLD
                 else if (context.getShaderGenerator().getTarget() == mx::ArnoldShaderGenerator::TARGET)
                 {
                     const std::string& pixelShader = shader->getSourceCode(mx::Stage::PIXEL);
-                    writeTextFile(pixelShader, baseName + "_arnold.osl");
-                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved Arnold OSL source: ", baseName);
+                    sourceFilename.addExtension("osl");
+                    writeTextFile(pixelShader, sourceFilename);
+                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved Arnold OSL source: ", sourceFilename);
                 }
 #endif
 #if MATERIALX_BUILD_GEN_ESSL
                 else if (context.getShaderGenerator().getTarget() == mx::EsslShaderGenerator::TARGET)
                 {
                     const std::string& pixelShader = shader->getSourceCode(mx::Stage::PIXEL);
-                    writeTextFile(pixelShader, baseName + "_gles.ps");
                     const std::string& vertexShader = shader->getSourceCode(mx::Stage::VERTEX);
-                    writeTextFile(vertexShader, baseName + "_gles.vs");
-                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved GLES source: ", baseName);
+                    writeTextFile(vertexShader, sourceFilename.asString() + "_essl_vs.glsl");
+                    writeTextFile(pixelShader, sourceFilename.asString() + "_essl_ps.glsl");
+                    new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved Essl source: ",
+                        sourceFilename.asString() + "_essl_*.glsl");
                 }
 #endif
                 
@@ -1503,12 +1528,10 @@ void Viewer::loadShaderSource()
         mx::TypedElementPtr elem = material ? material->getElement() : nullptr;
         if (elem)
         {
-            const std::string path = mx::getEnviron("MATERIALX_VIEW_OUTPUT_PATH");
-            const std::string baseName = (path.empty() ? _searchPath[0] : mx::FilePath(path)) / elem->getName();
-            std::string vertexShaderFile = baseName + "_vs.glsl";
-            std::string pixelShaderFile = baseName + "_ps.glsl";
-            bool hasTransparency = false;
-            if (material->loadSource(vertexShaderFile, pixelShaderFile, hasTransparency))
+            mx::FilePath sourceFilename = getBaseOutputPath();
+            mx::FilePath pixelSourceFilename = sourceFilename.asString() + "_ps.glsl";
+            mx::FilePath vertexSourceFilename = sourceFilename.asString() + "_vs.glsl";
+            if (material->loadSource(vertexSourceFilename, pixelSourceFilename, material->hasTransparency()))
             {
                 assignMaterial(getSelectedGeometry(), material);
             }
@@ -1526,33 +1549,32 @@ void Viewer::saveDotFiles()
     {
         MaterialPtr material = getSelectedMaterial();
         mx::TypedElementPtr elem = material ? material->getElement() : nullptr;
-        if (elem)
+        mx::NodePtr shaderNode = elem->asA<mx::Node>();
+        if (shaderNode)
         {
-            mx::NodePtr shaderNode = elem->asA<mx::Node>();
-            if (shaderNode && material->getMaterialNode())
+            mx::FilePath baseFilename = getBaseOutputPath();
+            for (mx::InputPtr input : shaderNode->getInputs())
             {
-                for (mx::InputPtr input : shaderNode->getInputs())
-                {
-                    mx::OutputPtr output = input->getConnectedOutput();
-                    mx::ConstNodeGraphPtr nodeGraph = output ? output->getAncestorOfType<mx::NodeGraph>() : nullptr;
-                    if (nodeGraph)
-                    {
-                        std::string dot = nodeGraph->asStringDot();
-                        std::string baseName = _searchPath[0] / nodeGraph->getName();
-                        writeTextFile(dot, baseName + ".dot");
-                    }
-                }
-
-                mx::NodeDefPtr nodeDef = shaderNode->getNodeDef();
-                mx::InterfaceElementPtr implement = nodeDef ? nodeDef->getImplementation() : nullptr;
-                mx::NodeGraphPtr nodeGraph = implement ? implement->asA<mx::NodeGraph>() : nullptr;
+                mx::OutputPtr output = input->getConnectedOutput();
+                mx::ConstNodeGraphPtr nodeGraph = output ? output->getAncestorOfType<mx::NodeGraph>() : nullptr;
                 if (nodeGraph)
                 {
-                    std::string dot = nodeGraph->asStringDot();
-                    std::string baseName = _searchPath[0] / nodeDef->getName();
-                    writeTextFile(dot, baseName + ".dot");
+                    std::string dotString = nodeGraph->asStringDot();
+                    std::string dotFilename = baseFilename.asString() + "_" + nodeGraph->getName() + ".dot";
+                    writeTextFile(dotString, dotFilename);
                 }
             }
+
+            mx::NodeDefPtr nodeDef = shaderNode->getNodeDef();
+            mx::InterfaceElementPtr implement = nodeDef ? nodeDef->getImplementation() : nullptr;
+            mx::NodeGraphPtr nodeGraph = implement ? implement->asA<mx::NodeGraph>() : nullptr;
+            if (nodeGraph)
+            {
+                std::string dotString = nodeGraph->asStringDot();
+                std::string dotFilename = baseFilename.asString() + "_" + nodeDef->getName() + ".dot";
+                writeTextFile(dotString, dotFilename);
+            }
+            new ng::MessageDialog(this, ng::MessageDialog::Type::Information, "Saved dot files: ", baseFilename.asString() + "_*.dot");
         }
     }
     catch (std::exception& e)
@@ -1588,7 +1610,7 @@ void Viewer::loadStandardLibraries()
     try
     {
         _stdLib = mx::createDocument();
-        _xincludeFiles = mx::loadCoreLibraries(_libraryFolders, _searchPath, _stdLib);
+        _xincludeFiles = mx::loadLibraries(_libraryFolders, _searchPath, _stdLib);
         if (_xincludeFiles.empty())
         {
             std::cerr << "Could not find standard data libraries on the given search path: " << _searchPath.asString() << std::endl;
@@ -1668,8 +1690,8 @@ bool Viewer::keyboardEvent(int key, int scancode, int action, int modifiers)
         return true;
     }
 
-    // Save the current shader source to file.
-    if (key == GLFW_KEY_S && action == GLFW_PRESS)
+    // Save GLSL shader source to file.
+    if (key == GLFW_KEY_G && action == GLFW_PRESS)
     {
         saveShaderSource(_genContext);
         return true;
@@ -1703,8 +1725,8 @@ bool Viewer::keyboardEvent(int key, int scancode, int action, int modifiers)
 #endif
 
 #if MATERIALX_BUILD_GEN_ESSL
-    // Save GLES shader source to file.
-    if (key == GLFW_KEY_G && action == GLFW_PRESS)
+    // Save Essl shader source to file.
+    if (key == GLFW_KEY_E && action == GLFW_PRESS)
     {
         saveShaderSource(_genContextEssl);
         return true;
@@ -1716,6 +1738,13 @@ bool Viewer::keyboardEvent(int key, int scancode, int action, int modifiers)
     if (key == GLFW_KEY_L && action == GLFW_PRESS)
     {
         loadShaderSource();
+        return true;
+    }
+
+    // Clear the image cache, reloading all required images from the file system.
+    if (key == GLFW_KEY_I && action == GLFW_PRESS && modifiers == GLFW_MOD_SHIFT)
+    {
+        _imageHandler->clearImageCache();
         return true;
     }
 
@@ -1803,7 +1832,7 @@ bool Viewer::keyboardEvent(int key, int scancode, int action, int modifiers)
             }
             assignMaterial(getSelectedGeometry(), getSelectedMaterial());
             updateMaterialSelectionUI();
-       }
+        }
         return true;
     }
 
@@ -2380,7 +2409,7 @@ mx::ImagePtr Viewer::getAmbientOcclusionImage(MaterialPtr material)
     aoFilename.removeExtension();
     aoFilename = aoFilename.asString() + aoSuffix;
     aoFilename.addExtension(AO_FILENAME_EXTENSION);
-    return _imageHandler->acquireImage(aoFilename, true);
+    return _imageHandler->acquireImage(aoFilename);
 }
 
 void Viewer::splitDirectLight(mx::ImagePtr envRadianceMap, mx::ImagePtr& indirectMap, mx::DocumentPtr& dirLightDoc)
