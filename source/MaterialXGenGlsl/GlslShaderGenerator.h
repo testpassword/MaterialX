@@ -36,9 +36,6 @@ class MX_GENGLSL_API GlslShaderGenerator : public HwShaderGenerator
 
     /// Return the version string for the GLSL version this generator is for
     virtual const string& getVersion() const { return VERSION; }
-  
-    // Return the math include path for the GLSL shader
-    virtual const string& getMathIncludePath() const { return MATH_INCLUDE_PATH; }
 
     /// Emit function definitions for all nodes
     void emitFunctionDefinitions(const ShaderGraph& graph, GenContext& context, ShaderStage& stage) const override;
@@ -58,9 +55,6 @@ class MX_GENGLSL_API GlslShaderGenerator : public HwShaderGenerator
 
     /// Version string for the generator target
     static const string VERSION;
-
-    /// Include paths to shaders
-    static const string MATH_INCLUDE_PATH;
 
   protected:
     virtual void emitVertexStage(const ShaderGraph& graph, GenContext& context, ShaderStage& stage) const;

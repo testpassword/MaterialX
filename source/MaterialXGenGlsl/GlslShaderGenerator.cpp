@@ -44,7 +44,6 @@ namespace MaterialX
 
 const string GlslShaderGenerator::TARGET = "genglsl";
 const string GlslShaderGenerator::VERSION = "400";
-const string GlslShaderGenerator::MATH_INCLUDE_PATH = "pbrlib/" + GlslShaderGenerator::TARGET + "/lib/mx_math.glsl";
 
 //
 // GlslShaderGenerator methods
@@ -530,7 +529,7 @@ void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& c
     emitOutpus(context, stage);
 
     // Emit common math functions
-    emitInclude(getMathIncludePath(), context, stage);
+    emitInclude("pbrlib/" + GlslShaderGenerator::TARGET + "/lib/mx_math.glsl", context, stage);
     emitLineBreak(stage);
 
     // Emit lighting and shadowing code

@@ -656,7 +656,7 @@ vec3 mx_environment_radiance(vec3 N, vec3 V, vec3 X, vec2 roughness, int distrib
 
         // Sample the environment light from the given direction.
         float pdf = mx_ggx_PDF(X, Y, H, NdotH, LdotH, roughness.x, roughness.y);
-        float lod = mx_latlong_compute_lod(L, pdf, float(u_envRadianceMips) - 1.0, envRadianceSamples);
+        float lod = mx_latlong_compute_lod(L, pdf, float(u_envRadianceMips - 1), envRadianceSamples);
         vec3 sampleColor = mx_latlong_map_lookup(L, u_envMatrix, lod, u_envRadiance);
 
         // Compute the Fresnel term.
@@ -1149,40 +1149,6 @@ vec3 mx_subsurface_scattering_approx(vec3 N, vec3 L, vec3 P, vec3 albedo, vec3 m
     return albedo * mx_integrate_burley_diffusion(N, L, radius, mfp) / vec3(M_PI);
 }
 
-void mx_oren_nayar_diffuse_bsdf_reflection(vec3 L, vec3 V, vec3 P, float occlusion, float weight, vec3 color, float roughness, vec3 normal, out BSDF result)
-{
-    if (weight < M_FLOAT_EPS)
-    {
-        result = BSDF(0.0);
-        return;
-    }
-
-    normal = mx_forward_facing_normal(normal, V);
-
-    float NdotL = clamp(dot(normal, L), M_FLOAT_EPS, 1.0);
-
-    result = color * occlusion * weight * NdotL * M_PI_INV;
-    if (roughness > 0.0)
-    {
-        result *= mx_oren_nayar_diffuse(L, V, normal, NdotL, roughness);
-    }
-}
-
-void mx_oren_nayar_diffuse_bsdf_indirect(vec3 V, float weight, vec3 color, float roughness, vec3 normal, out vec3 result)
-{
-    if (weight < M_FLOAT_EPS)
-    {
-        result = BSDF(0.0);
-        return;
-    }
-
-    normal = mx_forward_facing_normal(normal, V);
-
-    vec3 Li = mx_environment_irradiance(normal);
-    result = Li * color * weight;
-}
-
-
 void mx_subsurface_bsdf_reflection(vec3 L, vec3 V, vec3 P, float occlusion, float weight, vec3 color, vec3 radius, float anisotropy, vec3 normal, out BSDF result)
 {
     if (weight < M_FLOAT_EPS)
@@ -1242,6 +1208,40 @@ void mx_translucent_bsdf_indirect(vec3 V, float weight, vec3 color, vec3 normal,
     result = Li * color * weight;
 }
 
+
+void mx_oren_nayar_diffuse_bsdf_reflection(vec3 L, vec3 V, vec3 P, float occlusion, float weight, vec3 color, float roughness, vec3 normal, out BSDF result)
+{
+    if (weight < M_FLOAT_EPS)
+    {
+        result = BSDF(0.0);
+        return;
+    }
+
+    normal = mx_forward_facing_normal(normal, V);
+
+    float NdotL = clamp(dot(normal, L), M_FLOAT_EPS, 1.0);
+
+    result = color * occlusion * weight * NdotL * M_PI_INV;
+    if (roughness > 0.0)
+    {
+        result *= mx_oren_nayar_diffuse(L, V, normal, NdotL, roughness);
+    }
+}
+
+void mx_oren_nayar_diffuse_bsdf_indirect(vec3 V, float weight, vec3 color, float roughness, vec3 normal, out vec3 result)
+{
+    if (weight < M_FLOAT_EPS)
+    {
+        result = BSDF(0.0);
+        return;
+    }
+
+    normal = mx_forward_facing_normal(normal, V);
+
+    vec3 Li = mx_environment_irradiance(normal);
+    result = Li * color * weight;
+}
+
 void mx_mix_bsdf_reflection(vec3 L, vec3 V, vec3 P, float occlusion, BSDF fg, BSDF bg, float w, out BSDF result)
 {
     result = mix(bg, fg, clamp(w, 0.0, 1.0));
@@ -1298,7 +1298,6 @@ void IMPL_standard_surface_surfaceshader(float base, vec3 base_color, float diff
     vec3 coat_tangent_rotate_out = vec3(0.0);
     mx_rotate_vector3(tangent1, coat_tangent_rotate_degree_out, coat_normal, coat_tangent_rotate_out);
     vec3 subsurface_radius_scaled_out = subsurface_radius_vector_out * subsurface_scale;
-    float opacity_luminance_r_out = opacity_luminance_out.x;
     vec3 emission_weight_attenuated_out = emission_weight_out * coat_emission_attenuation_out;
     vec3 artistic_ior_ior = vec3(0.0);
     vec3 artistic_ior_extinction = vec3(0.0);
@@ -1333,8 +1332,8 @@ void IMPL_standard_surface_surfaceshader(float base, vec3 base_color, float diff
     {
         main_tangent_out = tangent1;
     }
-    vec3 coat_affected_diffuse_color_out = pow(base_color, vec3(coat_gamma_out));
     vec3 coat_affected_subsurface_color_out = pow(subsurface_color, vec3(coat_gamma_out));
+    vec3 coat_affected_diffuse_color_out = pow(base_color, vec3(coat_gamma_out));
 
     surfaceshader shader_constructor_out = surfaceshader(vec3(0.0),vec3(0.0));
     {
@@ -1359,12 +1358,12 @@ void IMPL_standard_surface_surfaceshader(float base, vec3 base_color, float diff
             BSDF metal_bsdf_out = BSDF(0.0);
             mx_conductor_bsdf_reflection(L, V, P, occlusion, 1.000000, artistic_ior_ior, artistic_ior_extinction, main_roughness_out, normal1, main_tangent_out, 0, thinfilm(0.0,1.5), metal_bsdf_out);
             BSDF transmission_bsdf_out = BSDF(0.0);
-            BSDF diffuse_bsdf_out = BSDF(0.0);
-            mx_oren_nayar_diffuse_bsdf_reflection(L, V, P, occlusion, base, coat_affected_diffuse_color_out, diffuse_roughness, normal1, diffuse_bsdf_out);
             BSDF subsurface_bsdf_out = BSDF(0.0);
             mx_subsurface_bsdf_reflection(L, V, P, occlusion, 1.000000, coat_affected_subsurface_color_out, subsurface_radius_scaled_out, subsurface_anisotropy, normal1, subsurface_bsdf_out);
             BSDF translucent_bsdf_out = BSDF(0.0);
             mx_translucent_bsdf_reflection(L, V, P, occlusion, 1.000000, coat_affected_subsurface_color_out, normal1, translucent_bsdf_out);
+            BSDF diffuse_bsdf_out = BSDF(0.0);
+            mx_oren_nayar_diffuse_bsdf_reflection(L, V, P, occlusion, base, coat_affected_diffuse_color_out, diffuse_roughness, normal1, diffuse_bsdf_out);
             BSDF selected_subsurface_bsdf_out = BSDF(0.0);
             mx_mix_bsdf_reflection(L, V, P, occlusion, translucent_bsdf_out, subsurface_bsdf_out, subsurface_selector_out, selected_subsurface_bsdf_out);
             BSDF subsurface_mix_out = BSDF(0.0);
@@ -1404,12 +1403,12 @@ void IMPL_standard_surface_surfaceshader(float base, vec3 base_color, float diff
             BSDF metal_bsdf_out = BSDF(0.0);
             mx_conductor_bsdf_indirect(V, 1.000000, artistic_ior_ior, artistic_ior_extinction, main_roughness_out, normal1, main_tangent_out, 0, thinfilm(0.0,1.5), metal_bsdf_out);
             BSDF transmission_bsdf_out = BSDF(0.0);
-            BSDF diffuse_bsdf_out = BSDF(0.0);
-            mx_oren_nayar_diffuse_bsdf_indirect(V, base, coat_affected_diffuse_color_out, diffuse_roughness, normal1, diffuse_bsdf_out);
             BSDF subsurface_bsdf_out = BSDF(0.0);
             mx_subsurface_bsdf_indirect(V, 1.000000, coat_affected_subsurface_color_out, subsurface_radius_scaled_out, subsurface_anisotropy, normal1, subsurface_bsdf_out);
             BSDF translucent_bsdf_out = BSDF(0.0);
             mx_translucent_bsdf_indirect(V, 1.000000, coat_affected_subsurface_color_out, normal1, translucent_bsdf_out);
+            BSDF diffuse_bsdf_out = BSDF(0.0);
+            mx_oren_nayar_diffuse_bsdf_indirect(V, base, coat_affected_diffuse_color_out, diffuse_roughness, normal1, diffuse_bsdf_out);
             BSDF selected_subsurface_bsdf_out = BSDF(0.0);
             mx_mix_bsdf_indirect(V, translucent_bsdf_out, subsurface_bsdf_out, subsurface_selector_out, selected_subsurface_bsdf_out);
             BSDF subsurface_mix_out = BSDF(0.0);

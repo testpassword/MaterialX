@@ -43,7 +43,7 @@ vec3 mx_environment_radiance(vec3 N, vec3 V, vec3 X, vec2 roughness, int distrib
 
         // Sample the environment light from the given direction.
         float pdf = mx_ggx_PDF(X, Y, H, NdotH, LdotH, roughness.x, roughness.y);
-        float lod = mx_latlong_compute_lod(L, pdf, float($envRadianceMips) - 1.0, envRadianceSamples);
+        float lod = mx_latlong_compute_lod(L, pdf, float($envRadianceMips - 1), envRadianceSamples);
         vec3 sampleColor = mx_latlong_map_lookup(L, $envMatrix, lod, $envRadiance);
 
         // Compute the Fresnel term.

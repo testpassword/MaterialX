@@ -197,10 +197,6 @@ function init() {
               opacity: {value: new THREE.Vector3(1.000000, 1.000000, 1.000000)},
               thin_walled: {value: false},
 
-              burley_brdf1_weight: {value: 1.0},
-              burley_brdf1_color: {value: new THREE.Vector3(0.6, 0.6, 0.6)},
-              burley_brdf1_roughness: {value: 0.2},
-
               u_numActiveLightSources: {value: 1},
               u_lightData: {value: [ lightData ]},
 
