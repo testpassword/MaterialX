@@ -359,6 +359,235 @@ ShaderNodePtr OCIOColorManagementSystem::createNode(const ShaderGraph* parent, c
     return shaderNode;
 }
 
+//
+// Customized shader generator.
+// Most of this is just a copy of OCIO GenericGpuShaderDesc.
+//
+class OCIOShaderCreator;
+using OCIOShaderCreatorPtr = OCIO_SHARED_PTR<OCIOShaderCreator>;
+
+class OCIOShaderCreator : public OCIO::GpuShaderCreator
+{
+  public:
+    OCIOShaderCreator() {};
+    virtual ~OCIOShaderCreator() {};
+
+    OCIOShaderCreator(const OCIOShaderCreator* other)
+    {
+        _shaderDeclarations = other->_shaderDeclarations;
+        _shaderHelperMethods = other->_shaderHelperMethods;
+        _shaderFunctionHeader = other->_shaderFunctionHeader;
+        _shaderFunctionBody = other->_shaderFunctionBody;
+        _shaderFunctionFooter = other->_shaderFunctionFooter;
+        for (size_t i = 0; i < OCIO_RESOURCEMAP_SIZE; i++)
+        {
+            resourceMap[i] = other->resourceMap[i];
+        }
+    }
+
+    static OCIOShaderCreatorPtr create()
+    {
+        OCIOShaderCreatorPtr newCreator = std::make_shared<OCIOShaderCreator>();
+        return newCreator;
+    }
+
+    OCIO::GpuShaderCreatorRcPtr clone() const override
+    {
+        OCIOShaderCreatorPtr newCreator = std::make_shared<OCIOShaderCreator>(this);
+        return OCIO::DynamicPtrCast<GpuShaderCreator>(newCreator);
+    }
+
+    void setTextureMaxWidth(unsigned int maxWidth) override
+    {
+        _textureMaxWidth = maxWidth;
+    }
+    unsigned int getTextureMaxWidth() const noexcept override
+    {
+        return _textureMaxWidth;
+    }
+
+    // Support for caching uniforms
+    //
+    bool addUniform(const char * uniformName, const DoubleGetter & getDouble) override
+    {
+        ColorManagementResourceMap& rmap = *(resourceMap[(int)ColorManagementSystem::ResourceType::UNIFORM]);
+        ValuePtr val = Value::createValue(static_cast<float>(getDouble()));
+        rmap[std::string(uniformName)] = ColorSpaceConstant::create(uniformName, val);
+        return true;
+    }
+    
+    bool addUniform(const char * uniformName, const BoolGetter & getBool) override
+    {
+        // Note: Booleans become float uniforms
+        ColorManagementResourceMap& rmap = *(resourceMap[(int)ColorManagementSystem::ResourceType::UNIFORM]);
+        ValuePtr val = Value::createValue(getBool() ? 1.0f : 0.0f);
+        rmap[std::string(uniformName)] = ColorSpaceConstant::create(uniformName, val);
+        return true;
+    }
+    
+    bool addUniform(const char * uniformName, const Float3Getter & getter) override
+    {
+        ColorManagementResourceMap& rmap = *(resourceMap[(int)ColorManagementSystem::ResourceType::UNIFORM]);
+        Vector3 vec3 = { static_cast<float>(getter()[0]),
+                         static_cast<float>(getter()[1]),
+                         static_cast<float>(getter()[2]) };
+        ValuePtr val = Value::createValue(vec3);
+        rmap[std::string(uniformName)] = ColorSpaceConstant::create(uniformName, val);
+        return true;
+    }
+
+    bool addUniform(const char * uniformName,
+        const SizeGetter & getSize,
+        const VectorFloatGetter & getVectorFloat) override
+    {
+        ColorManagementResourceMap& rmap = *(resourceMap[(int)ColorManagementSystem::ResourceType::UNIFORM]);
+        size_t vectorSize = static_cast<size_t>(getSize());
+        const float* data = static_cast<const float*>(getVectorFloat());
+        FloatVec vecarray(data, data + vectorSize);
+        ValuePtr val = Value::createValue(vecarray);
+        rmap[std::string(uniformName)] = ColorSpaceConstant::create(uniformName, val);
+        return true;
+    }
+
+    bool addUniform(const char * uniformName,
+        const SizeGetter & getSize,
+        const VectorIntGetter & getVectorInt) override
+    {
+        ColorManagementResourceMap& rmap = *(resourceMap[(int)ColorManagementSystem::ResourceType::UNIFORM]);
+        size_t vectorSize = static_cast<size_t>(getSize());
+        const int* data = static_cast<const int*>(getVectorInt());
+
+        IntVec vecarray(data, data + vectorSize);
+        ValuePtr val = Value::createValue(vecarray);
+        rmap[std::string(uniformName)] = ColorSpaceConstant::create(uniformName, val);
+        return true;
+    }
+
+    // Cache information for 1D and 2D textures
+    //
+    void addTexture(const char * textureName,
+                    const char * samplerName,
+                    unsigned width, unsigned height,
+                    OCIO::GpuShaderCreator::TextureType channel,
+                    OCIO::Interpolation /*interpolation*/,
+                    const float * data) override
+    {
+        if (!textureName || !*textureName
+            || !samplerName || !*samplerName
+            || width == 0)
+        {
+            throw Exception("OCIO 1D/2D texture data is corrupted: " + std::string(textureName));
+        }
+
+        if (!data)
+        {
+            throw Exception("OCIO 1D/2D texture values are missing: " + std::string(textureName));
+        }
+
+        size_t offset = static_cast<size_t>(width*height);
+        FloatVec vecarray(data, data + offset);
+
+        ColorSpaceTexturePtr newTexture = ColorSpaceTexture::create(samplerName, vecarray);
+        newTexture->_width = width;
+        newTexture->_height = height;
+        newTexture->_depth = 1;
+        // TODO : Support interpolation
+        newTexture->_channelCount = (channel == OCIO::GpuShaderDesc::TEXTURE_RGB_CHANNEL) ? 3 : 1;
+
+        if (height > 1)
+        {
+            ColorManagementResourceMap& rmap2D = *(resourceMap[(int)ColorManagementSystem::ResourceType::TEXTURE2D]);
+            rmap2D[samplerName] = newTexture;
+        }
+        else
+        {
+            ColorManagementResourceMap& rmap1D = *(resourceMap[(int)ColorManagementSystem::ResourceType::TEXTURE1D]);
+            rmap1D[samplerName] = newTexture;
+        }
+    }
+
+    // Cache information for 3D textures
+    //
+    void add3DTexture(const char * textureName,
+                      const char * samplerName,
+                      unsigned edgeLength,
+                      OCIO::Interpolation /*interpolation*/,
+                      const float * data) override
+    {
+        if (!textureName || !*textureName
+            || !samplerName || !*samplerName
+            || edgeLength == 0)
+        {
+            throw Exception("OCIO 3D texture data is corrupted: " + std::string(textureName));
+        }
+
+        if (!data)
+        {
+            throw Exception("OCIO 3D texture values are missing: " + std::string(textureName));
+        }
+
+        size_t offset = static_cast<size_t>(edgeLength * edgeLength* edgeLength);
+        FloatVec vecarray(data, data + offset);
+        ColorSpaceTexturePtr newTexture = ColorSpaceTexture::create(samplerName, vecarray);
+        newTexture->_width = newTexture->_height = newTexture->_depth = edgeLength;
+        newTexture->_channelCount = 3;
+
+        ColorManagementResourceMap& rmap3D = *(resourceMap[(int)ColorManagementSystem::ResourceType::TEXTURE3D]);
+        rmap3D[samplerName] = newTexture;
+    }
+
+    // Build the source code
+    void createShaderText(const char * shaderDeclarations,
+                          const char * shaderHelperMethods,
+                          const char * shaderFunctionHeader,
+                          const char * shaderFunctionBody,
+                          const char * shaderFunctionFooter) override
+    {
+        _shaderDeclarations = shaderDeclarations;
+        _shaderHelperMethods = shaderHelperMethods;
+        _shaderFunctionHeader = shaderFunctionHeader;
+        _shaderFunctionBody = shaderFunctionBody;
+        _shaderFunctionFooter = shaderFunctionFooter;
+
+        // Note that we never add in declrations as injection of this code is done elsewhere
+        _shaderCode.clear();
+        _shaderCode += (shaderHelperMethods  && *shaderHelperMethods) ? shaderHelperMethods : EMPTY_STRING;
+        _shaderCode += (shaderFunctionHeader && *shaderFunctionHeader) ? shaderFunctionHeader : EMPTY_STRING;
+        _shaderCode += (shaderFunctionBody   && *shaderFunctionBody) ? shaderFunctionBody : EMPTY_STRING;
+        _shaderCode += (shaderFunctionFooter && *shaderFunctionFooter) ? shaderFunctionFooter : EMPTY_STRING;
+    }
+
+    ColorManagementResourceMapPtr getResource(ColorManagementSystem::ResourceType resourceType)
+    {
+        return resourceMap[(int)resourceType];
+    }
+
+    const std::string getShaderCode()
+    {
+        return _shaderCode;
+    }
+
+  protected:
+
+    OCIOShaderCreator(const OCIOShaderCreator &) = delete;
+    OCIOShaderCreator& operator= (const OCIOShaderCreator &) = delete;
+
+    // Cached uniforms
+    ColorManagementResourceMapPtr resourceMap[OCIO_RESOURCEMAP_SIZE];
+
+    // Cached source code
+    std::string _shaderDeclarations;
+    std::string _shaderHelperMethods;
+    std::string _shaderFunctionHeader;
+    std::string _shaderFunctionBody;
+    std::string _shaderFunctionFooter;
+
+    std::string _shaderCode;
+
+    // Per language maximum width
+    unsigned int _textureMaxWidth = 4096;
+};
+
 ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceTransform& transform) const
 {
     if (!isValid())
@@ -403,6 +632,13 @@ ImplementationPtr OCIOColorManagementSystem::getImplementation(const ColorSpaceT
         // Retrieve information
         gpu->extractGpuShaderInfo(shaderDesc);
 
+#if _UNDEFINED_SYMBOLS_IF_INCLUDE_
+        OCIOShaderCreatorPtr creator = OCIOShaderCreator::create();
+        creator->setFunctionName(transformFunctionName.c_str());
+        creator->setResourcePrefix(transformFunctionName.c_str());
+        OCIO::GpuShaderCreatorRcPtr gg = OCIO::DynamicPtrCast<OCIO::GpuShaderCreator>(creator);
+        gpu->extractGpuShaderInfo(gg);
+#endif
         std::string fullFunction = shaderDesc->getShaderText();
         // TODO: Comment out uniforms as a workaround as the uniforms are always embedded as
         // part of the function string
