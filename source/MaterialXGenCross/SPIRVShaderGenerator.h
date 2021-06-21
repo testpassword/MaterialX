@@ -23,6 +23,7 @@ namespace MaterialX
         const string& getSourceFileExtension() const override { return EMPTY_STRING; };
     };
 
+
     class MX_GENCROSS_API SPIRVShaderGenerator : public GlslShaderGenerator
     {
     private:

@@ -4,6 +4,9 @@
 include(ExternalProject)
 set_property(DIRECTORY PROPERTY EP_BASE ${KHR_TOOLS_DIR})
 set(GLSLANG_GIT_REPO     https://github.com/KhronosGroup/glslang CACHE STRING "glslang Git repo")
+
+# ENABLE_GLSLANG_BINARIES for glsllang resource limits
+
 ExternalProject_Add(khr_glslang
     GIT_REPOSITORY   ${GLSLANG_GIT_REPO}
     GIT_TAG 11.4.0
@@ -11,7 +14,7 @@ ExternalProject_Add(khr_glslang
     GIT_PROGRESS OFF
     CMAKE_ARGS
         -DENABLE_SPVREMAPPER=OFF
-        -DENABLE_GLSLANG_BINARIES=OFF
+        -DENABLE_GLSLANG_BINARIES=ON
         -DENABLE_HLSL=OFF
         -DENABLE_OPT=OFF
         -DENABLE_CTEST=OFF

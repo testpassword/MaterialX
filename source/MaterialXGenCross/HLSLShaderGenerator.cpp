@@ -33,6 +33,7 @@ namespace MaterialX
         context.popUserData(MaterialX::HW::USER_DATA_BINDING_CONTEXT);
 
         MaterialX::ShaderStage& ps = hwShader->getStage(MaterialX::Stage::PIXEL);
+        
         std::string crosscompileSource;
 
         //TODO: figure out a better way to reuse stage

@@ -236,7 +236,6 @@ class MX_GENSHADER_API ShaderStage
         _functionName = functionName;
     }
 
-  private:
     /// Name of the stage
     const string _name;
 
