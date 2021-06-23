@@ -7,7 +7,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
 
-let camera, scene, model, renderer, composer, controls, uniforms;
+let camera, scene, model, renderer, composer, controls;
 
 let normalMat = new THREE.Matrix3();
 let viewProjMat = new THREE.Matrix4();
@@ -98,6 +98,53 @@ function generateTangents(geometry) {
     geometry.setAttribute('tangent', new THREE.BufferAttribute( tangentsdata, 3));
 }
 
+/**
+ * Create a new (half)float texture containing an alpha channel with a value of 1 from a RGB (half)float texture.
+ * @param {THREE.Texture} texture 
+ */
+function RGBToRGBA_Float(texture) {
+    const rgbData = texture.image.data;
+    const length = (rgbData.length / 3) * 4;
+    let rgbaData;
+
+    switch (texture.type) {
+        case THREE.FloatType:
+            rgbaData = new Float32Array(length);
+            break;
+        case THREE.HalfFloatType:
+            rgbaData = new Uint16Array(length);
+            break;
+        default:
+          break;
+    }
+
+    if (rgbaData) {
+        for (let i = 0; i < length / 4; i++) {
+            rgbaData[(i * 4) + 0] = rgbData[(i * 3) + 0];
+            rgbaData[(i * 4) + 1] = rgbData[(i * 3) + 1];
+            rgbaData[(i * 4) + 2] = rgbData[(i * 3) + 2];
+            rgbaData[(i * 4) + 3] = 1.0;
+        }
+        return new THREE.DataTexture(rgbaData, texture.image.width, texture.image.height, THREE.RGBAFormat, texture.type);
+    }
+
+    return texture;
+}
+
+function prepareEnvTexture(texture, capabilities) {
+    const rgbaTexture = RGBToRGBA_Float(texture);
+    // RGBELoader sets flipY to true by default
+    rgbaTexture.flipY = false;
+    rgbaTexture.wrapS = THREE.RepeatWrapping;
+    rgbaTexture.anisotropy = capabilities.getMaxAnisotropy();
+    rgbaTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    rgbaTexture.magFilter = THREE.LinearFilter;
+    rgbaTexture.generateMipmaps = true;
+    rgbaTexture.needsUpdate = true;
+
+    return rgbaTexture;
+}
+
 function init() {
     let canvas = document.getElementById('webglcanvas');
     let context = canvas.getContext('webgl2');
@@ -119,7 +166,6 @@ function init() {
       color: new THREE.Vector3(...directionalLight.color.toArray()), 
       intensity: directionalLight.intensity
     };
-
 
     renderer = new THREE.WebGLRenderer({canvas, context});
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -147,11 +193,10 @@ function init() {
         new Promise(resolve => objLoader.load('shaderball.obj', resolve)),
         new Promise(resolve => fileloader.load('shader-frag.glsl', resolve)),
         new Promise(resolve => fileloader.load('shader-vert.glsl', resolve))
-    ]).then(([radianceTexture, irradianceTexture, obj, fShader, vShader]) => {
+    ]).then(([loadedRadianceTexture, loadedIrradianceTexture, obj, fShader, vShader]) => {
 
-        // RGBELoader sets flipY to true by default
-        radianceTexture.flipY = false;
-        irradianceTexture.flipY = false;
+        const radianceTexture = prepareEnvTexture(loadedRadianceTexture, renderer.capabilities);
+        const irradianceTexture = prepareEnvTexture(loadedIrradianceTexture, renderer.capabilities);
 
         const material = new THREE.RawShaderMaterial({
             uniforms: { 
@@ -202,7 +247,7 @@ function init() {
 
               u_envMatrix: {value: new THREE.Matrix4().makeRotationY(Math.PI)},
               u_envRadiance: {value: radianceTexture},
-              u_envRadianceMips: {value: 1},
+              u_envRadianceMips: {value: Math.trunc(Math.log2(Math.max(radianceTexture.image.width, radianceTexture.image.height))) + 1},
               u_envRadianceSamples: {value: 16},
               u_envIrradiance: {value: irradianceTexture},
 
