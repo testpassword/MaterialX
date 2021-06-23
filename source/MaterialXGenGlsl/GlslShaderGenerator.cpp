@@ -275,7 +275,7 @@ ShaderPtr GlslShaderGenerator::generate(const string& name, ElementPtr element, 
     ScopedFloatFormatting fmt(Value::FloatFormatFixed);
 
     // Make sure we initialize/reset the binding context before generation.
-    HwResourceBindingContextPtr resourceBindingCtx = context.getUserData<HwResourceBindingContext>(HW::USER_DATA_BINDING_CONTEXT);
+    HwResourceBindingContextPtr resourceBindingCtx = getResourceBindingContext(context);
     if (resourceBindingCtx)
     {
         resourceBindingCtx->initialize();
@@ -296,7 +296,7 @@ ShaderPtr GlslShaderGenerator::generate(const string& name, ElementPtr element, 
 
 void GlslShaderGenerator::emitVertexStage(const ShaderGraph& graph, GenContext& context, ShaderStage& stage) const
 {
-    HwResourceBindingContextPtr resourceBindingCtx = context.getUserData<HwResourceBindingContext>(HW::USER_DATA_BINDING_CONTEXT);
+    HwResourceBindingContextPtr resourceBindingCtx = getResourceBindingContext(context);
 
     emitDirectives(context, stage);
     if (resourceBindingCtx)
@@ -474,6 +474,11 @@ const string GlslShaderGenerator::getPixelStageOutputVariable(const ShaderGraphO
     return outputSocket.getVariable();
 }
 
+const HwResourceBindingContextPtr GlslShaderGenerator::getResourceBindingContext(GenContext& context) const
+{
+    return context.getUserData<HwResourceBindingContext>(HW::USER_DATA_BINDING_CONTEXT);
+}
+
 const string GlslShaderGenerator::getVertexDataPrefix(const VariableBlock& vertexData) const
 {
     return vertexData.getInstance() + ".";
@@ -481,7 +486,7 @@ const string GlslShaderGenerator::getVertexDataPrefix(const VariableBlock& verte
 
 void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& context, ShaderStage& stage) const
 {
-    HwResourceBindingContextPtr resourceBindingCtx = context.getUserData<HwResourceBindingContext>(HW::USER_DATA_BINDING_CONTEXT);
+    HwResourceBindingContextPtr resourceBindingCtx = getResourceBindingContext(context);
 
     // Add directives
     emitDirectives(context, stage);

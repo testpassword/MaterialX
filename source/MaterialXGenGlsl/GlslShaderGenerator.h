@@ -68,6 +68,8 @@ class MX_GENGLSL_API GlslShaderGenerator : public HwShaderGenerator
     virtual void emitOutpus(GenContext& context, ShaderStage& stage) const;
 
     virtual const string getPixelStageOutputVariable(const ShaderGraphOutputSocket& outputSocket) const;
+    
+    virtual const HwResourceBindingContextPtr getResourceBindingContext(GenContext& context) const;
 
     virtual bool requiresLighting(const ShaderGraph& graph) const;
 
