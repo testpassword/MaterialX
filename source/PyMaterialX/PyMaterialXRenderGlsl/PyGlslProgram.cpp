@@ -37,6 +37,7 @@ void bindPyGlslProgram(py::module& mod)
         .def("bindLighting", &mx::GlslProgram::bindLighting)
         .def("bindViewInformation", &mx::GlslProgram::bindViewInformation)
         .def("bindTimeAndFrame", &mx::GlslProgram::bindTimeAndFrame)
+        .def("bindScalars", &mx::GlslProgram::bindScalars)
         .def("unbind", &mx::GlslProgram::unbind);
 
     py::class_<mx::GlslProgram::Input>(mod, "Input")

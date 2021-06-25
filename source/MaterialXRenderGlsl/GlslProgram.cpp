@@ -252,7 +252,8 @@ bool GlslProgram::bind()
 void GlslProgram::bindInputs(ViewHandlerPtr viewHandler,
                              GeometryHandlerPtr geometryHandler,
                              ImageHandlerPtr imageHandler,
-                             LightHandlerPtr lightHandler)
+                             LightHandlerPtr lightHandler,
+                             bool bindScalarValues)
 {
     // Bind the program to use
     if (!bind())
@@ -268,6 +269,13 @@ void GlslProgram::bindInputs(ViewHandlerPtr viewHandler,
     // Parse for uniforms and attributes
     getUniformsList();
     getAttributesList();
+
+    // If scalar uniforms are not initialized within the shading code
+    // then they need to be explicitly bound here.
+    if (bindScalarValues)
+    {
+        bindScalars();
+    }
 
     const MeshList& meshes = geometryHandler->getMeshes();
     if (meshes.size() > 0 && meshes[0]->getIdentifier() != _lastGeometryName)
@@ -872,11 +880,21 @@ void GlslProgram::bindUniformLocation(int location, ConstValuePtr value)
             Matrix44 m = value->asA<Matrix44>();
             glUniformMatrix4fv(location, 1, GL_FALSE, m.data());
         }
+        else if (value->getTypeString() == "floatarray")
+        {
+            FloatVec fvec = value->asA<FloatVec>();
+            glUniform1fv(location, (GLsizei)fvec.size(), fvec.data());
+        }
+        else if (value->getTypeString() == "intarray")
+        {
+            IntVec ivec = value->asA<IntVec>();
+            glUniform1iv(location, (GLsizei)ivec.size(), ivec.data());
+        }
         else
         {
             throw ExceptionShaderRenderError(
                 "GLSL input binding error.",
-                { "Unsupported data type when setting uniform value" }
+                { value->getTypeString() + ": is an unsupported data type when setting uniform value" }
             );
         }
     }
@@ -1457,6 +1475,27 @@ void GlslProgram::findInputs(const string& variable,
                 }
             }
         }
+    }
+}
+
+void GlslProgram::bindScalars()
+{
+    for (const auto& input : _uniformList)
+    {
+        GLint uniformLocation = input.second->location;
+        if (uniformLocation < 0)
+        {
+            continue;
+        }
+        GLenum uniformType = input.second->gltype;
+        ValuePtr uniformValue = input.second->value;
+        if (!uniformValue || input.second->isConstant ||
+            uniformValue->getTypeString() == STRING_TYPE_STRING ||
+            uniformType >= GL_SAMPLER_1D && uniformType <= GL_SAMPLER_CUBE)
+        {
+            continue;
+        }
+        bindUniformLocation(uniformLocation, uniformValue);
     }
 }
 

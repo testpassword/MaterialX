@@ -39,6 +39,8 @@
 #include <MaterialXGenShader/Nodes/ThinFilmNode.h>
 #include <MaterialXGenShader/Nodes/BsdfNodes.h>
 
+#include <iostream>
+
 namespace MaterialX
 {
 
@@ -310,7 +312,7 @@ void GlslShaderGenerator::emitVertexStage(const ShaderGraph& graph, GenContext& 
     const VariableBlock& constants = stage.getConstantBlock();
     if (!constants.empty())
     {
-        emitVariableDeclarations(constants, _syntax->getConstantQualifier(), Syntax::SEMICOLON, context, stage);
+        emitVariableDeclarations(constants, _syntax->getConstantQualifier(), Syntax::SEMICOLON, context, stage, true);
         emitLineBreak(stage);
     }
 
@@ -425,7 +427,7 @@ void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& c
     const VariableBlock& constants = stage.getConstantBlock();
     if (!constants.empty())
     {
-        emitVariableDeclarations(constants, _syntax->getConstantQualifier(), Syntax::SEMICOLON, context, stage);
+        emitVariableDeclarations(constants, _syntax->getConstantQualifier(), Syntax::SEMICOLON, context, stage, true);
         emitLineBreak(stage);
     }
 
@@ -720,7 +722,7 @@ void GlslShaderGenerator::toVec4(const TypeDesc* type, string& variable)
 }
 
 void GlslShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, const string& qualifier, 
-                                                  GenContext&, ShaderStage& stage,
+                                                  GenContext& genContext, ShaderStage& stage,
                                                   bool assignValue) const
 {
     // A file texture input needs special handling on GLSL
@@ -751,6 +753,15 @@ void GlslShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, co
             str += " : " + variable->getSemantic();
         }
 
+        // Disable emitting non-constant variables
+        bool skipped = false;
+        if (assignValue &&
+            !(qualifier.empty() && qualifier == getSyntax().getConstantQualifier()) &&
+            !genContext.getOptions().declareInputsWithDefaultValues)
+        {
+            skipped = true;
+            assignValue = false;
+        }
         if (assignValue)
         {
             const string valueStr = (variable->getValue() ?
@@ -758,7 +769,10 @@ void GlslShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, co
                 _syntax->getDefaultValue(variable->getType(), true));
             str += valueStr.empty() ? EMPTY_STRING : " = " + valueStr;
         }
-
+        if (skipped)
+        {
+            std::cout << "Skipped uniform = " << str << std::endl;
+        }
         emitString(str, stage);
     }
 }

@@ -88,6 +88,18 @@ class MX_RENDER_API ShaderRenderer
         return _viewHandler;
     }
 
+    /// Set whether to bind scale uniform values
+    void setBindScalarValues(bool val)
+    {
+        _bindScalarValues = val;
+    }
+
+    /// Get whether to bind scale uniform values
+    bool getBindScalarValues() const
+    {
+        return _bindScalarValues;
+    }
+
     /// @}
     /// @name Rendering
     /// @{
@@ -124,13 +136,15 @@ class MX_RENDER_API ShaderRenderer
     ShaderRenderer() :
         _width(0),
         _height(0),
-        _baseType(Image::BaseType::UINT8)
+        _baseType(Image::BaseType::UINT8),
+        _bindScalarValues(false)
     { }
 
     ShaderRenderer(unsigned int width, unsigned int height, Image::BaseType baseType) :
         _width(width),
         _height(height),
-        _baseType(baseType)
+        _baseType(baseType),
+        _bindScalarValues(false)
     { }
 
   protected:
@@ -142,6 +156,7 @@ class MX_RENDER_API ShaderRenderer
     GeometryHandlerPtr _geometryHandler;
     LightHandlerPtr _lightHandler;
     ViewHandlerPtr _viewHandler;
+    bool _bindScalarValues;
 };
 
 /// @class ExceptionShaderRenderError

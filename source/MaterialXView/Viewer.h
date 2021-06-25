@@ -74,7 +74,7 @@ class Viewer : public ng::Screen
     // Set the method for specular environment rendering.
     void setSpecularEnvironmentMethod(mx::HwSpecularEnvironmentMethod method)
     {
-        _genContext.getOptions().hwSpecularEnvironmentMethod = method;
+        _genContextGLSL.getOptions().hwSpecularEnvironmentMethod = method;
     }
 
     // Set the number of environment samples.
@@ -322,7 +322,7 @@ class Viewer : public ng::Screen
     mx::MeshPtr _quadMesh;
 
     // Shader generator contexts
-    mx::GenContext _genContext;
+    mx::GenContext _genContextGLSL;
 #if MATERIALX_BUILD_GEN_OSL
     mx::GenContext _genContextOsl;
 #endif

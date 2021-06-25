@@ -77,7 +77,8 @@ class MX_GENSHADER_API GenOptions
         hwMaxActiveLightSources(3),
         hwNormalizeUdimTexCoords(false),
         hwWriteAlbedoTable(false),
-        hwMaxRadianceSamples(1024)
+        hwMaxRadianceSamples(1024),
+        declareInputsWithDefaultValues(true)
     {
     }
     virtual ~GenOptions() { }
@@ -154,6 +155,10 @@ class MX_GENSHADER_API GenOptions
     /// Sets the maximum number of radiance samples 
     unsigned int hwMaxRadianceSamples;
 
+    /// Flag to indicate if inputs declarations whould be initialize with a default value.
+    /// This should be set to false if the shading language does not support this type of initialization.
+    /// The default is true.
+    bool declareInputsWithDefaultValues;
 };
 
 } // namespace MaterialX

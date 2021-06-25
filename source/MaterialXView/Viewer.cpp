@@ -225,7 +225,7 @@ Viewer::Viewer(const std::string& materialFilename,
     _lightHandler(mx::LightHandler::create()),
     _cameraViewHandler(mx::ViewHandler::create()),
     _shadowViewHandler(mx::ViewHandler::create()),
-    _genContext(mx::GlslShaderGenerator::create()),
+    _genContextGLSL(mx::GlslShaderGenerator::create()),
 #if MATERIALX_BUILD_GEN_OSL
     _genContextOsl(mx::OslShaderGenerator::create()),
 #endif
@@ -262,10 +262,11 @@ Viewer::Viewer(const std::string& materialFilename,
     setBackground(ng::Color(screenColor[0], screenColor[1], screenColor[2], 1.0f));
 
     // Set default generator options.
-    _genContext.getOptions().hwDirectionalAlbedoMethod = mx::DIRECTIONAL_ALBEDO_TABLE;
-    _genContext.getOptions().hwShadowMap = true;
-    _genContext.getOptions().targetColorSpaceOverride = "lin_rec709";
-    _genContext.getOptions().fileTextureVerticalFlip = true;
+    _genContextGLSL.getOptions().hwDirectionalAlbedoMethod = mx::DIRECTIONAL_ALBEDO_TABLE;
+    _genContextGLSL.getOptions().hwShadowMap = true;
+    _genContextGLSL.getOptions().targetColorSpaceOverride = "lin_rec709";
+    _genContextGLSL.getOptions().fileTextureVerticalFlip = true;
+    _genContextGLSL.getOptions().declareInputsWithDefaultValues = true;
 
     // Set OSL/MDL generator options.
 #if MATERIALX_BUILD_GEN_OSL
@@ -282,7 +283,7 @@ Viewer::Viewer(const std::string& materialFilename,
 #endif
 
     // Register the GLSL implementation for <viewdir> used by the environment shader.
-    _genContext.getShaderGenerator().registerImplementation("IM_viewdir_vector3_" + mx::GlslShaderGenerator::TARGET, ViewDirGlsl::create);
+    _genContextGLSL.getShaderGenerator().registerImplementation("IM_viewdir_vector3_" + mx::GlslShaderGenerator::TARGET, ViewDirGlsl::create);
 }
 
 void Viewer::initialize()
@@ -362,7 +363,7 @@ void Viewer::initialize()
     // Generate wireframe material.
     try
     {
-        mx::ShaderPtr hwShader = mx::createConstantShader(_genContext, _stdLib, "__WIRE_SHADER__", mx::Color3(1.0f));
+        mx::ShaderPtr hwShader = mx::createConstantShader(_genContextGLSL, _stdLib, "__WIRE_SHADER__", mx::Color3(1.0f));
         _wireMaterial = Material::create();
         _wireMaterial->generateShader(hwShader);
     }
@@ -375,7 +376,7 @@ void Viewer::initialize()
     // Generate shadow material.
     try
     {
-        mx::ShaderPtr hwShader = mx::createDepthShader(_genContext, _stdLib, "__SHADOW_SHADER__");
+        mx::ShaderPtr hwShader = mx::createDepthShader(_genContextGLSL, _stdLib, "__SHADOW_SHADER__");
         _shadowMaterial = Material::create();
         _shadowMaterial->generateShader(hwShader);
     }
@@ -388,7 +389,7 @@ void Viewer::initialize()
     // Generate shadow blur material.
     try
     {
-        mx::ShaderPtr hwShader = mx::createBlurShader(_genContext, _stdLib, "__SHADOW_BLUR_SHADER__", "gaussian", 1.0f);
+        mx::ShaderPtr hwShader = mx::createBlurShader(_genContextGLSL, _stdLib, "__SHADOW_BLUR_SHADER__", "gaussian", 1.0f);
         _shadowBlurMaterial = Material::create();
         _shadowBlurMaterial->generateShader(hwShader);
     }
@@ -510,7 +511,7 @@ void Viewer::loadEnvironmentLight()
         try
         {
             _envMaterial = Material::create();
-            _envMaterial->generateEnvironmentShader(_genContext, envFilename, _stdLib, _envRadianceFilename);
+            _envMaterial->generateEnvironmentShader(_genContextGLSL, envFilename, _stdLib, _envRadianceFilename);
         }
         catch (std::exception& e)
         {
@@ -532,7 +533,7 @@ void Viewer::applyDirectLights(mx::DocumentPtr doc)
     {
         std::vector<mx::NodePtr> lights;
         _lightHandler->findLights(doc, lights);
-        _lightHandler->registerLights(doc, lights, _genContext);
+        _lightHandler->registerLights(doc, lights, _genContextGLSL);
         _lightHandler->setLightSources(lights);
     }
     catch (std::exception& e)
@@ -754,7 +755,7 @@ void Viewer::createAdvancedSettings(Widget* parent)
     distanceUnitBox->setCallback([this](int index)
     {
         mProcessEvents = false;
-        _genContext.getOptions().targetDistanceUnit = _distanceUnitOptions[index];
+        _genContextGLSL.getOptions().targetDistanceUnit = _distanceUnitOptions[index];
 #if MATERIALX_BUILD_GEN_OSL
         _genContextOsl.getOptions().targetDistanceUnit = _distanceUnitOptions[index];
 #endif
@@ -766,8 +767,8 @@ void Viewer::createAdvancedSettings(Widget* parent)
 #endif
         for (MaterialPtr material : _materials)
         {
-            material->bindShader();
-            material->bindUnits(_unitRegistry, _genContext);
+            material->bindShader(_genContextGLSL);
+            material->bindUnits(_unitRegistry, _genContextGLSL);
         }
         mProcessEvents = true;
     });
@@ -822,18 +823,18 @@ void Viewer::createAdvancedSettings(Widget* parent)
     shadowingLabel->setFont("sans-bold");
 
     ng::CheckBox* shadowMapBox = new ng::CheckBox(advancedPopup, "Shadow Map");
-    shadowMapBox->setChecked(_genContext.getOptions().hwShadowMap);
+    shadowMapBox->setChecked(_genContextGLSL.getOptions().hwShadowMap);
     shadowMapBox->setCallback([this](bool enable)
     {
-        _genContext.getOptions().hwShadowMap = enable;
+        _genContextGLSL.getOptions().hwShadowMap = enable;
         reloadShaders();
     });
 
     ng::CheckBox* ambientOcclusionBox = new ng::CheckBox(advancedPopup, "Ambient Occlusion");
-    ambientOcclusionBox->setChecked(_genContext.getOptions().hwAmbientOcclusion);
+    ambientOcclusionBox->setChecked(_genContextGLSL.getOptions().hwAmbientOcclusion);
     ambientOcclusionBox->setCallback([this](bool enable)
     {
-        _genContext.getOptions().hwAmbientOcclusion = enable;
+        _genContextGLSL.getOptions().hwAmbientOcclusion = enable;
         reloadShaders();
     });
 
@@ -854,7 +855,7 @@ void Viewer::createAdvancedSettings(Widget* parent)
     try
     {
         const mx::Color3 gamma(_gammaValue, _gammaValue, _gammaValue);
-        mx::ShaderPtr hwShader = mx::createGammaShader(_genContext, _stdLib, "__GAMMA_CORRECT_SHADER__", gamma);
+        mx::ShaderPtr hwShader = mx::createGammaShader(_genContextGLSL, _stdLib, "__GAMMA_CORRECT_SHADER__", gamma);
         _gammaMaterial = Material::create();
         _gammaMaterial->generateShader(hwShader);
     }
@@ -910,15 +911,15 @@ void Viewer::createAdvancedSettings(Widget* parent)
     referenceQualityBox->setChecked(false);
     referenceQualityBox->setCallback([this](bool enable)
     {
-        _genContext.getOptions().hwDirectionalAlbedoMethod = enable ? mx::DIRECTIONAL_ALBEDO_IS : mx::DIRECTIONAL_ALBEDO_TABLE;
+        _genContextGLSL.getOptions().hwDirectionalAlbedoMethod = enable ? mx::DIRECTIONAL_ALBEDO_IS : mx::DIRECTIONAL_ALBEDO_TABLE;
         reloadShaders();
     });
 
     ng::CheckBox* importanceSampleBox = new ng::CheckBox(advancedPopup, "Environment FIS");
-    importanceSampleBox->setChecked(_genContext.getOptions().hwSpecularEnvironmentMethod == mx::SPECULAR_ENVIRONMENT_FIS);
+    importanceSampleBox->setChecked(_genContextGLSL.getOptions().hwSpecularEnvironmentMethod == mx::SPECULAR_ENVIRONMENT_FIS);
     importanceSampleBox->setCallback([this](bool enable)
     {
-        _genContext.getOptions().hwSpecularEnvironmentMethod = enable ? mx::SPECULAR_ENVIRONMENT_FIS : mx::SPECULAR_ENVIRONMENT_PREFILTER;
+        _genContextGLSL.getOptions().hwSpecularEnvironmentMethod = enable ? mx::SPECULAR_ENVIRONMENT_FIS : mx::SPECULAR_ENVIRONMENT_PREFILTER;
         reloadShaders();
     });
 
@@ -926,7 +927,7 @@ void Viewer::createAdvancedSettings(Widget* parent)
     sampleGroup->setLayout(new ng::BoxLayout(ng::Orientation::Horizontal));
     new ng::Label(sampleGroup, "Environment Samples:");
     mx::StringVec sampleOptions;
-    _genContext.getOptions().hwMaxRadianceSamples = MAX_ENV_SAMPLES;
+    _genContextGLSL.getOptions().hwMaxRadianceSamples = MAX_ENV_SAMPLES;
     for (int i = MIN_ENV_SAMPLES; i <= MAX_ENV_SAMPLES; i *= 4)
     {
         mProcessEvents = false;
@@ -1168,7 +1169,7 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
     };
 
     // Clear user data on the generator.
-    _genContext.clearUserData();
+    _genContextGLSL.clearUserData();
 
     // Clear materials if merging is not requested.
     if (!_mergeMaterials)
@@ -1289,7 +1290,7 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
             for (MaterialPtr mat : newMaterials)
             {
                 // Clear cached implementations, in case libraries on the file system have changed.
-                _genContext.clearNodeImplementations();
+                _genContextGLSL.clearNodeImplementations();
 
                 mx::TypedElementPtr elem = mat->getElement();
 
@@ -1306,7 +1307,7 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
                         // Generate a shader for the new material.
                         try
                         {
-                            mat->generateShader(_genContext);
+                            mat->generateShader(_genContextGLSL);
                         }
                         catch (std::exception& e)
                         {
@@ -1323,7 +1324,7 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
                 {
                     try
                     {
-                        mat->generateShader(_genContext);
+                        mat->generateShader(_genContextGLSL);
 
                     }
                     catch (std::exception& e)
@@ -1401,7 +1402,7 @@ void Viewer::reloadShaders()
     {
         for (MaterialPtr material : _materials)
         {
-            material->generateShader(_genContext);
+            material->generateShader(_genContextGLSL);
         }
         return;
     }
@@ -1622,7 +1623,7 @@ void Viewer::loadStandardLibraries()
     }
 
     // Initialize the generator contexts.
-    initContext(_genContext);
+    initContext(_genContextGLSL);
 #if MATERIALX_BUILD_GEN_OSL
     initContext(_genContextOsl);
 #endif
@@ -1672,7 +1673,7 @@ bool Viewer::keyboardEvent(int key, int scancode, int action, int modifiers)
     // Save GLSL shader source to file.
     if (key == GLFW_KEY_G && action == GLFW_PRESS)
     {
-        saveShaderSource(_genContext);
+        saveShaderSource(_genContextGLSL);
         return true;
     }
 
@@ -1864,7 +1865,7 @@ void Viewer::renderFrame()
     ShadowState shadowState;
     shadowState.ambientOcclusionGain = _ambientOcclusionGain;
     mx::NodePtr dirLight = _lightHandler->getFirstLightOfCategory(DIR_LIGHT_NODE_CATEGORY);
-    if (_genContext.getOptions().hwShadowMap && dirLight)
+    if (_genContextGLSL.getOptions().hwShadowMap && dirLight)
     {
         updateShadowMap();
         shadowState.shadowMap = _shadowMap;
@@ -1896,7 +1897,7 @@ void Viewer::renderFrame()
         {
             glEnable(GL_CULL_FACE);
             glCullFace(GL_FRONT);
-            _envMaterial->bindShader();
+            _envMaterial->bindShader(_genContextGLSL);
             _envMaterial->bindMesh(_envGeometryHandler->getMeshes()[0]);
             _envMaterial->bindViewInformation(envWorld, view, proj);
             _envMaterial->bindImages(_imageHandler, _searchPath, false);
@@ -1928,14 +1929,14 @@ void Viewer::renderFrame()
         {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
-        material->bindShader();
+        material->bindShader(_genContextGLSL);
         material->bindMesh(_geometryHandler->getMeshes()[0]);
         if (material->getProgram()->hasUniform(mx::HW::ALPHA_THRESHOLD))
         {
             material->getProgram()->bindUniform(mx::HW::ALPHA_THRESHOLD, mx::Value::createValue(0.99f));
         }
         material->bindViewInformation(world, view, proj);
-        material->bindLights(_genContext, _lightHandler, _imageHandler, lightingState, shadowState);
+        material->bindLights(_genContextGLSL, _lightHandler, _imageHandler, lightingState, shadowState);
         material->bindImages(_imageHandler, _searchPath);
         material->drawPartition(geom);
         material->unbindImages(_imageHandler);
@@ -1960,14 +1961,14 @@ void Viewer::renderFrame()
                 continue;
             }
 
-            material->bindShader();
+            material->bindShader(_genContextGLSL);
             material->bindMesh(_geometryHandler->getMeshes()[0]);
             if (material->getProgram()->hasUniform(mx::HW::ALPHA_THRESHOLD))
             {
                 material->getProgram()->bindUniform(mx::HW::ALPHA_THRESHOLD, mx::Value::createValue(0.001f));
             }
             material->bindViewInformation(world, view, proj);
-            material->bindLights(_genContext, _lightHandler, _imageHandler, lightingState, shadowState);
+            material->bindLights(_genContextGLSL, _lightHandler, _imageHandler, lightingState, shadowState);
             material->bindImages(_imageHandler, _searchPath);
             material->drawPartition(geom);
             material->unbindImages(_imageHandler);
@@ -1989,7 +1990,7 @@ void Viewer::renderFrame()
     if (_outlineSelection)
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        _wireMaterial->bindShader();
+        _wireMaterial->bindShader(_genContextGLSL);
         _wireMaterial->bindMesh(_geometryHandler->getMeshes()[0]);
         _wireMaterial->bindViewInformation(world, view, proj);
         _wireMaterial->drawPartition(getSelectedGeometry());
@@ -2006,7 +2007,7 @@ void Viewer::renderFrame()
 
         mx::ImagePtr originalBuffer = getFrameImage();
 
-        _gammaMaterial->bindShader();
+        _gammaMaterial->bindShader(_genContextGLSL);
         mx::Color3 gammaColor(_gammaValue, _gammaValue, _gammaValue);
         _gammaMaterial->getProgram()->bindUniform("node1_gamma", mx::Value::createValue(gammaColor));
         if (_imageHandler->bindImage(originalBuffer, samplingProperties))
@@ -2129,7 +2130,7 @@ void Viewer::bakeTextures()
         mx::Image::BaseType baseType = _bakeHdr ? mx::Image::BaseType::FLOAT : mx::Image::BaseType::UINT8;
         mx::TextureBakerPtr baker = mx::TextureBaker::create(bakeWidth, bakeHeight, baseType);
         baker->setupUnitSystem(_stdLib);
-        baker->setDistanceUnit(_genContext.getOptions().targetDistanceUnit);
+        baker->setDistanceUnit(_genContextGLSL.getOptions().targetDistanceUnit);
         baker->setAverageImages(_bakeAverage);
         baker->setOptimizeConstants(_bakeOptimize);
 
@@ -2401,7 +2402,7 @@ mx::ImagePtr Viewer::getAmbientOcclusionImage(MaterialPtr material)
     const mx::string AO_FILENAME_SUFFIX = "_ao";
     const mx::string AO_FILENAME_EXTENSION = "png";
 
-    if (!material || !_genContext.getOptions().hwAmbientOcclusion)
+    if (!material || !_genContextGLSL.getOptions().hwAmbientOcclusion)
     {
         return nullptr;
     }
@@ -2459,7 +2460,7 @@ void Viewer::updateShadowMap()
 
     // Render shadow geometry.
     _shadowMaterial->unbindGeometry();
-    _shadowMaterial->bindShader();
+    _shadowMaterial->bindShader(_genContextGLSL);
     _shadowMaterial->bindMesh(_geometryHandler->getMeshes()[0]);
     _shadowMaterial->bindViewInformation(world, view, proj);
     for (const auto& assignment : _materialAssignments)
@@ -2470,23 +2471,26 @@ void Viewer::updateShadowMap()
     _shadowMap = framebuffer->getColorImage();
 
     // Apply Gaussian blurring.
-    for (unsigned int i = 0; i < _shadowSoftness; i++)
+    if (_shadowBlurMaterial)
     {
-        framebuffer->bind();
-        _shadowBlurMaterial->bindShader();
-        if (_imageHandler->bindImage(_shadowMap, blurSamplingProperties))
+        for (unsigned int i = 0; i < _shadowSoftness; i++)
         {
-            mx::GLTextureHandlerPtr textureHandler = std::static_pointer_cast<mx::GLTextureHandler>(_imageHandler);
-            int textureLocation = textureHandler->getBoundTextureLocation(_shadowMap->getResourceId());
-            if (textureLocation >= 0)
+            framebuffer->bind();
+            _shadowBlurMaterial->bindShader(_genContextGLSL);
+            if (_imageHandler->bindImage(_shadowMap, blurSamplingProperties))
             {
-                _shadowBlurMaterial->getProgram()->bindUniform("image_file", mx::Value::createValue(textureLocation));
+                mx::GLTextureHandlerPtr textureHandler = std::static_pointer_cast<mx::GLTextureHandler>(_imageHandler);
+                int textureLocation = textureHandler->getBoundTextureLocation(_shadowMap->getResourceId());
+                if (textureLocation >= 0)
+                {
+                    _shadowBlurMaterial->getProgram()->bindUniform("image_file", mx::Value::createValue(textureLocation));
+                }
             }
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            renderScreenSpaceQuad(_shadowBlurMaterial);
+            _imageHandler->releaseRenderResources(_shadowMap);
+            _shadowMap = framebuffer->getColorImage();
         }
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        renderScreenSpaceQuad(_shadowBlurMaterial);
-        _imageHandler->releaseRenderResources(_shadowMap);
-        _shadowMap = framebuffer->getColorImage();
     }
 
     // Restore state for scene rendering.
@@ -2518,7 +2522,7 @@ void Viewer::updateAlbedoTable()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     // Create shader.
-    mx::ShaderPtr hwShader = mx::createAlbedoTableShader(_genContext, _stdLib, "__ALBEDO_TABLE_SHADER__");
+    mx::ShaderPtr hwShader = mx::createAlbedoTableShader(_genContextGLSL, _stdLib, "__ALBEDO_TABLE_SHADER__");
     MaterialPtr material = Material::create();
     try
     {
@@ -2531,7 +2535,7 @@ void Viewer::updateAlbedoTable()
     }
 
     // Render albedo table.
-    material->bindShader();
+    material->bindShader(_genContextGLSL);
     if (material->getProgram()->hasUniform(mx::HW::ALBEDO_TABLE_SIZE))
     {
         material->getProgram()->bindUniform(mx::HW::ALBEDO_TABLE_SIZE, mx::Value::createValue(ALBEDO_TABLE_SIZE));

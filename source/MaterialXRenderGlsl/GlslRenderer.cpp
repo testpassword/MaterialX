@@ -260,7 +260,7 @@ void GlslRenderer::render()
             {
                 // Bind the program to use
                 _program->bind();
-                _program->bindInputs(_viewHandler, _geometryHandler, _imageHandler, _lightHandler);
+                _program->bindInputs(_viewHandler, _geometryHandler, _imageHandler, _lightHandler, _bindScalarValues);
 
                 // Draw all the partitions of all the meshes in the handler
                 for (const auto& mesh : _geometryHandler->getMeshes())

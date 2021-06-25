@@ -20,6 +20,7 @@
 #include <MaterialXCore/Value.h>
 
 #include <sstream>
+#include <iostream>
 
 namespace MaterialX
 {
@@ -147,9 +148,19 @@ void ShaderGenerator::emitTypeDefinitions(GenContext&, ShaderStage& stage) const
 }
 
 void ShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, const string& qualifier, 
-                                              GenContext&, ShaderStage& stage,
+                                              GenContext& genContext, ShaderStage& stage,
                                               bool assignValue) const
 {
+    // Disable emitting non-constant variables
+    bool skipped = false;
+    if (assignValue && 
+        !(qualifier.empty() && qualifier == getSyntax().getConstantQualifier()) &&
+        !genContext.getOptions().declareInputsWithDefaultValues)
+    {
+        skipped = true;
+        assignValue = false;
+    }
+
     string str = qualifier.empty() ? EMPTY_STRING : qualifier + " ";
     str += _syntax->getTypeName(variable->getType());
     
@@ -175,6 +186,11 @@ void ShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, const 
         str += valueStr.empty() ? EMPTY_STRING : " = " + valueStr;
     }
 
+    if (skipped)
+    {
+        std::cout << "Skipped uniform = " << str << std::endl;
+    }
+
     stage.addString(str);
 }
 
@@ -182,6 +198,10 @@ void ShaderGenerator::emitVariableDeclarations(const VariableBlock& block, const
                                                GenContext& context, ShaderStage& stage,
                                                bool assignValue) const
 {
+    if (block.getName() == stage.getConstantBlock().getName())
+    {
+        assignValue = true;
+    }
     for (size_t i=0; i<block.size(); ++i)
     {
         emitLineBegin(stage);

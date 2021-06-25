@@ -8,6 +8,9 @@
 
 #include <MaterialXFormat/Util.h>
 
+#include <MaterialXRender/ShaderRenderer.h>
+#include <iostream>
+
 namespace {
 
 const float PI = std::acos(-1.0f);
@@ -151,11 +154,24 @@ bool Material::generateEnvironmentShader(mx::GenContext& context,
     return generateShader(_hwShader);
 }
 
-void Material::bindShader()
+void Material::bindShader(const mx::GenContext& genContext)
 {
     if (_glProgram)
     {
         _glProgram->bind();
+        if (!genContext.getOptions().declareInputsWithDefaultValues)
+        {
+            try {
+                _glProgram->bindScalars();
+            }
+            catch (mx::ExceptionShaderRenderError& e)
+            {
+                for (auto err : e.errorLog())
+                {
+                    std::cout << err << std::endl;
+                }
+            }
+        }
     }
 }
 

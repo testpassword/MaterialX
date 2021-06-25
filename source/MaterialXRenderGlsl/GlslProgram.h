@@ -141,12 +141,12 @@ class MX_RENDERGLSL_API GlslProgram
     /// @return False if failed
     bool bind();
 
-    /// Bind inputs
+    /// Bind inputs.
     void bindInputs(ViewHandlerPtr viewHandler,
                     GeometryHandlerPtr geometryHandler,
                     ImageHandlerPtr imageHandler,
-                    LightHandlerPtr lightHandler);
-
+                    LightHandlerPtr lightHandler,
+                    bool bindScalarValues);
     /// Unbind inputs
     void unbindInputs(ImageHandlerPtr imageHandler);
 
@@ -158,6 +158,9 @@ class MX_RENDERGLSL_API GlslProgram
 
     /// Bind a value to the uniform with the given name.
     void bindUniform(const string& name, ConstValuePtr value, bool errorIfMissing = true);
+
+    /// Bind non-constant scalara uniforms
+    void bindScalars();
 
     /// Bind attribute buffers to attribute inputs.
     /// A hardware buffer of the given attribute type is created and bound to the program locations
