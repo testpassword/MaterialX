@@ -266,7 +266,7 @@ Viewer::Viewer(const std::string& materialFilename,
     _genContextGLSL.getOptions().hwShadowMap = true;
     _genContextGLSL.getOptions().targetColorSpaceOverride = "lin_rec709";
     _genContextGLSL.getOptions().fileTextureVerticalFlip = true;
-    _genContextGLSL.getOptions().declareInputsWithDefaultValues = true;
+    _genContextGLSL.getOptions().declareInputsWithDefaultValues = false;
 
     // Set OSL/MDL generator options.
 #if MATERIALX_BUILD_GEN_OSL
@@ -367,9 +367,13 @@ void Viewer::initialize()
         _wireMaterial = Material::create();
         _wireMaterial->generateShader(hwShader);
     }
-    catch (std::exception& e)
+    catch (mx::ExceptionShaderRenderError& e)
     {
         std::cerr << "Failed to generate wireframe shader: " << e.what() << std::endl;
+        for (auto err : e.errorLog())
+        {
+            std::cerr << err << std::endl;
+        }
         _wireMaterial = nullptr;
     }
 
@@ -380,9 +384,13 @@ void Viewer::initialize()
         _shadowMaterial = Material::create();
         _shadowMaterial->generateShader(hwShader);
     }
-    catch (std::exception& e)
+    catch (mx::ExceptionShaderRenderError& e)
     {
         std::cerr << "Failed to generate shadow shader: " << e.what() << std::endl;
+        for (auto err : e.errorLog())
+        {
+            std::cerr << err << std::endl;
+        }
         _shadowMaterial = nullptr;
     }
 
@@ -393,9 +401,13 @@ void Viewer::initialize()
         _shadowBlurMaterial = Material::create();
         _shadowBlurMaterial->generateShader(hwShader);
     }
-    catch (std::exception& e)
+    catch (mx::ExceptionShaderRenderError& e)
     {
         std::cerr << "Failed to generate shadow blur shader: " << e.what() << std::endl;
+        for (auto err : e.errorLog())
+        {
+            std::cerr << err << std::endl;
+        }
         _shadowBlurMaterial = nullptr;
     }
 
@@ -859,7 +871,7 @@ void Viewer::createAdvancedSettings(Widget* parent)
         _gammaMaterial = Material::create();
         _gammaMaterial->generateShader(hwShader);
     }
-    catch (std::exception& e)
+    catch (mx::ExceptionShaderRenderError& e)
     {
         std::cerr << "Failed to generate gamma shader: " << e.what() << std::endl;
         _gammaMaterial = nullptr;
@@ -1309,7 +1321,7 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
                         {
                             mat->generateShader(_genContextGLSL);
                         }
-                        catch (std::exception& e)
+                        catch (mx::ExceptionShaderRenderError & e)
                         {
                             new ng::MessageDialog(this, ng::MessageDialog::Type::Warning, "Failed to generate shader", e.what());
                             continue;
@@ -1327,9 +1339,10 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
                         mat->generateShader(_genContextGLSL);
 
                     }
-                    catch (std::exception& e)
+                    catch (mx::ExceptionShaderRenderError& e)
                     {
-                        mat->copyShader(_wireMaterial);
+                        if (_wireMaterial)
+                            mat->copyShader(_wireMaterial);
                         new ng::MessageDialog(this, ng::MessageDialog::Type::Warning, "Failed to generate shader", e.what());
                     }
                 }
@@ -1408,11 +1421,11 @@ void Viewer::reloadShaders()
     }
     catch (mx::ExceptionShaderRenderError& e)
     {
+        new ng::MessageDialog(this, ng::MessageDialog::Type::Warning, "Shader generation error", e.what());
         for (const std::string& error : e.errorLog())
         {
             std::cerr << error << std::endl;
         }
-        new ng::MessageDialog(this, ng::MessageDialog::Type::Warning, "Shader generation error", e.what());
     }
     catch (std::exception& e)
     {
@@ -1987,7 +2000,7 @@ void Viewer::renderFrame()
     }
 
     // Wireframe pass
-    if (_outlineSelection)
+    if (_outlineSelection && _wireMaterial)
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         _wireMaterial->bindShader(_genContextGLSL);
@@ -2528,9 +2541,13 @@ void Viewer::updateAlbedoTable()
     {
         material->generateShader(hwShader);
     }
-    catch (std::exception& e)
+    catch (mx::ExceptionShaderRenderError& e)
     {
         new ng::MessageDialog(this, ng::MessageDialog::Type::Warning, "Failed to generate albedo table shader", e.what());
+        for (const std::string& error : e.errorLog())
+        {
+            std::cerr << error << std::endl;
+        }
         return;
     }
 

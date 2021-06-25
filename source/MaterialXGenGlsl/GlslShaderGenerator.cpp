@@ -755,24 +755,36 @@ void GlslShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, co
 
         // Disable emitting non-constant variables
         bool skipped = false;
-        if (assignValue &&
-            !(qualifier.empty() && qualifier == getSyntax().getConstantQualifier()) &&
-            !genContext.getOptions().declareInputsWithDefaultValues)
+        if (assignValue)
         {
-            skipped = true;
-            assignValue = false;
+            const string cqual = getSyntax().getConstantQualifier();
+            if (!cqual.empty() && (qualifier != cqual))
+            {
+                if (!genContext.getOptions().declareInputsWithDefaultValues)
+                {
+                    skipped = true;
+                    //assignValue = false;
+                }
+            }
         }
         if (assignValue)
         {
             const string valueStr = (variable->getValue() ?
                 _syntax->getValue(variable->getType(), *variable->getValue(), true) :
                 _syntax->getDefaultValue(variable->getType(), true));
-            str += valueStr.empty() ? EMPTY_STRING : " = " + valueStr;
+            if (skipped)
+            {
+                str += valueStr.empty() ? EMPTY_STRING : "; // = " + valueStr;
+            }
+            else
+            {
+                str += valueStr.empty() ? EMPTY_STRING : " = " + valueStr;
+            }
         }
-        if (skipped)
-        {
-            std::cout << "Skipped uniform = " << str << std::endl;
-        }
+        //if (skipped)
+        //{
+        //    std::cout << "Skipped uniform = " << str << std::endl;
+        //}
         emitString(str, stage);
     }
 }
