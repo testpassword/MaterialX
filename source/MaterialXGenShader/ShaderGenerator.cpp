@@ -502,4 +502,11 @@ void ShaderGenerator::finalizeShaderGraph(ShaderGraph& graph)
     }
 }
 
+bool ShaderGenerator::disableInputDeclarationAssignment(const ShaderPort*, const string&,
+                                                        GenContext&, ShaderStage&,
+                                                        bool) const
+{
+    return false;
+}
+
 } // namespace MaterialX

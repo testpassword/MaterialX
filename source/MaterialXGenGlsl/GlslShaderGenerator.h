@@ -70,6 +70,11 @@ class MX_GENGLSL_API GlslShaderGenerator : public HwShaderGenerator
 
     /// Nodes used internally for light sampling.
     vector<ShaderNodePtr> _lightSamplingNodes;
+
+    /// Override check to determine if inputs should be initialized with default values
+    bool disableInputDeclarationAssignment(const ShaderPort* variable, const string& qualifier,
+                                           GenContext& genContext, ShaderStage& stage,
+                                           bool assignValue) const override;
 };
 
 

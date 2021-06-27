@@ -721,6 +721,22 @@ void GlslShaderGenerator::toVec4(const TypeDesc* type, string& variable)
     }
 }
 
+bool GlslShaderGenerator::disableInputDeclarationAssignment(const ShaderPort* , const string& qualifier,
+                                                            GenContext& genContext, ShaderStage&,
+                                                            bool assignValue) const
+{
+    bool skipAssignment = false;
+    if (assignValue && !genContext.getOptions().declareInputsWithDefaultValues)
+    {
+        const string cqual = getSyntax().getConstantQualifier();
+        if (!cqual.empty() && (qualifier != cqual))
+        {
+            skipAssignment = true;
+        }
+    }
+    return skipAssignment;
+}
+
 void GlslShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, const string& qualifier, 
                                                   GenContext& genContext, ShaderStage& stage,
                                                   bool assignValue) const
@@ -753,38 +769,22 @@ void GlslShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, co
             str += " : " + variable->getSemantic();
         }
 
-        // Disable emitting non-constant variables
-        bool skipped = false;
-        if (assignValue)
-        {
-            const string cqual = getSyntax().getConstantQualifier();
-            if (!cqual.empty() && (qualifier != cqual))
-            {
-                if (!genContext.getOptions().declareInputsWithDefaultValues)
-                {
-                    skipped = true;
-                    //assignValue = false;
-                }
-            }
-        }
+        // Check whether to skip assignment
+        bool skipAssignment = disableInputDeclarationAssignment(variable, qualifier, genContext, stage, assignValue);
         if (assignValue)
         {
             const string valueStr = (variable->getValue() ?
                 _syntax->getValue(variable->getType(), *variable->getValue(), true) :
                 _syntax->getDefaultValue(variable->getType(), true));
-            if (skipped)
+            if (skipAssignment)
             {
-                str += valueStr.empty() ? EMPTY_STRING : "; // = " + valueStr;
+                str += valueStr.empty() ? EMPTY_STRING : Syntax::SEMICOLON + Syntax::SINGLE_LINE_COMMENT + " = " + valueStr;
             }
             else
             {
                 str += valueStr.empty() ? EMPTY_STRING : " = " + valueStr;
             }
         }
-        //if (skipped)
-        //{
-        //    std::cout << "Skipped uniform = " << str << std::endl;
-        //}
         emitString(str, stage);
     }
 }

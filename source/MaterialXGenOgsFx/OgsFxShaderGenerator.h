@@ -49,6 +49,13 @@ protected:
     /// Get parameters for the technique block
     virtual void getTechniqueParams(const Shader& shader, string& params) const;
 
+    /// Override check to determine if inputs should be initialized with default values
+    bool disableInputDeclarationAssignment(const ShaderPort*, const string&,
+                                           GenContext&, ShaderStage&, bool) const override
+    {
+        return false;
+    }
+
     StringMap _semanticsMap;
 };
 

@@ -201,6 +201,13 @@ class MX_GENSHADER_API ShaderGenerator
     /// before shader generation starts.
     virtual void finalizeShaderGraph(ShaderGraph& graph);
 
+    /// Flag to indicate whether inputs declarations should not be initialized with a default value.
+    /// This should always return true if a gigen target does not support this type of initialization.
+    /// The default return is false.
+    virtual bool disableInputDeclarationAssignment(const ShaderPort* variable, const string& qualifier,
+                                                   GenContext& genContext, ShaderStage& stage,
+                                                   bool assignValue) const;
+
     /// Set function name for a stage.
     void setFunctionName(const string& functionName, ShaderStage& stage) const
     {

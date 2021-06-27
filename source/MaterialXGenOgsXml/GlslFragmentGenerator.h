@@ -55,6 +55,13 @@ class MX_GENOGSXML_API GlslFragmentGenerator : public GlslShaderGenerator
     static const string MATRIX3_TO_MATRIX4_POSTFIX;
 
   protected:
+    /// Override check to determine if inputs should be initialized with default values
+    bool disableInputDeclarationAssignment(const ShaderPort*, const string&,
+        GenContext&, ShaderStage&, bool) const override
+    {
+        return false;
+    }
+
     static void toVec3(const TypeDesc* type, string& variable);
 };
 

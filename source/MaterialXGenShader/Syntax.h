@@ -189,6 +189,7 @@ class MX_GENSHADER_API Syntax
     static const string NEWLINE;
     static const string SEMICOLON;
     static const string COMMA;
+    static const string SINGLE_LINE_COMMENT;
 
   protected:
     /// Protected constructor
@@ -203,7 +204,6 @@ class MX_GENSHADER_API Syntax
     static const string INDENTATION;
     static const string STRING_QUOTE;
     static const string INCLUDE_STATEMENT;
-    static const string SINGLE_LINE_COMMENT;
     static const string BEGIN_MULTI_LINE_COMMENT;
     static const string END_MULTI_LINE_COMMENT;
 
