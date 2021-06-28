@@ -7,7 +7,7 @@
 #define MATERIALX_ESSLSHADERGENERATOR_H
 
 /// @file
-/// OpenGL ES shader generator
+/// ESSL shader generator
 
 #include <MaterialXGenGlsl/GlslShaderGenerator.h>
 
@@ -16,8 +16,8 @@ namespace MaterialX
 
 using EsslShaderGeneratorPtr = shared_ptr<class EsslShaderGenerator>;
 
-/// @class ArnoldShaderGenerator 
-/// An OpenGL ES generator 
+/// @class EsslShaderGenerator 
+/// An ESSL (OpenGL ES Shading Language) shader generator 
 class EsslShaderGenerator : public GlslShaderGenerator
 {
   public:
