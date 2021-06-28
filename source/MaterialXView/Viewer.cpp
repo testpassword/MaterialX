@@ -870,6 +870,10 @@ void Viewer::createAdvancedSettings(Widget* parent)
         mx::ShaderPtr hwShader = mx::createGammaShader(_genContextGLSL, _stdLib, "__GAMMA_CORRECT_SHADER__", gamma);
         _gammaMaterial = Material::create();
         _gammaMaterial->generateShader(hwShader);
+        const std::string gammCode = hwShader->getSourceCode();
+        std::cout << "************** Gamm code ****************\n";
+        std::cout << gammCode << std::endl;
+        std::cout << "************** Gamm code ****************\n";
     }
     catch (mx::ExceptionShaderRenderError& e)
     {

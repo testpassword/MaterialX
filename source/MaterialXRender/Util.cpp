@@ -67,8 +67,8 @@ ShaderPtr createGammaShader(GenContext& context,
     // will not change any of the texture coordinates (i.e. scale by identify and offsets by zero).
     if (verticalFlip)
     {
-        multiplyNode->setInputValue("in2", "1.0, -1.0");
-        addNode->setInputValue("in2", "0.0, 1.0");
+        multiplyNode->setInputValue("in2", Vector2(1.0, -1.0));
+        addNode->setInputValue("in2", Vector2(0.0, 1.0));
     }
 
     // Generate the shader

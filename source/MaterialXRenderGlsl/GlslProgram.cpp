@@ -1489,12 +1489,21 @@ void GlslProgram::bindScalars()
         }
         GLenum uniformType = input.second->gltype;
         ValuePtr uniformValue = input.second->value;
-        if (!uniformValue || input.second->isConstant ||
-            uniformValue->getTypeString() == STRING_TYPE_STRING ||
-            uniformType >= GL_SAMPLER_1D && uniformType <= GL_SAMPLER_CUBE)
+        if (!uniformValue || /*input.second->isConstant || */
+            (uniformType == GL_SAMPLER_1D || 
+            uniformType == GL_SAMPLER_2D || 
+            uniformType == GL_SAMPLER_3D ||
+            uniformType == GL_SAMPLER_CUBE))
         {
+            std::cout << "SKIP scalar: " << input.first << ": " << (uniformValue ? uniformValue->getValueString() : "[NONE]") << std::endl;
             continue;
         }
+        //if (uniformValue->getType() == STRING_TYPE_STRING)
+        //{
+        //    std::cout << "SKIP STRING scalar: " << input.first << ": " << (uniformValue ? uniformValue->getValueString() : "[NONE]") << std::endl;
+        //    continue;
+        //}
+        std::cout << "Bind scalar: " << input.first << ": " << uniformValue->getValueString() << std::endl;
         bindUniformLocation(uniformLocation, uniformValue);
     }
 }
