@@ -4,9 +4,17 @@
     <meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">  
     <title>Getting Started</title>
+    <link rel="icon" type="image/x-icon" href="/public/favicon.ico" />
   </head>
   <body style="margin: 0px;">
     <div id="container">
+      <label for="materials">Choose a material:</label>
+      <select name="materials" id="materials">
+        <% materials.forEach(function(m){ %>
+          <option value="<%-m.value%>"><%-m.name%></option>
+        <% }); %>
+      </select>
+      
       <canvas id="webglcanvas"></canvas>
     </div>
     <script src="JsMaterialXGenShader.js"></script>

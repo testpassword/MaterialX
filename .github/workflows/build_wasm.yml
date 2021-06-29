@@ -21,6 +21,7 @@ jobs:
         - name: Linux_EMCC_2
           os: ubuntu-20.04
           compiler_version: "2.0.20"
+          deploy_branch: "chore/deploy_sample_app"
 
     steps:
     - name: Sync Repository
@@ -69,3 +70,23 @@ jobs:
       with:
         name: MaterialX_${{ matrix.name }}
         path: build/installed/
+
+    - run: echo ${{github.ref}}
+    - run: echo ${{github.head_ref}}
+    - run: echo $(pwd)
+    - run: git config -l
+
+    - name: Build Sample App
+      if: github.head_ref == matrix.deploy_branch
+      run: |
+        echo "Running build"
+        cd source/JsMaterialX/JsMaterialXView
+        npm install
+        npm run build
+
+    - name: Deploy Sample App
+      if: github.head_ref == matrix.deploy_branch
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages
+        folder: source/JsMaterialX/JsMaterialXView/dist

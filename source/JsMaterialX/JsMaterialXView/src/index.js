@@ -10,11 +10,12 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
 
 import { generateTangents, prepareEnvTexture, toThreeUniforms } from './helper.js'
 
-let camera, scene, model, renderer, composer, controls, mx;
+let camera, scene, model, renderer, composer, controls, mx, startTime;
 
 let normalMat = new THREE.Matrix3();
 let viewProjMat = new THREE.Matrix4();
@@ -23,7 +24,6 @@ let worldViewPos = new THREE.Vector3();
 const materialFilename = new URLSearchParams(document.location.search).get("file");
 
 init();
-
 
 // If no material file is selected, we programmatically create a jade material as a fallback
 function fallbackMaterial(doc) {
@@ -79,7 +79,13 @@ function fallbackMaterial(doc) {
 
 function init() {
     let canvas = document.getElementById('webglcanvas');
+    let materialsSelect = document.getElementById('materials');
+    materialsSelect.value = materialFilename;
     let context = canvas.getContext('webgl2');
+
+    materialsSelect.addEventListener('change', (e) => {
+      window.location.href = `${window.location.origin}/?file=${e.target.value}`;
+    });
 
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 100);
 
@@ -205,6 +211,7 @@ function init() {
 
         camera.far = bsphere.radius * 10;
         camera.updateProjectionMatrix();
+        startTime = Date.now();
 
     }).then(() => {
         animate();
@@ -222,13 +229,17 @@ function onWindowResize() {
 
 function animate() {  
     requestAnimationFrame(animate);
+    const currentTime = Date.now();
+    const time = ( currentTime - startTime ) / 1000;
+
     composer.render();
 
     model.traverse((child) => {
       if (child.isMesh) {
         const uniforms = child.material.uniforms;
-        if(uniforms) {
+        if(uniforms) {          
           uniforms.time.value = performance.now() / 1000;
+          uniforms.u_envMatrix.value = new THREE.Matrix4().makeRotationY(Math.PI * (time / 20));
           uniforms.u_viewPosition.value = camera.getWorldPosition(worldViewPos);
           uniforms.u_worldMatrix.value = child.matrixWorld;
           uniforms.u_viewProjectionMatrix.value = viewProjMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
