@@ -176,6 +176,8 @@ class Material
     /// Unbind all geometry from this material.
     void unbindGeometry() const;
 
+    void unbindShader() const;
+
     /// Return the block of public uniforms for this material.
     mx::VariableBlock* getPublicUniforms() const;
 

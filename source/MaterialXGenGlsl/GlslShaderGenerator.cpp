@@ -741,7 +741,7 @@ void GlslShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, co
                                                   GenContext& genContext, ShaderStage& stage,
                                                   bool assignValue) const
 {
-    // A file texture input needs special handling on GLSL
+    // A file texture input needs special handling in GLSL
     if (variable->getType() == Type::FILENAME)
     {
         // Samplers must always be uniforms

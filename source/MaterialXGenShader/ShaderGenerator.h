@@ -202,7 +202,6 @@ class MX_GENSHADER_API ShaderGenerator
     virtual void finalizeShaderGraph(ShaderGraph& graph);
 
     /// Flag to indicate whether inputs declarations should not be initialized with a default value.
-    /// This should always return true if a gigen target does not support this type of initialization.
     /// The default return is false.
     virtual bool disableInputDeclarationAssignment(const ShaderPort* variable, const string& qualifier,
                                                    GenContext& genContext, ShaderStage& stage,

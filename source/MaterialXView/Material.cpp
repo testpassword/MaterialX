@@ -154,11 +154,21 @@ bool Material::generateEnvironmentShader(mx::GenContext& context,
     return generateShader(_hwShader);
 }
 
+void Material::unbindShader() const
+{
+    _glProgram->unbind();
+}
+
 void Material::bindShader(const mx::GenContext& genContext)
 {
     if (_glProgram)
     {
         _glProgram->bind();
+
+        std::cout << "********** BIND SHADER: " << this->_hwShader->getName() << std::endl;
+        //_glProgram->printUniforms(std::cout);
+        std::cout << "*******  Bind scalars **********\n";
+
         if (!genContext.getOptions().declareInputsWithDefaultValues)
         {
             try {
@@ -172,6 +182,8 @@ void Material::bindShader(const mx::GenContext& genContext)
                 }
             }
         }
+
+        std::cout << "*******************************\n";
     }
 }
 

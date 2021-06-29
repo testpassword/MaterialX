@@ -57,7 +57,7 @@ class MX_GENOGSXML_API GlslFragmentGenerator : public GlslShaderGenerator
   protected:
     /// Override check to determine if inputs should be initialized with default values
     bool disableInputDeclarationAssignment(const ShaderPort*, const string&,
-        GenContext&, ShaderStage&, bool) const override
+                                           GenContext&, ShaderStage&, bool) const override
     {
         return false;
     }

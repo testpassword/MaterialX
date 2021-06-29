@@ -667,6 +667,7 @@ void GlslProgram::bindLighting(LightHandlerPtr lightHandler, ImageHandlerPtr ima
         if (location >= 0)
         {
             glUniform1i(location, int(lightCount));
+            input->second->isBound = true;
         }
     }
     else
@@ -722,6 +723,7 @@ void GlslProgram::bindLighting(LightHandlerPtr lightHandler, ImageHandlerPtr ima
                     if (textureLocation >= 0)
                     {
                         glUniform1i(inputPtr->location, textureLocation);
+                        iblUniform->second->isBound = true;
                     }
                     if (iblUniform->first == HW::ENV_RADIANCE)
                     {
@@ -730,6 +732,7 @@ void GlslProgram::bindLighting(LightHandlerPtr lightHandler, ImageHandlerPtr ima
                         if (mipsUniform != uniformList.end() && mipsUniform->second->location >= 0)
                         {
                             glUniform1i(mipsUniform->second->location, image->getMaxMipCount());
+                            iblUniform->second->isBound = true;
                         }
                     }
                 }
@@ -764,6 +767,7 @@ void GlslProgram::bindLighting(LightHandlerPtr lightHandler, ImageHandlerPtr ima
                 {
                     glUniform1i(location, it->second);
                     boundType = true;
+                    input->second->isBound = true;
                 }
             }
         }
@@ -782,6 +786,7 @@ void GlslProgram::bindLighting(LightHandlerPtr lightHandler, ImageHandlerPtr ima
                 if (input != uniformList.end())
                 {
                     bindUniformLocation(input->second->location, lightInput->getValue());
+                    input->second->isBound = true;
                 }
             }
         }
@@ -815,6 +820,7 @@ void GlslProgram::bindUniform(const string& name, ConstValuePtr value, bool erro
             return;
         }
         bindUniformLocation(location, value);
+        input->second->isBound = true;
     }
 }
 
@@ -927,6 +933,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniform3fv(location, 1, viewHandler->viewPosition.data());
+            input->second->isBound = true;
         }
     }
     input = uniformList.find(HW::VIEW_DIRECTION);
@@ -936,6 +943,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniform3fv(location, 1, viewHandler->viewDirection.data());
+            input->second->isBound = true;
         }
     }
 
@@ -950,6 +958,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, world.data());
+            input->second->isBound = true;
         }
     }
     input = uniformList.find(HW::WORLD_TRANSPOSE_MATRIX);
@@ -959,6 +968,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, world.getTranspose().data());
+            input->second->isBound = true;
         }
     }
     input = uniformList.find(HW::WORLD_INVERSE_MATRIX);
@@ -968,6 +978,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, invWorld.data());
+            input->second->isBound = true;
         }
     }
     input = uniformList.find(HW::WORLD_INVERSE_TRANSPOSE_MATRIX);
@@ -977,6 +988,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, invTransWorld.getTranspose().data());
+            input->second->isBound = true;
         }
     }
 
@@ -989,6 +1001,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, proj.data());
+            input->second->isBound = true;
         }
     }
     input = uniformList.find(HW::PROJ_TRANSPOSE_MATRIX);
@@ -998,6 +1011,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, proj.getTranspose().data());
+            input->second->isBound = true;
         }
     }
     Matrix44 projInverse= proj.getInverse();
@@ -1008,6 +1022,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, projInverse.data());
+            input->second->isBound = true;
         }
     }
     input = uniformList.find(HW::PROJ_INVERSE_TRANSPOSE_MATRIX);
@@ -1017,6 +1032,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, projInverse.getTranspose().data());
+            input->second->isBound = true;
         }
     }
 
@@ -1029,6 +1045,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, view.data());
+            input->second->isBound = true;
         }
     }
     input = uniformList.find(HW::VIEW_TRANSPOSE_MATRIX);
@@ -1038,6 +1055,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, view.getTranspose().data());
+            input->second->isBound = true;
         }
     }
     Matrix44 viewInverse = view.getInverse();
@@ -1048,6 +1066,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, viewInverse.data());
+            input->second->isBound = true;
         }
     }
     input = uniformList.find(HW::VIEW_INVERSE_TRANSPOSE_MATRIX);
@@ -1057,6 +1076,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, viewInverse.getTranspose().data());
+            input->second->isBound = true;
         }
     }
     
@@ -1069,6 +1089,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, viewProj.data());
+            input->second->isBound = true;
         }
     }
 
@@ -1081,6 +1102,7 @@ void GlslProgram::bindViewInformation(ViewHandlerPtr viewHandler)
         if (location >= 0)
         {
             glUniformMatrix4fv(location, 1, false, viewProjWorld.data());
+            input->second->isBound = true;
         }
     } 
 }
@@ -1107,6 +1129,7 @@ void GlslProgram::bindTimeAndFrame()
         if (location >= 0)
         {
             glUniform1f(location, 1.0f);
+            input->second->isBound = true;
         }
     }
 
@@ -1118,6 +1141,7 @@ void GlslProgram::bindTimeAndFrame()
         if (location >= 0)
         {
             glUniform1f(location, 1.0f);
+            input->second->isBound = true;
         }
     }
 }
@@ -1134,6 +1158,14 @@ bool GlslProgram::hasActiveAttributes() const
 
 void GlslProgram::unbind() const
 {
+    for (auto uniform : _uniformList)
+    {
+        if (!uniform.second->isBound)
+        {
+            std::cout << "****** Did not bind: " << uniform.first << std::endl;
+        }
+        uniform.second->isBound = false;
+    }
     glUseProgram(0);
 }
 
@@ -1491,20 +1523,16 @@ void GlslProgram::bindScalars()
         ValuePtr uniformValue = input.second->value;
         if (!uniformValue || /*input.second->isConstant || */
             (uniformType == GL_SAMPLER_1D || 
-            uniformType == GL_SAMPLER_2D || 
-            uniformType == GL_SAMPLER_3D ||
-            uniformType == GL_SAMPLER_CUBE))
+             uniformType == GL_SAMPLER_2D || 
+             uniformType == GL_SAMPLER_3D ||
+             uniformType == GL_SAMPLER_CUBE))
         {
             std::cout << "SKIP scalar: " << input.first << ": " << (uniformValue ? uniformValue->getValueString() : "[NONE]") << std::endl;
             continue;
         }
-        //if (uniformValue->getType() == STRING_TYPE_STRING)
-        //{
-        //    std::cout << "SKIP STRING scalar: " << input.first << ": " << (uniformValue ? uniformValue->getValueString() : "[NONE]") << std::endl;
-        //    continue;
-        //}
         std::cout << "Bind scalar: " << input.first << ": " << uniformValue->getValueString() << std::endl;
         bindUniformLocation(uniformLocation, uniformValue);
+        input.second->isBound = true;
     }
 }
 
@@ -1520,6 +1548,7 @@ void GlslProgram::printUniforms(std::ostream& outputStream)
         string value = input.second->value ? input.second->value->getValueString() : EMPTY_STRING;
         string unit = input.second->unit;
         bool isConstant = input.second->isConstant;
+        bool isBound = input.second->isBound;
         outputStream << "Program Uniform: \"" << input.first
             << "\". Location:" << location
             << ". GLtype: " << std::hex << gltype
@@ -1533,6 +1562,7 @@ void GlslProgram::printUniforms(std::ostream& outputStream)
                 outputStream << ". Unit: " << unit;
         }
         outputStream << ". Is constant: " << isConstant;
+        outputStream << ". Is bound: " << isBound;
         if (!input.second->path.empty())
             outputStream << ". Element Path: \"" << input.second->path << "\"";
         outputStream << "." << std::endl;

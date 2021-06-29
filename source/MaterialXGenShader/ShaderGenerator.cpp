@@ -151,16 +151,6 @@ void ShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, const 
                                               GenContext& genContext, ShaderStage& stage,
                                               bool assignValue) const
 {
-    // Disable emitting non-constant variables
-    bool skipped = false;
-    if (assignValue && 
-        !(qualifier.empty() && qualifier == getSyntax().getConstantQualifier()) &&
-        !genContext.getOptions().declareInputsWithDefaultValues)
-    {
-        skipped = true;
-        assignValue = false;
-    }
-
     string str = qualifier.empty() ? EMPTY_STRING : qualifier + " ";
     str += _syntax->getTypeName(variable->getType());
     
@@ -178,17 +168,12 @@ void ShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, const 
         str += _syntax->getArrayVariableSuffix(variable->getType(), *variable->getValue());
     }
 
-    if (assignValue)
+    if (assignValue && !disableInputDeclarationAssignment(variable, qualifier, genContext, stage, assignValue))
     {
         const string valueStr = (variable->getValue() ?
             _syntax->getValue(variable->getType(), *variable->getValue(), true) :
             _syntax->getDefaultValue(variable->getType(), true));
         str += valueStr.empty() ? EMPTY_STRING : " = " + valueStr;
-    }
-
-    if (skipped)
-    {
-        std::cout << "Skipped uniform = " << str << std::endl;
     }
 
     stage.addString(str);

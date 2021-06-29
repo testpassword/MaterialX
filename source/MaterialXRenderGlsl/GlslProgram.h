@@ -96,6 +96,8 @@ class MX_RENDERGLSL_API GlslProgram
         string path;
         /// Unit
         string unit;
+        /// Bind  state
+        bool isBound;
 
         /// Program input constructor
         Input(int inputLocation, int inputType, int inputSize, string inputPath)
@@ -104,6 +106,7 @@ class MX_RENDERGLSL_API GlslProgram
             , size(inputSize)
             , isConstant(false)
             , path(inputPath)
+            , isBound(false)
         { }
     };
     /// Program input structure shared pointer type
@@ -192,6 +195,8 @@ class MX_RENDERGLSL_API GlslProgram
 
     /// Unbind the program.  Equivalent to binding no program
     void unbind() const;
+
+    void clearBind();
 
     /// @}
     /// @name Utilities

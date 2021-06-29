@@ -781,6 +781,7 @@ void Viewer::createAdvancedSettings(Widget* parent)
         {
             material->bindShader(_genContextGLSL);
             material->bindUnits(_unitRegistry, _genContextGLSL);
+            material->unbindShader();
         }
         mProcessEvents = true;
     });
@@ -1919,6 +1920,7 @@ void Viewer::renderFrame()
             _envMaterial->bindViewInformation(envWorld, view, proj);
             _envMaterial->bindImages(_imageHandler, _searchPath, false);
             _envMaterial->drawPartition(envPart);
+            _envMaterial->unbindShader();
             glDisable(GL_CULL_FACE);
             glCullFace(GL_BACK);
         }
@@ -1957,6 +1959,7 @@ void Viewer::renderFrame()
         material->bindImages(_imageHandler, _searchPath);
         material->drawPartition(geom);
         material->unbindImages(_imageHandler);
+        material->unbindShader();
         if (material->getShader()->getName() == "__WIRE_SHADER__")
         {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -1989,6 +1992,7 @@ void Viewer::renderFrame()
             material->bindImages(_imageHandler, _searchPath);
             material->drawPartition(geom);
             material->unbindImages(_imageHandler);
+            material->unbindShader();
         }
         glDisable(GL_BLEND);
     }
@@ -2011,6 +2015,7 @@ void Viewer::renderFrame()
         _wireMaterial->bindMesh(_geometryHandler->getMeshes()[0]);
         _wireMaterial->bindViewInformation(world, view, proj);
         _wireMaterial->drawPartition(getSelectedGeometry());
+        _wireMaterial->unbindShader();
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
@@ -2025,6 +2030,7 @@ void Viewer::renderFrame()
         mx::ImagePtr originalBuffer = getFrameImage();
 
         _gammaMaterial->bindShader(_genContextGLSL);
+        _gammaMaterial->bindViewInformation(mx::Matrix44::IDENTITY, mx::Matrix44::IDENTITY, mx::Matrix44::IDENTITY);
         mx::Color3 gammaColor(_gammaValue, _gammaValue, _gammaValue);
         _gammaMaterial->getProgram()->bindUniform("node1_gamma", mx::Value::createValue(gammaColor));
         if (_imageHandler->bindImage(originalBuffer, samplingProperties))
@@ -2039,6 +2045,7 @@ void Viewer::renderFrame()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         renderScreenSpaceQuad(_gammaMaterial);
         _imageHandler->releaseRenderResources(originalBuffer);
+        _gammaMaterial->unbindShader();
     }
 }
 
@@ -2485,6 +2492,7 @@ void Viewer::updateShadowMap()
         mx::MeshPartitionPtr geom = assignment.first;
         _shadowMaterial->drawPartition(geom);
     }
+    _shadowMaterial->unbindShader();
     _shadowMap = framebuffer->getColorImage();
 
     // Apply Gaussian blurring.
@@ -2506,6 +2514,7 @@ void Viewer::updateShadowMap()
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
             renderScreenSpaceQuad(_shadowBlurMaterial);
             _imageHandler->releaseRenderResources(_shadowMap);
+            _shadowBlurMaterial->unbindShader();
             _shadowMap = framebuffer->getColorImage();
         }
     }
@@ -2562,6 +2571,7 @@ void Viewer::updateAlbedoTable()
         material->getProgram()->bindUniform(mx::HW::ALBEDO_TABLE_SIZE, mx::Value::createValue(ALBEDO_TABLE_SIZE));
     }
     renderScreenSpaceQuad(material);
+    material->unbindShader();
 
     // Store albedo table image.
     _imageHandler->releaseRenderResources(_lightHandler->getAlbedoTable());

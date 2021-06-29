@@ -156,8 +156,7 @@ class MX_GENSHADER_API GenOptions
     unsigned int hwMaxRadianceSamples;
 
     /// Flag to indicate if inputs declarations whould be initialize with a default value.
-    /// This should be set to false if the shading language does not support this type of initialization.
-    /// The default is true.
+    /// The default value is true.
     bool declareInputsWithDefaultValues;
 };
 
