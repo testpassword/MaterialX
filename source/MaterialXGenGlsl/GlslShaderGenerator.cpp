@@ -315,7 +315,7 @@ void GlslShaderGenerator::emitVertexStage(const ShaderGraph& graph, GenContext& 
     emitInputs(context, stage);
 
     // Add vertex data outputs block
-    emitOutpus(context, stage);
+    emitOutputs(context, stage);
 
     emitFunctionDefinitions(graph, context, stage);
 
@@ -360,7 +360,7 @@ bool GlslShaderGenerator::requiresLighting(const ShaderGraph& graph) const
 
 void GlslShaderGenerator::emitDirectives(GenContext&, ShaderStage& stage) const
 {
-  emitLine("#version " + getVersion(), stage, false);
+    emitLine("#version " + getVersion(), stage, false);
 }
 
 void GlslShaderGenerator::emitConstants(GenContext& context, ShaderStage& stage) const
@@ -445,7 +445,7 @@ BEGIN_SHADER_STAGE(stage, Stage::PIXEL)
 END_SHADER_STAGE(stage, Stage::PIXEL)
 }
 
-void GlslShaderGenerator::emitOutpus(GenContext& context, ShaderStage& stage) const
+void GlslShaderGenerator::emitOutputs(GenContext& context, ShaderStage& stage) const
 {
 BEGIN_SHADER_STAGE(stage, Stage::VERTEX)
     const VariableBlock& vertexData = stage.getOutputBlock(HW::VERTEX_DATA);
@@ -467,11 +467,6 @@ BEGIN_SHADER_STAGE(stage, Stage::PIXEL)
     emitVariableDeclarations(outputs, _syntax->getOutputQualifier(), Syntax::SEMICOLON, context, stage, false);
     emitLineBreak(stage);
 END_SHADER_STAGE(stage, Stage::PIXEL)
-}
-
-const string GlslShaderGenerator::getPixelStageOutputVariable(const ShaderGraphOutputSocket& outputSocket) const
-{
-    return outputSocket.getVariable();
 }
 
 const HwResourceBindingContextPtr GlslShaderGenerator::getResourceBindingContext(GenContext& context) const
@@ -531,7 +526,7 @@ void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& c
 
     // Add the pixel shader output. This needs to be a vec4 for rendering
     // and upstream connection will be converted to vec4 if needed in emitFinalOutput()
-    emitOutpus(context, stage);
+    emitOutputs(context, stage);
 
     // Emit common math functions
     emitInclude("pbrlib/" + GlslShaderGenerator::TARGET + "/lib/mx_math.glsl", context, stage);
@@ -587,15 +582,15 @@ void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& c
         // Handle the case where the graph is a direct closure.
         // We don't support rendering closures without attaching 
         // to a surface shader, so just output black.
-        emitLine(getPixelStageOutputVariable(*outputSocket) + " = vec4(0.0, 0.0, 0.0, 1.0)", stage);
+        emitLine(outputSocket->getVariable() + " = vec4(0.0, 0.0, 0.0, 1.0)", stage);
     }
     else if (context.getOptions().hwWriteDepthMoments)
     {
-        emitLine(getPixelStageOutputVariable(*outputSocket) + " = vec4(mx_compute_depth_moments(), 0.0, 1.0)", stage);
+        emitLine(outputSocket->getVariable() + " = vec4(mx_compute_depth_moments(), 0.0, 1.0)", stage);
     }
     else if (context.getOptions().hwWriteAlbedoTable)
     {
-        emitLine(getPixelStageOutputVariable(*outputSocket) + " = vec4(mx_ggx_directional_albedo_generate_table(), 0.0, 1.0)", stage);
+        emitLine(outputSocket->getVariable() + " = vec4(mx_ggx_directional_albedo_generate_table(), 0.0, 1.0)", stage);
     }
     else
     {
@@ -618,7 +613,7 @@ void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& c
                 if (context.getOptions().hwTransparency)
                 {
                     emitLine("float outAlpha = clamp(1.0 - dot(" + finalOutput + ".transparency, vec3(0.3333)), 0.0, 1.0)", stage);
-                    emitLine(getPixelStageOutputVariable(*outputSocket) + " = vec4(" + finalOutput + ".color, outAlpha)", stage);
+                    emitLine(outputSocket->getVariable() + " = vec4(" + finalOutput + ".color, outAlpha)", stage);
                     emitLine("if (outAlpha < " + HW::T_ALPHA_THRESHOLD + ")", stage, false);
                     emitScopeBegin(stage);
                     emitLine("discard", stage);
@@ -626,7 +621,7 @@ void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& c
                 }
                 else
                 {
-                    emitLine(getPixelStageOutputVariable(*outputSocket) + " = vec4(" + finalOutput + ".color, 1.0)", stage);
+                    emitLine(outputSocket->getVariable() + " = vec4(" + finalOutput + ".color, 1.0)", stage);
                 }
             }
             else
@@ -635,7 +630,7 @@ void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& c
                 {
                     toVec4(outputSocket->getType(), finalOutput);
                 }
-                emitLine(getPixelStageOutputVariable(*outputSocket) + " = " + finalOutput, stage);
+                emitLine(outputSocket->getVariable() + " = " + finalOutput, stage);
             }
         }
         else
@@ -646,11 +641,11 @@ void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& c
                 string finalOutput = outputSocket->getVariable() + "_tmp";
                 emitLine(_syntax->getTypeName(outputSocket->getType()) + " " + finalOutput + " = " + outputValue, stage);
                 toVec4(outputSocket->getType(), finalOutput);
-                emitLine(getPixelStageOutputVariable(*outputSocket) + " = " + finalOutput, stage);
+                emitLine(outputSocket->getVariable() + " = " + finalOutput, stage);
             }
             else
             {
-                emitLine(getPixelStageOutputVariable(*outputSocket) + " = " + outputValue, stage);
+                emitLine(outputSocket->getVariable() + " = " + outputValue, stage);
             }
         }
     }

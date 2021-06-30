@@ -1,5 +1,5 @@
 //
-// TM & (c) 2032 Lucasfilm Entertainment Company Ltd. and Lucasfilm Ltd.
+// TM & (c) 2021 Lucasfilm Entertainment Company Ltd. and Lucasfilm Ltd.
 // All rights reserved.  See LICENSE.txt for license.
 //
 
@@ -74,7 +74,7 @@ BEGIN_SHADER_STAGE(stage, Stage::PIXEL)
 END_SHADER_STAGE(stage, Stage::PIXEL)
 }
 
-void EsslShaderGenerator::emitOutpus(GenContext& context, ShaderStage& stage) const
+void EsslShaderGenerator::emitOutputs(GenContext& context, ShaderStage& stage) const
 {
 BEGIN_SHADER_STAGE(stage, Stage::VERTEX)
     const VariableBlock& vertexData = stage.getOutputBlock(HW::VERTEX_DATA);
