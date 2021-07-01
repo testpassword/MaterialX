@@ -896,6 +896,15 @@ void Viewer::createAdvancedSettings(Widget* parent)
         gammaBox->setEditable(true);
     }
 
+    ng::CheckBox* initInputsBox = new ng::CheckBox(advancedPopup, "Initialize inputs");
+    initInputsBox->setChecked(_genContextGLSL.getOptions().declareInputsWithDefaultValues);
+    initInputsBox->setCallback([this](bool enable)
+        {
+            _genContextGLSL.getOptions().declareInputsWithDefaultValues = enable;
+            reloadShaders();
+        });
+
+
     ng::CheckBox* transparencyBox = new ng::CheckBox(advancedPopup, "Render Transparency");
     transparencyBox->setChecked(_renderTransparency);
     transparencyBox->setCallback([this](bool enable)

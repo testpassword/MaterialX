@@ -171,8 +171,74 @@ void Material::bindShader(const mx::GenContext& genContext)
 
         if (!genContext.getOptions().declareInputsWithDefaultValues)
         {
-            try {
-                _glProgram->bindScalars();
+            try 
+            {
+                _glProgram->getUniformsList();
+
+                size_t stageCount = _hwShader->numStages();
+                for (size_t s = 0; s < stageCount; s++)
+                {
+                    const mx::ShaderStage& stg = _hwShader->getStage(s);
+                    for (const auto& it : stg.getUniformBlocks())
+                    {
+                        const mx::VariableBlock& uniforms = *it.second;
+                        for (size_t i = 0; i < uniforms.size(); ++i)
+                        {
+                            const mx::ShaderPort* v = uniforms[i];
+                            const std::string& variableName = v->getVariable();
+                            if (variableName.empty() || !v->getValue() || 
+                                (v->getType() == mx::Type::FILENAME ||
+                                 v->getType() == mx::Type::STRING))
+                            {
+                                std::cout << "SKIP Block: " + it.first + ". Bind PS scalar: " + variableName + " = " +
+                                    (v->getValue() ? v->getValue()->getValueString() : std::string("[EMPTY]")) << std::endl;
+                                continue;
+                            }
+                            if (_glProgram->hasUniform(variableName))
+                            {
+                                //std::cout << "Block: " + it.first + ". Bind PS scalar: " + variableName + " = " + v->getValue()->getValueString() << std::endl;
+                                try {
+                                    _glProgram->bindUniform(variableName, v->getValue());
+                                }
+                                catch (mx::ExceptionShaderRenderError& e)
+                                {
+                                    std::cout << "FAILED Block: " + it.first + ". Bind PS scalar: " + variableName + " = " + v->getValue()->getValueString() << std::endl;
+                                    for (auto err : e.errorLog())
+                                    {
+                                        std::cout << err << std::endl;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                std::cout << "SKIP Block: " + it.first + ". Bind PS scalar: " + variableName + " = " + v->getValue()->getValueString() << std::endl;
+                            }
+                        }
+                    }
+                }
+
+                const mx::ShaderStage& ps = _hwShader->getStage(mx::Stage::PIXEL);
+                const mx::VariableBlock& constants = ps.getConstantBlock();
+                for (size_t i = 0; i < constants.size(); ++i)
+                {
+                    const mx::ShaderPort* v = constants[i];
+                    const std::string& variableName = v->getVariable();
+                    if (variableName.empty() || !v->getValue())
+                    {
+                        std::cout << "SKIP CONSTANT Block. Bind PS scalar: " + variableName + " = " +
+                            (v->getValue() ? v->getValue()->getValueString() : std::string("[EMPTY]")) << std::endl;
+                        continue;
+                    }
+                    if (_glProgram->hasUniform(variableName))
+                    {
+                        //std::cout << "Block: " + it.first + ". Bind PS scalar: " + variableName + " = " + v->getValue()->getValueString() << std::endl;
+                        _glProgram->bindUniform(variableName, v->getValue());
+                    }
+                    else
+                    {
+                        std::cout << "SKIP CONSTANT Block. Bind PS scalar: " + variableName + " = " + v->getValue()->getValueString() << std::endl;
+                    }
+                }
             }
             catch (mx::ExceptionShaderRenderError& e)
             {

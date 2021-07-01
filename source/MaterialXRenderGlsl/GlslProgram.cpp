@@ -803,6 +803,10 @@ bool GlslProgram::hasUniform(const string& name)
 
 void GlslProgram::bindUniform(const string& name, ConstValuePtr value, bool errorIfMissing)
 {
+    if (!value)
+    {
+        return;
+    }
     const GlslProgram::InputMap& uniformList = getUniformsList();
     auto input = uniformList.find(name);
     if (input != uniformList.end())
@@ -821,6 +825,10 @@ void GlslProgram::bindUniform(const string& name, ConstValuePtr value, bool erro
         }
         bindUniformLocation(location, value);
         input->second->isBound = true;
+    }
+    else
+    {
+        std::cout << "Could not find uniform to bind: " + name << std::endl;
     }
 }
 
@@ -1274,6 +1282,7 @@ const GlslProgram::InputMap& GlslProgram::updateUniformsList()
                 // Ignore types which are unsupported in GLSL.
                 if (glType == Input::INVALID_OPENGL_TYPE)
                 {
+                    std::cout << "SKIP invalid GL TYPE: " + v->getVariable() << std::endl;
                     continue;
                 }
 
