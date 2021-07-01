@@ -361,8 +361,10 @@ void Viewer::initialize()
     loadEnvironmentLight();
 
     // Generate wireframe material.
+    bool prev = _genContextGLSL.getOptions().declareInputsWithDefaultValues;
     try
     {
+        _genContextGLSL.getOptions().declareInputsWithDefaultValues = true;
         mx::ShaderPtr hwShader = mx::createConstantShader(_genContextGLSL, _stdLib, "__WIRE_SHADER__", mx::Color3(1.0f));
         _wireMaterial = Material::create();
         _wireMaterial->generateShader(hwShader);
@@ -378,6 +380,7 @@ void Viewer::initialize()
     }
 
     // Generate shadow material.
+    _genContextGLSL.getOptions().declareInputsWithDefaultValues = true;
     try
     {
         mx::ShaderPtr hwShader = mx::createDepthShader(_genContextGLSL, _stdLib, "__SHADOW_SHADER__");
@@ -410,6 +413,7 @@ void Viewer::initialize()
         }
         _shadowBlurMaterial = nullptr;
     }
+    _genContextGLSL.getOptions().declareInputsWithDefaultValues = prev;
 
     // Initialize camera
     initCamera();
@@ -2557,6 +2561,8 @@ void Viewer::updateAlbedoTable()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     // Create shader.
+    bool prev = _genContextGLSL.getOptions().declareInputsWithDefaultValues;
+    _genContextGLSL.getOptions().declareInputsWithDefaultValues = true;
     mx::ShaderPtr hwShader = mx::createAlbedoTableShader(_genContextGLSL, _stdLib, "__ALBEDO_TABLE_SHADER__");
     MaterialPtr material = Material::create();
     try
@@ -2570,8 +2576,10 @@ void Viewer::updateAlbedoTable()
         {
             std::cerr << error << std::endl;
         }
+        _genContextGLSL.getOptions().declareInputsWithDefaultValues = prev;
         return;
     }
+    _genContextGLSL.getOptions().declareInputsWithDefaultValues = prev;
 
     // Render albedo table.
     material->bindShader(_genContextGLSL);

@@ -471,6 +471,7 @@ bool GlslShaderRenderTester::runRenderer(const std::string& shaderName,
                 contextOptions.targetColorSpaceOverride = "lin_rec709";
                 contextOptions.hwSpecularEnvironmentMethod = testOptions.specularEnvironmentMethod;
                 contextOptions.declareInputsWithDefaultValues = false;
+                _renderer->setBindScalarValues(true);
                 shader = shadergen.generate(shaderName, element, context);
                 generationTimer.endTimer();
             }
