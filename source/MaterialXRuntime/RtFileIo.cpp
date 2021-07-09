@@ -700,13 +700,15 @@ namespace
         // for implementation associations.
         RtNodeDef nodedef(prim->hnd());
         RtString nodeDefName = prim->getName();
+        RtString defNamespace = nodedef.getNamespace();
+        RtString qualifiedName = !defNamespace.empty() ? RtString(defNamespace.str() + NAME_PREFIX_SEPARATOR  + nodeDefName.str()) : nodeDefName;
         RtSchemaPredicate<RtNodeGraph> filter;
         for (RtPrim child : stage->getRootPrim()->getChildren(filter))
         {
             // The association between a nodedef and a nodegraph is by name. No
             // version check is required as nodegraphs are not versioned.
             RtNodeGraph nodeGraph(child);
-            if (nodeGraph.getDefinition() == nodeDefName)
+            if (nodeGraph.getDefinition() == qualifiedName)
             {
                 PvtPrim* graphPrim = PvtObject::cast<PvtPrim>(child);
                 writeNodeGraph(graphPrim, document, options);
@@ -1465,7 +1467,8 @@ RtWriteOptions::RtWriteOptions() :
 }
 
 RtExportOptions::RtExportOptions() :
-    mergeLooks(false)
+    mergeLooks(true),
+    flattenFilenames(true)
 {
 }
 
@@ -1730,7 +1733,9 @@ void RtFileIo::exportDocument(std::ostream& stream, const RtExportOptions* optio
         xmlExportOptions.flattenFilenames = options->flattenFilenames;
         xmlExportOptions.resolvedTexturePath = options->resolvedTexturePath;
         xmlExportOptions.stringResolver = options->stringResolver;
+        xmlExportOptions.exportResolvers = options->exportResolvers;
     }
+    xmlExportOptions.modifyInPlace = true;
     exportToXmlStream(document, stream, &xmlExportOptions);
 }
 
@@ -1750,7 +1755,9 @@ void RtFileIo::exportDocument(const FilePath& documentPath, const RtExportOption
         xmlExportOptions.flattenFilenames = options->flattenFilenames;
         xmlExportOptions.resolvedTexturePath = options->resolvedTexturePath;
         xmlExportOptions.stringResolver = options->stringResolver;
+        xmlExportOptions.exportResolvers = options->exportResolvers;
     }
+    xmlExportOptions.modifyInPlace = true;
     exportToXmlFile(document, documentPath, &xmlExportOptions);
 }
 

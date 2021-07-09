@@ -77,6 +77,9 @@ endif()
 if (MATERIALX_BUILD_GEN_ARNOLD)
     LIST(APPEND LIBS MaterialXGenArnold)
 endif()
+if (MATERIALX_BUILD_GEN_ESSL)
+    LIST(APPEND LIBS MaterialXGenEssl)
+endif()
 
 target_link_libraries(
      ${LIBS}
@@ -101,6 +104,7 @@ install(TARGETS MaterialXView
     RUNTIME DESTINATION bin)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/MaterialXView.pdb"
     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/" OPTIONAL)
+
     
 # Copy over libraries and resources to local build area
 add_custom_command(TARGET MaterialXView POST_BUILD
@@ -108,4 +112,4 @@ add_custom_command(TARGET MaterialXView POST_BUILD
 	${CMAKE_CURRENT_SOURCE_DIR}/../../libraries ${CMAKE_BINARY_DIR}/bin/libraries)
 add_custom_command(TARGET MaterialXView POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
-	${CMAKE_CURRENT_SOURCE_DIR}/../../resources ${CMAKE_BINARY_DIR}/bin/resources)
+	${CMAKE_CURRENT_SOURCE_DIR}/../../resources ${CMAKE_CURRENT_BINARY_DIR}/resources)
