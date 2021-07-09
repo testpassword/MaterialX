@@ -1952,12 +1952,12 @@ void Viewer::renderFrame()
         mx::MeshPartitionPtr geom = assignment.first;
         MaterialPtr material = assignment.second;
         shadowState.ambientOcclusionMap = getAmbientOcclusionImage(material);
-        if (!material)
+        if (!material || !material->getProgram())
         {
             continue;
         }
 
-        if (material->getShader()->getName() == "__WIRE_SHADER__")
+        if (material->getShader() && material->getShader()->getName() == "__WIRE_SHADER__")
         {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
