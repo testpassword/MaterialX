@@ -21,7 +21,7 @@ jobs:
         - name: Linux_EMCC_2
           os: ubuntu-20.04
           compiler_version: "2.0.20"
-          deploy_branch: "refs/heads/chore/deploy_sample_app"
+          deploy_branch: "refs/heads/adsk_contrib/dev"
 
     steps:
     - name: Sync Repository
@@ -70,11 +70,6 @@ jobs:
       with:
         name: MaterialX_${{ matrix.name }}
         path: build/installed/
-
-    - run: echo ${{github.ref}}
-    - run: echo ${{github.head_ref}}
-    - run: echo $(pwd)
-    - run: git config -l
 
     - name: Build Sample App
       if: github.ref == matrix.deploy_branch
