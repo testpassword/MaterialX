@@ -80,7 +80,9 @@ function fallbackMaterial(doc) {
 function init() {
     let canvas = document.getElementById('webglcanvas');
     let materialsSelect = document.getElementById('materials');
-    materialsSelect.value = materialFilename;
+    if (materialFilename) {
+      materialsSelect.value = materialFilename;
+    }
     let context = canvas.getContext('webgl2');
 
     materialsSelect.addEventListener('change', (e) => {
