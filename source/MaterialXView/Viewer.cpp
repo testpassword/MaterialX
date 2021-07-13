@@ -970,7 +970,7 @@ void Viewer::createAdvancedSettings(Widget* parent)
     importanceSampleBox->setCallback([this](bool enable)
     {
         _genContextGLSL.getOptions().hwSpecularEnvironmentMethod = enable ? mx::SPECULAR_ENVIRONMENT_FIS : mx::SPECULAR_ENVIRONMENT_PREFILTER;
-        _genContextEssl.getOptions().hwSpecularEnvironmentMethod = _genContext.getOptions().hwSpecularEnvironmentMethod;
+        _genContextEssl.getOptions().hwSpecularEnvironmentMethod = _genContextGLSL.getOptions().hwSpecularEnvironmentMethod;
         reloadShaders();
     });
 
