@@ -1,0 +1,236 @@
+<?xml version="1.0"?>
+<materialx version="1.38">
+  <!--
+    Khronos glTF PBR node definition (transcribed from GitHub schema).
+    (https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/schema/material.schema.json)
+    A set of parameter values that are used to define the metallic-roughness material model from Physically-Based Rendering (PBR) methodology.
+  -->
+  <nodedef name="ND_gltf_pbr_next_surfaceshader" node="gltf_pbr_next" nodegroup="pbr" doc="glTF PBR Next surface shader" version="0.1.0" isdefaultversion="true">
+    <!-- "A set of parameter values that are used to define the metallic-roughness material model from Physically-Based Rendering (PBR) methodology. When not specified, all the default values of `pbrMetallicRoughness` apply." -->
+    <!-- "The RGBA components of the base color of the material. The fourth component (A) is the alpha coverage of the material. The `alphaMode` property specifies how alpha is interpreted.
+    These values are linear. If a baseColorTexture is specified, this value is multiplied with the texel values."
+    -->
+    <input name="baseColorFactor" type="color4" value="1.0, 1.0, 1.0, 1.0" uimin="0,0,0,0" uimax="1,1,1,1" uiname="Base Color Factor" uifolder="Base" doc="The material's base color factor." />
+    <!-- "The base color texture. The first three components (RGB) are encoded with the sRGB transfer function. They specify the base color of the material.
+    If the fourth component (A) is present, it represents the linear alpha coverage of the material. Otherwise, an alpha of 1.0 is assumed.
+    The `alphaMode` property specifies how alpha is interpreted. The stored texels must not be premultiplied."
+    -->
+    <input name="baseColorTexture" type="color4" value="1.0, 1.0, 1.0, 1.0" uimin="0,0,0,0" uimax="1,1,1,1" uiname="Base Color Texture" uifolder="Base" doc="The base color texture." />
+    <!-- "The metalness of the material. A value of 1.0 means the material is a metal. A value of 0.0 means the material is a dielectric.
+    Values in between are for blending between metals and dielectrics such as dirty metallic surfaces. This value is linear.
+    If a metallicRoughnessTexture is specified, this value is multiplied with the metallic texel values."
+    -->
+    <input name="metallicFactor" type="float" value="1.0" uimin="0.0" uimax="1.0" uiname="metalness" uifolder="MetallicRoughness" uiadvanced="true" doc="The metalness of the material." />
+    <!-- "The roughness of the material. A value of 1.0 means the material is completely rough. A value of 0.0 means the material is completely smooth. This value is linear.
+    If a metallicRoughnessTexture is specified, this value is multiplied with the roughness texel values."
+    -->
+    <input name="roughnessFactor" type="float" value="1.0" uimin="0.0" uimax="1.0" uiname="roughness" uifolder="MetallicRoughness" doc="The roughness of the material." />
+    <!-- 
+    "The metallic-roughness texture. The metalness values are sampled from the B channel. The roughness values are sampled from the G channel. These values are linear.
+    If other channels are present (R or A), they are ignored for metallic-roughness calculations."
+    -->
+    <input name="metallicRoughnessTexture" type="color4" value="1.0, 1.0, 1.0, 1.0" uimin="0,0,0,0" uimax="1,1,1,1" uiname="Metallic-Roughness Texture" uifolder="MetallicRoughness" doc="The metallic-roughness texture." />
+
+    <!--
+    "A tangent space normal map. The texture contains RGB components in linear space. Each texel represents the XYZ components of a normal vector in tangent space. Red [0 to 255] maps to X [-1 to 1].
+    Green [0 to 255] maps to Y [-1 to 1]. Blue [128 to 255] maps to Z [1/255 to 1]. The normal vectors use the convention +X is right and +Y is up. +Z points toward the viewer.
+    In GLSL, this vector would be unpacked like so: `vec3 normalVector = tex2D(<sampled normal map texture value>, texCoord) * 2 - 1`.
+    Client implementations should normalize the normal vectors before using them in lighting equations."
+    -->
+    <input name="normalTexture" type="vector3" value="0.0, 0.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Normal Texture" uifolder="Normal" doc="The normal map texture." />
+
+    <!--
+    "The occlusion map texture. The occlusion values are sampled from the R channel. Higher values indicate areas that should receive full indirect lighting and lower values indicate no indirect lighting.
+    These values are linear. If other channels are present (GBA), they are ignored for occlusion calculations."
+    -->
+    <input name="occlusionTexture" type="color3" value="0.0, 0.0, 0.0" uimin="0,0,0" uimax="1,1,1" uiname="Occlusion Texture" uifolder="Occlusion" doc="The occlusion map texture." />
+
+    <!--
+    "The emissive map controls the color and intensity of the light being emitted by the material. This texture contains RGB components encoded with the sRGB transfer function.
+    If a fourth component (A) is present, it is ignored."
+    -->
+    <input name="emissiveTexture" type="color3" value="0.0, 0.0, 0.0" uimin="0,0,0" uimax="1,1,1" uiname="Emissive Texture" uifolder="Emissive" doc="The emissive map texture." />
+
+    <!--
+    "The RGB components of the emissive color of the material. These values are linear. If an emissiveTexture is specified, this value is multiplied with the texel values."
+    -->
+    <input name="emissiveFactor" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Emissive Color Factor" uifolder="Emissive" doc="The emissive color of the material." />
+
+    <!-- 
+    "The material's alpha rendering mode enumeration specifying the interpretation of the alpha value of the main factor and texture.",
+    "OPAQUE" : "The alpha value is ignored and the rendered output is fully opaque."
+    "MASK" : "The rendered output is either fully opaque or fully transparent depending on the alpha value and the specified alpha cutoff value."
+    "BLEND" : "The alpha value is used to composite the source and destination areas. The rendered output is combined with the background using the normal painting operation (i.e. the Porter and Duff over operator)."
+    -->
+    <input name="alphaMode" type="string" value="OPAQUE" uiname="Alpha Mode" uifolder="Alpha" uiadvanced="true" doc="The alpha rendering mode of the material."/>
+
+    <!-- 
+    "Specifies the cutoff threshold when in `MASK` mode. If the alpha value is greater than or equal to this value then it is rendered as fully opaque, otherwise, it is rendered as fully transparent.
+    A value greater than 1.0 will render the entire material as fully transparent. This value is ignored for other modes."
+    -->
+    <input name="alphaCutoff" type="float" value="0.5" uimin="0.0" uisoftmax="1.0" uiname="Alpha Cutoff" uifolder="Alpha" doc="The alpha cutoff value of the material." />
+
+    <!-- 
+    "Specifies whether the material is double sided. When this value is false, back-face culling is enabled. When this value is true, back-face culling is disabled and double sided lighting is enabled.
+    The back-face must have its normals reversed before the lighting equation is evaluated."
+    -->
+    <input name="doubleSided" type="boolean" value="false" uiname="Double Sided" uifolder="Geometry" uiadvanced="true" doc="Specifies whether the material is double sided." />
+
+
+    <!--
+        glTF PBR extensions
+    -->
+    <!--<input name="emissiveStrength" type="float" value="1.0" uimin="0.0" uisoftmax="1.0" uiname="Emissive Strength" uifolder="Emissive" doc="The maximum strength of the emissive texture." />-->
+
+
+    <!--   "glTF extension that defines the clearcoat material layer." -->
+    <!--
+    "The clearcoat layer intensity (aka opacity) of the material. A value of 0.0 means the material has no clearcoat layer enabled."
+    -->
+    <input name="clearcoatFactor" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Clearcoat Factor" uifolder="Clearcoat" doc="The clearcoat layer intensity." />
+    <!--
+    "The clearcoat layer intensity texture. These values are sampled from the R channel.  The values are linear.  Use value 1.0 if no texture is supplied."
+    -->
+    <input name="clearcoatTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Clearcoat Texture" uifolder="Clearcoat" doc="The clearcoat layer intensity texture." />
+    <!--
+    "The clearcoat layer roughness of the material."
+    -->
+    <input name="clearcoatRoughnessFactor" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Clearcoat Roughness Factor" uifolder="Clearcoat" doc="The clearcoat layer roughness." />
+    <!--
+    "The clearcoat layer roughness texture. These values are sampled from the G channel.  The values are linear.  Use value 1.0 if no texture is supplied."
+    -->
+    <input name="clearcoatRoughnessTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Clearcoat Roughness Texture" uifolder="Clearcoat" doc="The clearcoat layer roughness texture." />
+    <!--
+    "A tangent space normal map for the clearcoat layer.  If desired, this may be a reference to the same normal map used by the base material.  If not supplied, no normal mapping is applied to the clear coat layer."
+    -->
+    <input name="clearcoatNormalTexture" type="vector3" value="0.0, 0.0, 1.0" uimin="-1,-1,-1" uimax="1,1,1" uiname="Clearcoat Normal Texture" uifolder="Clearcoat" doc="The clearcoat normal map texture." />
+
+
+    <!-- "glTF extension that defines the index of refraction of a material." -->
+    <!--
+    "The index of refraction (IOR) is a measured physical number usually in the range between 1 and 2 that determines how much the path of light is bent, or refracted, when entering a material.
+    It also influences the ratio between reflected and transmitted light, calculated from the Fresnel equations."
+    -->
+    <input name="ior" type="float" value="1.5" uimin="1.0" uisoftmax="100.0" uiname="Index of Refraction" uifolder="IOR" doc="The index of refraction." />
+
+
+    <!-- "glTF extension that defines the sheen material model." -->
+    <input name="sheenColorFactor" type="color3" value="0.0, 0.0, 0.0" uimin="0,0,0" uimax="1,1,1" uiname="Sheen Color Factor" uifolder="Sheen" doc="Color of the sheen layer (in linear space)." />
+    <!--
+    "The sheen color (RGB) texture. Stored in channel RGB, the sheen color is in sRGB transfer function."
+    -->
+    <input name="sheenColorTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Sheen Color Texture" uifolder="Sheen" doc="The sheen color (RGB) texture." />
+    <!--
+    "The sheen layer roughness of the material."
+    -->
+    <input name="sheenRoughnessFactor" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Sheen Roughness Factor" uifolder="Sheen" doc="The sheen layer roughness." />
+    <!--
+    "The sheen roughness (Alpha) texture. Stored in alpha channel, the roughness value is in linear space."
+    -->
+    <input name="sheenRoughnessTexture" type="color4" value="1.0, 1.0, 1.0, 1.0" uimin="0,0,0,0" uimax="1,1,1,1" uiname="Sheen Roughness Texture" uifolder="Sheen" doc="The sheen roughness (Alpha) texture." />
+
+
+    <!-- "glTF extension that defines the strength of the specular reflection." -->
+    <!--
+    "This parameter scales the amount of specular reflection on non-metallic surfaces. It has no effect on metals."
+    -->
+    <input name="specularFactor" type="float" value="1.0" uimin="0.0" uisoftmax="1.0" uiname="Specular Factor" uifolder="Specular" doc="The strength of the specular reflection." />
+    <!--
+    "A texture that defines the specular factor in the alpha channel. This will be multiplied by specularFactor."
+    -->
+    <input name="specularTexture" type="color4" value="1.0, 1.0, 1.0, 1.0" uimin="0,0,0,0" uimax="1,1,1,1" uiname="Specular Texture" uifolder="Specular" doc="A texture that defines the specular factor in the alpha channel." />
+    <!--
+    "This is an additional RGB color parameter that tints the specular reflection of non-metallic surfaces. At grazing angles, the reflection still blends to white, and the parameter has not effect on metals. The value is linear."
+    -->
+    <input name="specularColorFactor" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Specular Color Factor" uifolder="Specular" doc="The F0 RGB color of the specular reflection." />
+    <!--
+    "A texture that defines the specular color in the RGB channels (encoded in sRGB). This will be multiplied by specularColorFactor."
+    -->
+    <input name="specularColorTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Specular Color Texture" uifolder="Specular" doc="A texture that defines the F0 color of the specular reflection." />
+
+
+    <!-- "glTF extension that defines the parameters for the volume of a material." -->
+    <!--
+    "The thickness of the volume beneath the surface. The value is given in the coordinate space of the mesh. A value greater than 0 turns the mesh into a volume with a homogeneous medium, enabling refraction, absorption and subsurface scattering.
+    The actual value may be ignored by renderers that are able to derive the thickness from the mesh (ray tracer)."
+    -->
+    <input name="thicknessFactor" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Volume Thickness Factor" uifolder="Volume" doc="Thickness of the volume." />
+    <!--
+    "A texture that defines the thickness of the volume, stored in the G channel. Will be multiplied by thicknessFactor."
+    -->
+    <input name="thicknessTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Volume Thickness Texture" uifolder="Volume" doc="Texture that defines the thickness of the volume, stored in the G channel." />
+    <!--
+    "Density of the medium given as the average distance that light travels in the medium before interacting with a particle. The value is given in world space. When undefined, the value is assumed to be infinite."
+    -->
+    <input name="attenuationDistance" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Volume Attenuation Distance" uifolder="Volume" doc="Average distance that light travels in the medium before interacting with a particle." />
+    <!--
+    "Color that white light turns into due to absorption when reaching the attenuation distance."
+    -->
+    <input name="attenuationColor" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Volume Attenuation Color Texture" uifolder="Volume" doc="Color at attenuation distance." />
+
+
+    <!-- "glTF extension that defines the optical transmission of a material." -->
+    <!--
+    "The base percentage of non-specularly reflected light that is transmitted through the surface. i.e. of the light that penetrates a surface (isn't specularly reflected), this is the percentage that is transmitted and not diffusely re-emitted."
+    -->
+    <input name="transmissionFactor" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Transmission Factor" uifolder="Transmission" doc="The base percentage of light transmitted through the surface." />
+    <!--
+    "A texture that defines the transmission percentage of the surface, sampled from the R channel. These values are linear, and will be multiplied by transmissionFactor. This indicates the percentage of non-specularly reflected light that is transmitted
+    through the surface. i.e. of the light that penetrates a surface (isn't specularly reflected), this is the percentage is transmitted and not diffusely re-emitted."
+    -->
+    <input name="transmissionTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Transmission Color Texture" uifolder="Transmission" doc="A texture that defines the transmission percentage of the surface, sampled from the R channel. These values are linear, and will be multiplied by transmissionFactor." />
+
+
+    <output name="out" type="surfaceshader" />
+  </nodedef>
+
+   <nodegraph name="NG_gltf_pbr_next_surfaceshader" version="0.1.0" nodedef="ND_gltf_pbr_next_surfaceshader">
+    <input name="baseColorFactor" type="color4" value="1.0, 1.0, 1.0, 1.0" uimin="0,0,0,0" uimax="1,1,1,1" uiname="Base Color Factor" uifolder="Base" doc="The material's base color factor." />
+    <input name="baseColorTexture" type="color4" value="1.0, 1.0, 1.0, 1.0" uimin="0,0,0,0" uimax="1,1,1,1" uiname="Base Color Texture" uifolder="Base" doc="The base color texture." />
+    <input name="metallicFactor" type="float" value="1.0" uimin="0.0" uimax="1.0" uiname="metalness" uifolder="MetallicRoughness" uiadvanced="true" doc="The metalness of the material." />
+    <input name="roughnessFactor" type="float" value="1.0" uimin="0.0" uimax="1.0" uiname="roughness" uifolder="MetallicRoughness" doc="The roughness of the material." />
+    <input name="metallicRoughnessTexture" type="color4" value="1.0, 1.0, 1.0, 1.0" uimin="0,0,0,0" uimax="1,1,1,1" uiname="Metallic-Roughness Texture" uifolder="MetallicRoughness" doc="The metallic-roughness texture." />
+    <input name="normalTexture" type="vector3" value="0.0, 0.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Normal Texture" uifolder="Normal" doc="The normal map texture." />
+    <input name="occlusionTexture" type="color3" value="0.0, 0.0, 0.0" uimin="0,0,0" uimax="1,1,1" uiname="Occlusion Texture" uifolder="Occlusion" doc="The occlusion map texture." />
+    <input name="emissiveTexture" type="color3" value="0.0, 0.0, 0.0" uimin="0,0,0" uimax="1,1,1" uiname="Emissive Texture" uifolder="Emissive" doc="The emissive map texture." />
+    <input name="emissiveFactor" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Emissive Color Factor" uifolder="Emissive" doc="The emissive color of the material." />
+    <input name="alphaMode" type="string" value="OPAQUE" uiname="Alpha Mode" uifolder="Alpha" uiadvanced="true" doc="The alpha rendering mode of the material."/>
+    <input name="alphaCutoff" type="float" value="0.5" uimin="0.0" uisoftmax="1.0" uiname="Alpha Cutoff" uifolder="Alpha" doc="The alpha cutoff value of the material." />
+    <input name="doubleSided" type="boolean" value="false" uiname="Double Sided" uifolder="Geometry" uiadvanced="true" doc="Specifies whether the material is double sided." />
+    <input name="clearcoatFactor" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Clearcoat Factor" uifolder="Clearcoat" doc="The clearcoat layer intensity." />
+    <input name="clearcoatTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Clearcoat Texture" uifolder="Clearcoat" doc="The clearcoat layer intensity texture." />
+    <input name="clearcoatRoughnessFactor" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Clearcoat Roughness Factor" uifolder="Clearcoat" doc="The clearcoat layer roughness." />
+    <input name="clearcoatRoughnessTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Clearcoat Roughness Texture" uifolder="Clearcoat" doc="The clearcoat layer roughness texture." />
+    <input name="clearcoatNormalTexture" type="vector3" value="0.0, 0.0, 1.0" uimin="-1,-1,-1" uimax="1,1,1" uiname="Clearcoat Normal Texture" uifolder="Clearcoat" doc="The clearcoat normal map texture." />
+    <input name="ior" type="float" value="1.5" uimin="1.0" uisoftmax="100.0" uiname="Index of Refraction" uifolder="IOR" doc="The index of refraction." />
+    <input name="sheenColorFactor" type="color3" value="0.0, 0.0, 0.0" uimin="0,0,0" uimax="1,1,1" uiname="Sheen Color Factor" uifolder="Sheen" doc="Color of the sheen layer (in linear space)." />
+    <input name="sheenColorTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Sheen Color Texture" uifolder="Sheen" doc="The sheen color (RGB) texture." />
+    <input name="sheenRoughnessFactor" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Sheen Roughness Factor" uifolder="Sheen" doc="The sheen layer roughness." />
+    <input name="sheenRoughnessTexture" type="color4" value="1.0, 1.0, 1.0, 1.0" uimin="0,0,0,0" uimax="1,1,1,1" uiname="Sheen Roughness Texture" uifolder="Sheen" doc="The sheen roughness (Alpha) texture." />
+    <input name="specularFactor" type="float" value="1.0" uimin="0.0" uisoftmax="1.0" uiname="Specular Factor" uifolder="Specular" doc="The strength of the specular reflection." />
+    <input name="specularTexture" type="color4" value="1.0, 1.0, 1.0, 1.0" uimin="0,0,0,0" uimax="1,1,1,1" uiname="Specular Texture" uifolder="Specular" doc="A texture that defines the specular factor in the alpha channel." />
+    <input name="specularColorFactor" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Specular Color Factor" uifolder="Specular" doc="The F0 RGB color of the specular reflection." />
+    <input name="specularColorTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Specular Color Texture" uifolder="Specular" doc="A texture that defines the F0 color of the specular reflection." />
+    <input name="thicknessFactor" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Volume Thickness Factor" uifolder="Volume" doc="Thickness of the volume." />
+    <input name="thicknessTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Volume Thickness Texture" uifolder="Volume" doc="Texture that defines the thickness of the volume, stored in the G channel." />
+    <input name="attenuationDistance" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Volume Attenuation Distance" uifolder="Volume" doc="Average distance that light travels in the medium before interacting with a particle." />
+    <input name="attenuationColor" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Volume Attenuation Color Texture" uifolder="Volume" doc="Color at attenuation distance." />
+    <input name="transmissionFactor" type="float" value="0.0" uimin="0.0" uisoftmax="1.0" uiname="Transmission Factor" uifolder="Transmission" doc="The base percentage of light transmitted through the surface." />
+    <input name="transmissionTexture" type="color3" value="1.0, 1.0, 1.0" uimin="0,0,0" uimax="1,1,1" uiname="Transmission Color Texture" uifolder="Transmission" doc="A texture that defines the transmission percentage of the surface, sampled from the R channel. These values are linear, and will be multiplied by transmissionFactor." />
+
+    <!-- Stand-in graph: Does not represent the actual logic -->
+    <surface name="surface" type="surfaceshader" nodedef="ND_surface" xpos="94.572" ypos="-222.888">
+      <input name="bsdf" type="BSDF" nodename="oren_nayar_diffuse_bsdf"  />
+      <input name="edf" type="EDF" value=""  />
+      </surface>
+      <oren_nayar_diffuse_bsdf name="oren_nayar_diffuse_bsdf" type="BSDF" nodedef="ND_oren_nayar_diffuse_bsdf" >
+         <input name="color" type="color3" nodename="convert"  />
+      </oren_nayar_diffuse_bsdf>
+      <convert name="convert" type="color3" nodedef="ND_convert_color4_color3" >
+         <input name="in" type="color4" interfacename="baseColorFactor" value="1, 1, 1, 1"  />
+      </convert>
+      <output name="out" type="surfaceshader" nodename="surface" />
+      
+    <output name="out" type="surfaceshader" />
+  </nodegraph>
+</materialx>

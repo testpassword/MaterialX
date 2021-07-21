@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<materialx version="1.38">
+  <gltf_pbr_next name="gltf_pbr_next" type="surfaceshader" nodedef="ND_gltf_pbr_next_surfaceshader" version="0.1.0"/>
+  <surfacematerial name="surfacematerial" type="material" nodedef="ND_surfacematerial" >
+    <input name="surfaceshader" type="surfaceshader" nodename="gltf_pbr_next" />
+    <input name="displacementshader" type="displacementshader" value="" />
+  </surfacematerial>
+</materialx>
