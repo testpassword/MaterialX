@@ -180,10 +180,11 @@ Viewer::Viewer(const std::string& materialFilename,
                int screenWidth,
                int screenHeight,
                const mx::Color3& screenColor,
-               int multiSampleCount) :
+               int multiSampleCount,
+               bool srgbFrameBuffer) :
     ng::Screen(ng::Vector2i(screenWidth, screenHeight), "MaterialXView",
         true, false,
-        8, 8, 24, 8,
+        srgbFrameBuffer ? 8 : 24, 8, 24, 0,
         multiSampleCount),
     _window(nullptr),
     _materialFilename(materialFilename),
@@ -211,7 +212,7 @@ Viewer::Viewer(const std::string& materialFilename,
     _shadowSoftness(1),
     _ambientOcclusionGain(0.6f),
     _gammaValue(2.2f),
-    _srgbFrameBuffer(false),
+    _srgbFrameBuffer(srgbFrameBuffer),
     _screenColor(screenColor),
     _selectedGeom(0),
     _geomLabel(nullptr),
@@ -839,31 +840,34 @@ void Viewer::createAdvancedSettings(Widget* parent)
     renderLabel->setFont("sans-bold");
 
     // Generate gamma correction material.
-    try
+    if (!_srgbFrameBuffer)
     {
-        const mx::Color3 gamma(_gammaValue, _gammaValue, _gammaValue);
-        mx::ShaderPtr hwShader = mx::createGammaShader(_genContext, _stdLib, "__GAMMA_CORRECT_SHADER__", gamma);
-        _gammaMaterial = Material::create();
-        _gammaMaterial->generateShader(hwShader);
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << "Failed to generate gamma shader: " << e.what() << std::endl;
-        _gammaMaterial = nullptr;
-    }
-
-    if (_gammaMaterial)
-    {
-        ng::Widget* gammaRow = new ng::Widget(advancedPopup);
-        gammaRow->setLayout(new ng::BoxLayout(ng::Orientation::Horizontal));
-        ui.uiMin = mx::Value::createValue(0.01f);
-        ui.uiMax = mx::Value::createValue(2.2f);
-        ng::FloatBox<float>* gammaBox = createFloatWidget(gammaRow, "Gamma:",
-            _gammaValue, &ui, [this](float value)
+        try
         {
-            _gammaValue = value;
-        });
-        gammaBox->setEditable(true);
+            const mx::Color3 gamma(_gammaValue, _gammaValue, _gammaValue);
+            mx::ShaderPtr hwShader = mx::createGammaShader(_genContext, _stdLib, "__GAMMA_CORRECT_SHADER__", gamma);
+            _gammaMaterial = Material::create();
+            _gammaMaterial->generateShader(hwShader);
+        }
+        catch (std::exception& e)
+        {
+            std::cerr << "Failed to generate gamma shader: " << e.what() << std::endl;
+            _gammaMaterial = nullptr;
+        }
+
+        if (_gammaMaterial)
+        {
+            ng::Widget* gammaRow = new ng::Widget(advancedPopup);
+            gammaRow->setLayout(new ng::BoxLayout(ng::Orientation::Horizontal));
+            ui.uiMin = mx::Value::createValue(0.01f);
+            ui.uiMax = mx::Value::createValue(2.2f);
+            ng::FloatBox<float>* gammaBox = createFloatWidget(gammaRow, "Gamma:",
+                _gammaValue, &ui, [this](float value)
+            {
+                _gammaValue = value;
+            });
+            gammaBox->setEditable(true);
+        }
     }
 
     ng::CheckBox* transparencyBox = new ng::CheckBox(advancedPopup, "Render Transparency");

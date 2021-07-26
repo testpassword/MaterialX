@@ -29,7 +29,8 @@ class Viewer : public ng::Screen
            int screenWidth,
            int screenHeight,
            const mx::Color3& screenColor,
-           int multiSampleCount);
+           int multiSampleCount,
+           bool srgbFrameBuffer);
     ~Viewer() { }
 
     // Initialize the viewer for rendering.
@@ -95,6 +96,11 @@ class Viewer : public ng::Screen
         _modifiers = modifiers;
     }
 
+    void setSRGBBuffer(bool val)
+    {
+        _srgbFrameBuffer = val;
+    }
+
     // Set the target width for texture baking.
     void setBakeWidth(unsigned int bakeWidth)
     {
@@ -117,12 +123,6 @@ class Viewer : public ng::Screen
     bool getShowAllInputs() const
     {
         return _showAllInputs;
-    }
-
-    //  Set to use a hardware sRGB buffer for rendering
-    void setSRGBBuffer(bool val)
-    {
-        _srgbFrameBuffer = val;
     }
 
     // Return the underlying NanoGUI window.
