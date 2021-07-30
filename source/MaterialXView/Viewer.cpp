@@ -318,7 +318,7 @@ void Viewer::initialize()
     mx::FileSearchPath imageSearchPath = _searchPath;
     for (auto ipath : _searchPath)
     {
-        _searchPath.append(ipath / "libraries");
+        imageSearchPath.append(ipath / "libraries");
     }
     _imageHandler->setSearchPath(imageSearchPath);
 
@@ -935,8 +935,6 @@ void Viewer::createAdvancedSettings(Widget* parent)
     referenceQualityBox->setCallback([this](bool enable)
     {
         _genContext.getOptions().hwDirectionalAlbedoMethod = enable ? mx::DIRECTIONAL_ALBEDO_IS : mx::DIRECTIONAL_ALBEDO_TABLE;
-        // No Albedo Table support for Essl yet.
-        _genContextEssl.getOptions().hwDirectionalAlbedoMethod = enable ? mx::DIRECTIONAL_ALBEDO_IS : mx::DIRECTIONAL_ALBEDO_CURVE_FIT;
         reloadShaders();
     });
 
@@ -945,7 +943,6 @@ void Viewer::createAdvancedSettings(Widget* parent)
     importanceSampleBox->setCallback([this](bool enable)
     {
         _genContext.getOptions().hwSpecularEnvironmentMethod = enable ? mx::SPECULAR_ENVIRONMENT_FIS : mx::SPECULAR_ENVIRONMENT_PREFILTER;
-        _genContextEssl.getOptions().hwSpecularEnvironmentMethod = _genContext.getOptions().hwSpecularEnvironmentMethod;
         reloadShaders();
     });
 
