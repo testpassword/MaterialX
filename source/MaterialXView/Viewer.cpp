@@ -553,7 +553,9 @@ void Viewer::applyDirectLights(mx::DocumentPtr doc)
         std::vector<mx::NodePtr> lights;
         _lightHandler->findLights(doc, lights);
         _lightHandler->registerLights(doc, lights, _genContext);
+#if MATERIALX_BUILD_GEN_ESSL
         _lightHandler->registerLights(doc, lights, _genContextEssl);
+#endif
         _lightHandler->setLightSources(lights);
     }
     catch (std::exception& e)
@@ -935,6 +937,10 @@ void Viewer::createAdvancedSettings(Widget* parent)
     referenceQualityBox->setCallback([this](bool enable)
     {
         _genContext.getOptions().hwDirectionalAlbedoMethod = enable ? mx::DIRECTIONAL_ALBEDO_IS : mx::DIRECTIONAL_ALBEDO_TABLE;
+#if MATERIALX_BUILD_GEN_ESSL
+        // No Albedo Table support for Essl yet.
+        _genContextEssl.getOptions().hwDirectionalAlbedoMethod = enable ? mx::DIRECTIONAL_ALBEDO_IS : mx::DIRECTIONAL_ALBEDO_CURVE_FIT;
+#endif
         reloadShaders();
     });
 
@@ -943,6 +949,9 @@ void Viewer::createAdvancedSettings(Widget* parent)
     importanceSampleBox->setCallback([this](bool enable)
     {
         _genContext.getOptions().hwSpecularEnvironmentMethod = enable ? mx::SPECULAR_ENVIRONMENT_FIS : mx::SPECULAR_ENVIRONMENT_PREFILTER;
+#if MATERIALX_BUILD_GEN_ESSL
+        _genContextEssl.getOptions().hwSpecularEnvironmentMethod = _genContext.getOptions().hwSpecularEnvironmentMethod;
+#endif
         reloadShaders();
     });
 
