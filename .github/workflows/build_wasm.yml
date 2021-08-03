@@ -23,6 +23,12 @@ jobs:
           compiler_version: "2.0.20"
           deploy_branch: "refs/heads/adsk_contrib/dev"
 
+        - name: Windows_VS2017_EMCC_2
+          os: windows-2016
+          #architecture: x64
+          compiler_version: "2.0.20"
+          #cmake_config: -G "Ninja" 
+
     steps:
     - name: Sync Repository
       uses: actions/checkout@v2
@@ -35,9 +41,17 @@ jobs:
          node-version: '12'
 
     - name: Install Dependencies (Linux)
+      if: ${{ runner.os == 'Linux' }}
       run: |
         sudo apt-get update
         sudo apt-get install libglu1-mesa-dev xorg-dev
+
+    - name: Create Build Directory
+      run: mkdir javascript_build
+
+    - name: Install EMSDK (Linux)
+      if: ${{ runner.os == 'Linux' }}
+      run: |
         mkdir -p tmp
         cd tmp
         git clone --recursive https://github.com/emscripten-core/emsdk
@@ -46,12 +60,25 @@ jobs:
         ./emsdk activate ${{ matrix.compiler_version }}
         source ./emsdk_env.sh
         echo "EMSDK=$EMSDK" >> $GITHUB_ENV
-
-    - name: Create Build Directory
-      run: mkdir javascript_build
+        
+    - name: Install EMSDK (Windows)
+      if: ${{ runner.os == 'Windows' }}
+      run: |
+        mkdir -p tmp
+        cd tmp
+        git clone --recursive https://github.com/emscripten-core/emsdk
+        cd emsdk
+        ./emsdk install ${{ matrix.compiler_version }}
+        ./emsdk activate ${{ matrix.compiler_version }}
+        ./emsdk_env.bat
+        echo "EMSDK=$EMSDK" >> $env:GITHUB_ENV
       
-    - name: CMake Generate
-      run: cmake -DMATERIALX_BUILD_JS=ON -DMATERIALX_EMSDK_PATH=${{ env.EMSDK }} -DMATERIALX_BUILD_RENDER=OFF -DMATERIALX_BUILD_TESTS=OFF -DMATERIALX_BUILD_GEN_OSL=OFF -DMATERIALX_BUILD_GEN_MDL=OFF -DMATERIALX_BUILD_GEN_OGSXML=OFF -DMATERIALX_BUILD_GEN_OGSFX=OFF -DMATERIALX_BUILD_GEN_ARNOLD=OFF -DMATERIALX_BUILD_VIEWER=OFF -DMATERIALX_WARNINGS_AS_ERRORS=ON ${{matrix.cmake_config}} ..
+    - name: CMake Generate (Linux)
+      if: ${{ runner.os == 'Linux' }}
+        run: cmake -DMATERIALX_BUILD_JS=ON -DMATERIALX_EMSDK_PATH=${{ env.EMSDK }} -DMATERIALX_BUILD_RENDER=OFF -DMATERIALX_BUILD_TESTS=OFF -DMATERIALX_BUILD_GEN_OSL=OFF -DMATERIALX_BUILD_GEN_MDL=OFF -DMATERIALX_BUILD_GEN_OGSXML=OFF -DMATERIALX_BUILD_GEN_OGSFX=OFF -DMATERIALX_BUILD_GEN_ARNOLD=OFF -DMATERIALX_BUILD_VIEWER=OFF -DMATERIALX_WARNINGS_AS_ERRORS=ON ${{matrix.cmake_config}} ..
+    - name: CMake Generate (Windows)
+      if: ${{ runner.os == 'Windows' }}
+        run: cmake -DMATERIALX_BUILD_JS=ON -DMATERIALX_EMSDK_PATH=${{ $env:EMSDK }} -DMATERIALX_BUILD_RENDER=OFF -DMATERIALX_BUILD_TESTS=OFF -DMATERIALX_BUILD_GEN_OSL=OFF -DMATERIALX_BUILD_GEN_MDL=OFF -DMATERIALX_BUILD_GEN_OGSXML=OFF -DMATERIALX_BUILD_GEN_OGSFX=OFF -DMATERIALX_BUILD_GEN_ARNOLD=OFF -DMATERIALX_BUILD_VIEWER=OFF -DMATERIALX_WARNINGS_AS_ERRORS=ON ${{matrix.cmake_config}} ..
       working-directory: javascript_build
 
     - name: CMake Build
@@ -70,16 +97,16 @@ jobs:
         npm run test:browser
       working-directory: source/JsMaterialX/test/
 
-    - name: Build Sample App
-      if: github.ref == matrix.deploy_branch
+    - name: Build Sample App (Linux only)
+      if: ${{ runner.os == 'Linux' && github.ref == matrix.deploy_branch }}
       run: |
         echo "Running build"
         cd source/JsMaterialX/JsMaterialXView
         npm install
         npm run build
 
-    - name: Deploy Sample App
-      if: github.ref == matrix.deploy_branch
+    - name: Deploy Sample App (Linux only)
+      if: ${{ runner.os == 'Linux' && github.ref == matrix.deploy_branch }}
       uses: JamesIves/github-pages-deploy-action@4.1.4
       with:
         branch: gh-pages
