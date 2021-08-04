@@ -50,8 +50,7 @@ jobs:
     - name: Create Build Directory
       run: mkdir javascript_build
 
-    - name: Install EMSDK (Linux)
-      if: ${{ runner.os == 'Linux' }}
+    - name: Install EMSDK 
       run: |
         mkdir -p tmp
         cd tmp
@@ -59,28 +58,21 @@ jobs:
         cd emsdk
         ./emsdk install ${{ matrix.compiler_version }}
         ./emsdk activate ${{ matrix.compiler_version }}
-        source ./emsdk_env.sh
-        echo "EMSDK=$EMSDK" >> $GITHUB_ENV
-        
-    - name: Install EMSDK (Windows)
-      if: ${{ runner.os == 'Windows' }}
-      run: |
-        mkdir -p tmp
-        cd tmp
-        git clone --recursive https://github.com/emscripten-core/emsdk
-        cd emsdk
-        ./emsdk install ${{ matrix.compiler_version }}
-        ./emsdk activate ${{ matrix.compiler_version }}
-        ./emsdk_env.bat
-        echo "EMSDK=$EMSDK" >> $env:GITHUB_ENV
-      
-    - name: CMake Generate (Linux)
-      if: ${{ runner.os == 'Linux' }}
-        run: cmake -DMATERIALX_BUILD_JS=ON -DMATERIALX_EMSDK_PATH=${{ env.EMSDK }} -DMATERIALX_BUILD_RENDER=OFF -DMATERIALX_BUILD_TESTS=OFF -DMATERIALX_BUILD_GEN_OSL=OFF -DMATERIALX_BUILD_GEN_MDL=OFF -DMATERIALX_BUILD_GEN_OGSXML=OFF -DMATERIALX_BUILD_GEN_OGSFX=OFF -DMATERIALX_BUILD_GEN_ARNOLD=OFF -DMATERIALX_BUILD_VIEWER=OFF -DMATERIALX_WARNINGS_AS_ERRORS=ON ${{matrix.cmake_config}} ..
-      working-directory: javascript_build
-    - name: CMake Generate (Windows)
-      if: ${{ runner.os == 'Windows' }}
-        run: cmake -DMATERIALX_BUILD_JS=ON -DMATERIALX_EMSDK_PATH=${{ $env:EMSDK }} -DMATERIALX_BUILD_RENDER=OFF -DMATERIALX_BUILD_TESTS=OFF -DMATERIALX_BUILD_GEN_OSL=OFF -DMATERIALX_BUILD_GEN_MDL=OFF -DMATERIALX_BUILD_GEN_OGSXML=OFF -DMATERIALX_BUILD_GEN_OGSFX=OFF -DMATERIALX_BUILD_GEN_ARNOLD=OFF -DMATERIALX_BUILD_VIEWER=OFF -DMATERIALX_WARNINGS_AS_ERRORS=ON ${{matrix.cmake_config}} ..
+        if [ ${{ runner.os }} == 'Linux' ]; then
+          source ./emsdk_env.sh
+          echo "EMSDK=$EMSDK" >> $GITHUB_ENV
+        else
+          ./emsdk_env.bat
+          echo "EMSDK=$EMSDK" >> $env:GITHUB_ENV
+        fi
+              
+    - name: CMake Generate
+      run: | 
+         if [ ${{ runner.os }} == 'Linux' ]; then
+           cmake -DMATERIALX_BUILD_JS=ON -DMATERIALX_EMSDK_PATH=${{ env.EMSDK }} -DMATERIALX_BUILD_RENDER=OFF -DMATERIALX_BUILD_TESTS=OFF -DMATERIALX_BUILD_GEN_OSL=OFF -DMATERIALX_BUILD_GEN_MDL=OFF -DMATERIALX_BUILD_GEN_OGSXML=OFF -DMATERIALX_BUILD_GEN_OGSFX=OFF -DMATERIALX_BUILD_GEN_ARNOLD=OFF -DMATERIALX_BUILD_VIEWER=OFF -DMATERIALX_WARNINGS_AS_ERRORS=ON ${{matrix.cmake_config}} ..
+         else
+           cmake -DMATERIALX_BUILD_JS=ON -DMATERIALX_EMSDK_PATH=${{ $env:EMSDK }} -DMATERIALX_BUILD_RENDER=OFF -DMATERIALX_BUILD_TESTS=OFF -DMATERIALX_BUILD_GEN_OSL=OFF -DMATERIALX_BUILD_GEN_MDL=OFF -DMATERIALX_BUILD_GEN_OGSXML=OFF -DMATERIALX_BUILD_GEN_OGSFX=OFF -DMATERIALX_BUILD_GEN_ARNOLD=OFF -DMATERIALX_BUILD_VIEWER=OFF -DMATERIALX_WARNINGS_AS_ERRORS=ON ${{matrix.cmake_config}} ..
+         fi
       working-directory: javascript_build
 
     - name: CMake Build
