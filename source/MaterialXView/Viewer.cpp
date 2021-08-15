@@ -8,6 +8,7 @@
 #include <MaterialXRender/OiioImageLoader.h>
 #include <MaterialXRender/StbImageLoader.h>
 #include <MaterialXRender/TinyObjLoader.h>
+#include <MaterialXRender/TinyGLTFLoader.h>
 #include <MaterialXRender/Util.h>
 
 #include <MaterialXGenShader/DefaultColorManagementSystem.h>
@@ -335,8 +336,10 @@ void Viewer::initialize()
 
     // Create geometry handler.
     mx::TinyObjLoaderPtr loader = mx::TinyObjLoader::create();
+    mx::TinyGLTFLoaderPtr gltfLoader = mx::TinyGLTFLoader::create();
     _geometryHandler = mx::GeometryHandler::create();
     _geometryHandler->addLoader(loader);
+    _geometryHandler->addLoader(gltfLoader);
     loadMesh(_searchPath.find(_meshFilename));
 
     // Create environment geometry handler.
