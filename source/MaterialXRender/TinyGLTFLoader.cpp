@@ -10,6 +10,7 @@
 #define TINYGLTF_IMPLEMENTATION 1
 #define TINYGLTF_NO_STB_IMAGE 1
 #define TINYGLTF_NO_STB_IMAGE_WRITE 1
+#define TINYGLTF_NO_EXTERNAL_IMAGE 1
 
 #include <MaterialXRender/External/TinyGLTFLoader/tiny_gltf.h>
 
@@ -71,10 +72,10 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
 			gltf_ctx.LoadASCIIFromFile(&model, &err, &warn, input_filename.c_str());
 	}
 
-	if (!warn.empty() || !err.empty() || !ret)
-	{
-		return false;
-	}
+	//if (!warn.empty() || !err.empty() || !ret)
+	//{
+	//	return false;
+	//}
 
     // Load model 
     // For each gltf mesh a new mesh is created
