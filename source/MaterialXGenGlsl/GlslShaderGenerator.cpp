@@ -660,7 +660,7 @@ void GlslShaderGenerator::emitFunctionDefinitions(const ShaderGraph& graph, GenC
 BEGIN_SHADER_STAGE(stage, Stage::PIXEL)
 
     // Emit Light functions if requested
-    if (context.getOptions().hwMaxActiveLightSources > 0)
+    if (requiresLighting(graph) && context.getOptions().hwMaxActiveLightSources > 0)
     {
         // For surface shaders we need light shaders
         if (graph.hasClassification(ShaderNode::Classification::SHADER | ShaderNode::Classification::SURFACE))
