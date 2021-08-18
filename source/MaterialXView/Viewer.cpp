@@ -591,7 +591,8 @@ void Viewer::createLoadMeshInterface(Widget* parent, const std::string& label)
     meshButton->setCallback([this]()
     {
         mProcessEvents = false;
-        std::string filename = ng::file_dialog({ { "obj", "Wavefront OBJ" } }, false);
+        std::string filename = ng::file_dialog({ { "obj", "Wavefront OBJ" },
+            { "gltf", "GLTF ASCII" }, { "glb", "GLTF Binary"} }, false);
         if (!filename.empty())
         {
             loadMesh(filename);

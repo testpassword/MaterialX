@@ -15,6 +15,7 @@
 #include <MaterialXRender/External/TinyGLTFLoader/tiny_gltf.h>
 
 #include <iostream>
+#include <algorithm>
 
 namespace MaterialX
 {
@@ -144,6 +145,9 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
 	//	return false;
 	//}
 
+    Vector3 boxMin = { MAX_FLOAT, MAX_FLOAT, MAX_FLOAT };
+    Vector3 boxMax = { -MAX_FLOAT, -MAX_FLOAT, -MAX_FLOAT };
+
     // Load model 
     // For each gltf mesh a new mesh is created
     // A MeshStream == buffer view for an attribute + associated data.
@@ -177,16 +181,16 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                 MeshPartitionPtr part = MeshPartition::create();
                 size_t faceCount = indexCount / FACE_VERTEX_COUNT;
                 part->setFaceCount(faceCount);
-                //part->setIdentifier(); - What should this be called ?
+                part->setIdentifier(gMesh.name); 
                 MeshIndexBuffer& indices = part->getIndices();
                 indices.resize(indexCount);
                 size_t startLocation = gaccessor.byteOffset;
                 size_t byteStride = gaccessor.ByteStride(gBufferView);
                 std::cout << "*** Indexing: {\n";
-				for (size_t i = 0; i < indexCount; i++)
+                for (size_t i = 0; i < indexCount; i++)
                 {
                     size_t offset = startLocation + (i * byteStride);
-                    uint32_t bufferIndex = VALUE_AS_UINT32(gaccessor.componentType, &(gBuffer.data[offset]) );
+                    uint32_t bufferIndex = VALUE_AS_UINT32(gaccessor.componentType, &(gBuffer.data[offset]));
                     indices[i] = bufferIndex;
                     std::cout << "[" + std::to_string(i) + "] = " + std::to_string(bufferIndex) + "\n";
                 }
@@ -201,11 +205,10 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                 const tinygltf::Accessor& gAccessor = model.accessors[gattrib.second];
                 const tinygltf::BufferView& gBufferView = model.bufferViews[gAccessor.bufferView];
                 const tinygltf::Buffer& gBuffer = model.buffers[gBufferView.buffer];
-                //size_t startLocation = gAccessor.byteOffset;
                 size_t byteStride = gAccessor.ByteStride(gBufferView);
-                //size_t byteStride = ComponentTypeByteSize(gAccessor.componentType);
                 size_t floatStride = byteStride / sizeof(float);
-                size_t byteOffset = gAccessor.byteOffset;
+
+                size_t byteOffset = gBufferView.byteOffset;
                 size_t startLocation = byteOffset / sizeof(float);
 
                 unsigned int vectorSize = 3;
@@ -220,9 +223,9 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
 
                 std::cout << "** READ ATTRIB: " << gattrib.first <<  
                     " from buffer: " << std::to_string(gBufferView.buffer) << std::endl;
-                std::cout << "-- ATTR-START-LOC: " << std::to_string(startLocation) << std::endl;
-                std::cout << "-- ATTR-STRIDE: " << std::to_string(floatStride) << std::endl;
-                std::cout << "-- ATTR-VECSIZE: " << std::to_string(vectorSize) << std::endl;
+                std::cout << "-- Buffer start offset: " << std::to_string(startLocation) << std::endl;
+                std::cout << "-- Float stride: " << std::to_string(floatStride) << std::endl;
+                std::cout << "-- Vector size: " << std::to_string(vectorSize) << std::endl;
 
                 if (gattrib.first.compare("POSITION") == 0)
                 {
@@ -231,23 +234,27 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
 
                     // Resize data and get pointer to data as float. 
                     size_t dataCount = gAccessor.count;
-                    buffer.resize(dataCount* vectorSize);
-                    float* floatPointer = (float*)&(gBuffer.data[0]);
-                    
-                    // Jump to start of data
-                    floatPointer += startLocation;
+                    buffer.resize(dataCount * vectorSize);
+
+                    float* floatPointer = (float*)&(gBuffer.data[byteOffset]);
                     std::cout << "{\n";
                     for (size_t i = 0; i < dataCount; i++)
                     {
                         // Jump to start of vector
-                        floatPointer += i * floatStride;
+                        floatPointer += floatStride;
+                        std::cout << "[" + std::to_string(i) + "] = { ";
                         for (size_t v = 0; v < vectorSize; v++)
                         {
                             // Jump to component in vector and save
                             float bufferData = *(floatPointer + v);
                             buffer[i] = bufferData;
-                            std::cout << "[" + std::to_string(i) + "] = " + std::to_string(bufferData) + "\n";
+                            std::cout << std::to_string(bufferData) + " ";
+
+                            // Update bounds.
+                            boxMin[v] = std::min(bufferData, boxMin[v]);
+                            boxMax[v] = std::max(bufferData, boxMax[v]);
                         }
+                        std::cout << " }" << std::endl;
                     }
                     std::cout << "}\n";
                 }
@@ -261,22 +268,22 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                     // Resize data and get pointer to data as float. 
                     size_t dataCount = gAccessor.count;
                     buffer.resize(dataCount * vectorSize);
-                    float* floatPointer = (float*)&(gBuffer.data[0]);
 
-                    // Jump to start of data
-                    floatPointer += startLocation;
+                    float* floatPointer = (float*)&(gBuffer.data[byteOffset]);
                     std::cout << "{\n";
                     for (size_t i = 0; i < dataCount; i++)
                     {
                         // Jump to start of vector
-                        floatPointer += i * floatStride;
-                        for (size_t v = 0; v < vectorSize; v++)
+                        floatPointer += floatStride;
+                        std::cout << "[" + std::to_string(i) + "] = { ";
+						for (size_t v = 0; v < vectorSize; v++)
                         {
                             // Jump to component in vector and save
                             float bufferData = *(floatPointer + v);
                             buffer[i] = bufferData;
-                            std::cout << "[" + std::to_string(i) + "] = " + std::to_string(bufferData) + "\n";
+                            std::cout << std::to_string(bufferData) + " ";
                         }
+                        std::cout << " }" << std::endl;
                     }
                     std::cout << "}\n";
                 }
@@ -293,23 +300,21 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                     // Resize data and get pointer to data as float. 
                     size_t dataCount = gAccessor.count;
                     buffer.resize(dataCount* vectorSize);
-                    float* floatPointer = (float*)&(gBuffer.data[0]);
 
-                    // Jump to start of data
-                    floatPointer += startLocation;
+                    float* floatPointer = (float*)&(gBuffer.data[byteOffset]);
                     std::cout << "{\n";
                     for (size_t i = 0; i < dataCount; i++)
                     {
-                        // Jump to start of vector
-                        floatPointer += i * floatStride;
+                        std::cout << "[" + std::to_string(i) + "] = { ";
                         for (size_t v = 0; v < vectorSize; v++)
                         {
                             // Jump to component in vector and save
-                            float bufferData = *(floatPointer + v);
+                            float bufferData = *floatPointer;
                             buffer[i] = bufferData;
-                            std::cout << "[" + std::to_string(i) + "][" + std::to_string(v) +
-                                "] = " + std::to_string(bufferData) + "\n";
+                            std::cout << std::to_string(bufferData) + " ";
+                            floatPointer++;
                         }
+                        std::cout << " }" << std::endl;
                     }
                     std::cout << "}\n";
                 }
@@ -322,24 +327,27 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
 
                     // Resize data and get pointer to data as float. 
                     size_t dataCount = gAccessor.count;
+                    if (vectorSize > 3)
+                    {
+                        vectorSize = 3;
+                    }
                     buffer.resize(dataCount * vectorSize);
-                    float* floatPointer = (float*)&(gBuffer.data[0]);
 
-                    // Jump to start of data
-                    floatPointer += startLocation;
+                    float* floatPointer = (float*)&(gBuffer.data[byteOffset]);
                     std::cout << "{\n";
                     for (size_t i = 0; i < dataCount; i++)
                     {
                         // Jump to start of vector
-                        floatPointer += i * floatStride;
+                        floatPointer += floatStride;
+                        std::cout << "[" + std::to_string(i) + "] = { ";
                         for (size_t v = 0; v < vectorSize; v++)
                         {
                             // Jump to component in vector and save
                             float bufferData = *(floatPointer + v);
                             buffer[i] = bufferData;
-                            std::cout << "[" + std::to_string(i) + "]["+ std::to_string(v) +
-                                "] = " + std::to_string(bufferData) + "\n";
+                            std::cout << std::to_string(bufferData) + " ";
                         }
+                        std::cout << " }" << std::endl;
                     }
                     std::cout << "}\n";
                 }
@@ -369,8 +377,6 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
 
         // Assign properties to mesh.
         mesh->setVertexCount(positionStream->getData().size() / MeshStream::STRIDE_3D);
-        Vector3 boxMin = { MAX_FLOAT, MAX_FLOAT, MAX_FLOAT };
-        Vector3 boxMax = { -MAX_FLOAT, -MAX_FLOAT, -MAX_FLOAT };
         mesh->setMinimumBounds(boxMin);
         mesh->setMaximumBounds(boxMax);
         Vector3 sphereCenter = (boxMax + boxMin) * 0.5;
@@ -378,86 +384,6 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
         mesh->setSphereRadius((sphereCenter - boxMin).getMagnitude());
     }
 	return true;
-#if 0    
- 
- 
-    VertexIndexMap vertexIndexMap;
-    uint32_t nextVertexIndex = 0;
-    bool normalsFound = false;
-    for (const tinyobj::shape_t& shape : shapes)
-    {
-        size_t indexCount = shape.mesh.indices.size();
-        if (indexCount == 0)
-        {
-            continue;
-        }
-        size_t faceCount = indexCount / FACE_VERTEX_COUNT;
-
-        MeshPartitionPtr part = MeshPartition::create();
-        part->setIdentifier(shape.name);
-        part->setFaceCount(faceCount);
-        mesh->addPartition(part);
-
-        MeshIndexBuffer& indices = part->getIndices();
-        indices.resize(indexCount);
-
-        for (size_t i = 0; i < shape.mesh.indices.size(); i++)
-        {
-            const tinyobj::index_t& indexObj = shape.mesh.indices[i];
-
-            // Read vertex components.
-            Vector3 position, normal;
-            Vector2 texcoord;
-            for (unsigned int k = 0; k < MeshStream::STRIDE_3D; k++)
-            {
-                position[k] = attrib.vertices[indexObj.vertex_index * MeshStream::STRIDE_3D + k];
-                if (indexObj.normal_index >= 0)
-                {
-                    normal[k] = attrib.normals[indexObj.normal_index * MeshStream::STRIDE_3D + k];
-                    normalsFound = true;
-                }
-                if (indexObj.texcoord_index >= 0 && k < MeshStream::STRIDE_2D)
-                {
-                    texcoord[k] = attrib.texcoords[indexObj.texcoord_index * MeshStream::STRIDE_2D + k];
-                }
-            }
-
-            // Check for duplicate vertices.
-            VertexVector vec(position, normal, texcoord);
-            VertexIndexMap::iterator it = vertexIndexMap.find(vec);
-            if (it != vertexIndexMap.end())
-            {
-                indices[i] = it->second;
-                continue;
-            }
-            vertexIndexMap[vec] = nextVertexIndex;
-
-            // Store vertex components.
-            for (unsigned int k = 0; k < MeshStream::STRIDE_3D; k++)
-            {
-                positionStream->getData().push_back(position[k]);
-                normalStream->getData().push_back(normal[k]);
-                if (k < MeshStream::STRIDE_2D)
-                {
-                    texcoordStream->getData().push_back(texcoord[k]);
-                }
-
-                // Update bounds.
-                boxMin[k] = std::min(position[k], boxMin[k]);
-                boxMax[k] = std::max(position[k], boxMax[k]);
-            }
-
-            // Store index data.
-            indices[i] = nextVertexIndex++;
-        }
-    }
-
-    // Generate normals if needed.
-    if (!normalsFound)
-    {
-        normalStream = mesh->generateNormals(positionStream);
-    }   
-#endif
 }
 
 } // namespace MaterialX
