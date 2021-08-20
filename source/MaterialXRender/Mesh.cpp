@@ -186,7 +186,7 @@ void Mesh::mergePartitions()
 void Mesh::splitByUdims()
 {
     MeshStreamPtr texcoords = getStream(MeshStream::TEXCOORD_ATTRIBUTE, 0);
-    if (!texcoords)
+    if (!texcoords || texcoords->getData().empty())
     {
         return;
     }

@@ -308,20 +308,22 @@ void GlslProgram::bindAttribute(const GlslProgram::InputMap& inputs, MeshPtr mes
     for (const auto& input : inputs)
     {
         int location = input.second->location;
-        unsigned int index = input.second->value ? input.second->value->asA<int>() : 0;
+        //unsigned int index = input.second->value ? input.second->value->asA<int>() : 0;
 
         unsigned int stride = 0;
         MeshStreamPtr stream = mesh->getStream(input.first);
         if (!stream)
         {
-            throw ExceptionRenderError("Geometry buffer could not be retrieved for binding: " + input.first + ". Index: " + std::to_string(index));
+            continue;
+            //throw ExceptionRenderError("Geometry buffer could not be retrieved for binding: " + input.first + ". Index: " + std::to_string(index));
         }
         MeshFloatBuffer& attributeData = stream->getData();
         stride = stream->getStride();
 
         if (attributeData.empty() || (stride == 0))
         {
-            throw ExceptionRenderError("Geometry buffer could not be retrieved for binding: " + input.first + ". Index: " + std::to_string(index));
+            continue;
+            //throw ExceptionRenderError("Geometry buffer could not be retrieved for binding: " + input.first + ". Index: " + std::to_string(index));
         }
 
         if (_attributeBufferIds.find(input.first) == _attributeBufferIds.end())
