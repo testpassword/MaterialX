@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <stack>
 
 namespace MaterialX
 {
@@ -45,6 +46,91 @@ uint32_t VALUE_AS_UINT32(int type, const unsigned char* value)
     default:
         return 0;
     }
+}
+
+using MeshMatrixList = std::unordered_map<size_t, Matrix44>;
+// Use to accumulate transforms as we travers
+using Matrix44Stack = std::stack<Matrix44>;
+
+const float PI = std::acos(-1.0f);
+
+void computeMeshMatrices(MeshMatrixList& meshMatrices, tinygltf::Model& model, const tinygltf::Node& node,
+                         Matrix44Stack& matrixStack, unsigned int debugLevel)
+{
+    std::string indent;
+    for (size_t i = 0; i < matrixStack.size(); i++)
+    {
+        indent += "\t";
+    }
+    if (debugLevel > 0)
+        std::cout << indent + "Visit node: " << node.name << std::endl;
+
+    Matrix44 matrix = Matrix44::IDENTITY;
+    if (node.matrix.size() == 16)
+    {
+        matrix = Matrix44(
+            (float)node.matrix[0], (float)node.matrix[1], (float)node.matrix[2], (float)node.matrix[3],
+            (float)node.matrix[4], (float)node.matrix[5], (float)node.matrix[6], (float)node.matrix[7],
+            (float)node.matrix[8], (float)node.matrix[9], (float)node.matrix[10], (float)node.matrix[11],
+            (float)node.matrix[12], (float)node.matrix[13], (float)node.matrix[14], (float)node.matrix[15]);
+    }
+    else
+    {
+        if (node.scale.size() == 3) {
+            Matrix44 scale = matrix.createScale({ (float)node.scale[0], (float)node.scale[1], (float)node.scale[2] });
+            matrix *= scale;
+        }
+
+        if (node.rotation.size() == 4)
+        {
+            Matrix44 rotation = Matrix44::createRotationZ((float)node.rotation[2] / 180.0f * PI) *
+                Matrix44::createRotationY((float)node.rotation[1] / 180.0f * PI) *
+                Matrix44::createRotationX((float)node.rotation[0] / 180.0f * PI);
+            matrix *= rotation;
+        }
+
+        if (node.translation.size() == 3)
+        {
+            Vector3 transVec = { (float)node.translation[0], (float)node.translation[1], (float)node.translation[2] };
+            Matrix44 translation = matrix.createTranslation(transVec);
+            translation *= translation;
+        }
+    }
+    if (matrixStack.size())
+    {
+        matrixStack.push(matrixStack.top() * matrix);
+    }
+    else
+    {
+        matrixStack.push(matrix);
+    }
+
+    if (node.mesh > -1 && (node.mesh < model.meshes.size()))
+    {
+        tinygltf::Mesh mesh = model.meshes[node.mesh];
+        Matrix44 meshMatrix = matrixStack.top();
+        meshMatrices[node.mesh] = meshMatrix.getTranspose();
+        if (debugLevel > 0)
+        {
+            std::cout << indent + "Set Mesh[" + std::to_string(node.mesh) + "] = " <<
+                mesh.name << ".Matrix : \n";
+            for (size_t m = 0; m < 4; m++)
+            {
+                std::cout << indent;
+                for (size_t n = 0; n < 4; n++)
+                {
+                    std::cout << std::to_string(meshMatrix[m][n]) + " ";
+                }
+                std::cout << std::endl;
+            }
+        }
+    }
+    for (auto childNodeIndex: node.children)
+    {
+        computeMeshMatrices(meshMatrices, model, model.nodes[childNodeIndex], matrixStack, debugLevel);
+    }
+    
+    matrixStack.pop();
 }
 
 } // anonymous namespace
@@ -84,17 +170,41 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
 	    return false;
 	}
 
+    if (model.scenes.size() == 0)
+    {
+        return false;
+    }
+
     Vector3 boxMin = { MAX_FLOAT, MAX_FLOAT, MAX_FLOAT };
     Vector3 boxMax = { -MAX_FLOAT, -MAX_FLOAT, -MAX_FLOAT };
+
+    MeshMatrixList meshMatrices;
+    Matrix44Stack matrixStack;
+    matrixStack.push(Matrix44::IDENTITY);
+    int scene_to_display = model.defaultScene > -1 ? model.defaultScene : 0;
+    const tinygltf::Scene& scene = model.scenes[scene_to_display];
+    for (size_t i = 0; i < scene.nodes.size(); i++) 
+    {
+        computeMeshMatrices(meshMatrices, model, model.nodes[scene.nodes[i]], matrixStack, _debugLevel);
+    }
 
     // Load model 
     // For each gltf mesh a new mesh is created
     // A MeshStream == buffer view for an attribute + associated data.
     // A MeshPartition == buffer view for indexing + associated data.
-    for (auto gMesh : model.meshes)
+    for (size_t m=0; m< model.meshes.size(); m++)
     {
+        tinygltf::Mesh& gMesh = model.meshes[m];
+
         // Create new mesh
-        MeshPtr mesh = Mesh::create(gMesh.name);
+        std::string meshName = gMesh.name;
+        if (meshName.empty())
+        {
+            meshName = "generatedName_" + std::to_string(m);
+        }
+        MeshPtr mesh = Mesh::create(meshName);
+        if (_debugLevel > 0)
+            std::cout << "Translate mesh: " << meshName << std::endl;
         meshList.push_back(mesh);
         mesh->setSourceUri(filePath);
 
@@ -120,7 +230,7 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                 MeshPartitionPtr part = MeshPartition::create();
                 size_t faceCount = indexCount / FACE_VERTEX_COUNT;
                 part->setFaceCount(faceCount);
-                part->setIdentifier(gMesh.name); 
+                part->setIdentifier(meshName); 
                 MeshIndexBuffer& indices = part->getIndices();
                 size_t startLocation = gBufferView.byteOffset + gaccessor.byteOffset;
                 size_t byteStride = gaccessor.ByteStride(gBufferView);
@@ -152,14 +262,14 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                     if (_debugLevel > 0)
                     {
                         std::cout << "Skip unsupported prim type: " << indexingType << " on mesh" <<
-                            gMesh.name << std::endl;
+                            meshName << std::endl;
                     }
                     continue;
                 }
 
                 if (_debugLevel > 0)
                 {
-                    std::cout << "*** Read mesh: " << gMesh.name << std::endl;
+                    std::cout << "*** Read mesh: " << meshName << std::endl;
                     std::cout << "Index start byte offset: " << std::to_string(startLocation) << std::endl;
                     std::cout << "-- Index byte stride: " << std::to_string(byteStride) << std::endl;
                     if (_debugLevel > 1)
@@ -212,80 +322,21 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                     std::cout << "-- Float stride: " << std::to_string(floatStride) << std::endl;
                     std::cout << "-- Vector size: " << std::to_string(vectorSize) << std::endl;
                 }
-                if (gattrib.first.compare("POSITION") == 0)
+
+                bool isPositionStream = gattrib.first.compare("POSITION") == 0;
+                MeshStreamPtr geomStream = nullptr;
+                if (isPositionStream)
                 {
                     if (!positionStream)
                     {
                         positionStream = MeshStream::create("i_" + MeshStream::POSITION_ATTRIBUTE, MeshStream::POSITION_ATTRIBUTE, 0);
                     }
-
-                    // Fill in stream 
-                    MeshFloatBuffer& buffer = positionStream->getData();
-
-                    // Resize data and get pointer to data as float. 
-                    size_t dataCount = gAccessor.count;
-
-                    const unsigned char* charPointer = &(gBuffer.data[0]);
-                    charPointer += byteOffset;
-                    float* floatPointer = (float*)charPointer;
-                    if (_debugLevel > 1)
-                        std::cout << "{\n";
-                    for (size_t i = 0; i < dataCount; i++)
-                    {
-                        // Copy the vector over
-                        if (_debugLevel > 1)
-                            std::cout << "[" + std::to_string(i) + "] = { ";
-                        for (size_t v = 0; v < vectorSize; v++)
-                        {
-                            float bufferData = *(floatPointer + v);
-                            buffer.push_back(bufferData);
-                            if (_debugLevel > 1)
-                                std::cout << std::to_string(buffer[i]) + " ";
-
-                            // Update bounds.
-                            boxMin[v] = std::min(bufferData, boxMin[v]);
-                            boxMax[v] = std::max(bufferData, boxMax[v]);
-                        }
-                        if (_debugLevel > 1)
-                            std::cout << " }" << std::endl;
-
-                        // Jump to next vector
-                        floatPointer += floatStride;
-                    }
-                    if (_debugLevel > 1)
-                        std::cout << "}\n";
+                    geomStream = positionStream;
                 }
                 else if (gattrib.first.compare("NORMAL") == 0)
                 {
                     normalStream = MeshStream::create("i_" + MeshStream::NORMAL_ATTRIBUTE, MeshStream::NORMAL_ATTRIBUTE, 0);
-
-                    // Fill in normal stream 
-                    MeshFloatBuffer& buffer = normalStream->getData();
-
-                    // Resize data and get pointer to data as float. 
-                    size_t dataCount = gAccessor.count;
-                    //buffer.resize(dataCount * vectorSize);
-
-                    const unsigned char* charPointer = &(gBuffer.data[0]);
-                    charPointer += byteOffset;
-                    float* floatPointer = (float*)charPointer;
-                    //std::cout << "{\n";
-                    for (size_t i = 0; i < dataCount; i++)
-                    {
-                        //std::cout << "[" + std::to_string(i) + "] = { ";
-						for (size_t v = 0; v < vectorSize; v++)
-                        {
-                            // Jump to component in vector and save
-                            float bufferData = *(floatPointer + v);
-                            buffer.push_back(bufferData);
-                            //std::cout << std::to_string(bufferData) + " ";
-                        }
-                        //std::cout << " }" << std::endl;
-
-                        // Jump to start of vector
-                        floatPointer += floatStride;
-                    }
-                    //std::cout << "}\n";
+                    geomStream = normalStream;
                 }
                 else if (gattrib.first.compare("TEXCOORD_0") == 0)
                 {
@@ -298,70 +349,76 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                     {
                         texcoordStream->setStride(MeshStream::STRIDE_2D);
                     }
-
-                    // Fill in texture coordinate stream 
-                    MeshFloatBuffer& buffer = texcoordStream->getData();
-
-                    // Resize data and get pointer to data as float. 
-                    size_t dataCount = gAccessor.count;
-                    //buffer.resize(dataCount* vectorSize);
-
-                    const unsigned char* charPointer = &(gBuffer.data[0]);
-                    charPointer += byteOffset;
-                    float* floatPointer = (float*)charPointer;
-                    //std::cout << "{\n";
-                    for (size_t i = 0; i < dataCount; i++)
-                    {
-                        //std::cout << "[" + std::to_string(i) + "] = { ";
-                        for (size_t v = 0; v < vectorSize; v++)
-                        {
-                            // Jump to next vector 
-                            float bufferData = *( floatPointer + v);
-                            buffer.push_back(bufferData);
-                            //std::cout << std::to_string(bufferData) + " ";
-                        }
-                        //std::cout << " }" << std::endl;
-
-                        // Jump to start of vector
-                        floatPointer += floatStride;
-                    }
-                    //std::cout << "}\n";
+                    geomStream = texcoordStream;
                 }
                 else if (gattrib.first.compare("TANGENT") == 0)
                 {
                     tangentStream = MeshStream::create("i_" + MeshStream::TANGENT_ATTRIBUTE, MeshStream::NORMAL_ATTRIBUTE, 0);
+                    geomStream = tangentStream;
 
-                    // Fill in tangent stream 
-                    MeshFloatBuffer& buffer = tangentStream->getData();
-
-                    // Resize data and get pointer to data as float. 
-                    size_t dataCount = gAccessor.count;
+                    // 4-channel tangents are not supported. Drop the 4th coordinate for now
                     if (vectorSize > 3)
                     {
                         vectorSize = 3;
                     }
-                    //buffer.resize(dataCount * vectorSize);
+                }
+                if (geomStream)
+                {
+                    // Fill in stream 
+                    MeshFloatBuffer& buffer = geomStream->getData();
 
-                    const unsigned char* charPointer = &(gBuffer.data[0]);
-                    charPointer += byteOffset;
-                    float* floatPointer = (float*)charPointer;
-                    //std::cout << "{\n";
+                    size_t dataCount = gAccessor.count;
+                    const unsigned char* charPointer = &(gBuffer.data[byteOffset]);
+                    float* floatPointer = const_cast<float *>(reinterpret_cast<const float*>(charPointer));
+                    if (_debugLevel > 1)
+                        std::cout << "{\n";
                     for (size_t i = 0; i < dataCount; i++)
                     {
-                        //std::cout << "[" + std::to_string(i) + "] = { ";
-                        for (size_t v = 0; v < vectorSize; v++)
+                        // Copy the vector over
+                        if (_debugLevel > 1)
+                            std::cout << "[" + std::to_string(i) + "] = { ";
+
+                        if (!isPositionStream)
                         {
-                            // Jump to component in vector and save
-                            float bufferData = *(floatPointer + v);
-                            buffer.push_back(bufferData);
-                            //std::cout << std::to_string(bufferData) + " ";
+                            for (size_t v = 0; v < vectorSize; v++)
+                            {
+                                float bufferData = *(floatPointer + v);
+                                buffer.push_back(bufferData);
+                                if (_debugLevel > 1)
+                                    std::cout << std::to_string(buffer[i]) + " ";
+                            }
                         }
-                        //std::cout << " }" << std::endl;
+                        if (isPositionStream)
+                        {
+                            Vector3 position;
+                            for (size_t v = 0; v < 3; v++)
+                            {
+                                position[v] = *(floatPointer + v);
+                            }
+
+                            // Transform matrix if needed
+                            if (meshMatrices.find(m) != meshMatrices.end())
+                            {
+                                Matrix44 meshMatrix = meshMatrices[m];
+                                position = meshMatrix.transformPoint(position);
+                            }
+
+                            // Update bounds.
+                            for (size_t v = 0; v < 3; v++)
+                            {
+                                buffer.push_back(position[v]);
+                                boxMin[v] = std::min(position[v], boxMin[v]);
+                                boxMax[v] = std::max(position[v], boxMax[v]);
+                            }
+                        }
+                        if (_debugLevel > 1)
+                            std::cout << " }" << std::endl;
 
                         // Jump to next vector
                         floatPointer += floatStride;
                     }
-                    //std::cout << "}\n";
+                    if (_debugLevel > 1)
+                        std::cout << "}\n";
                 }
             }
         }
