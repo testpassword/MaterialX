@@ -47,48 +47,6 @@ uint32_t VALUE_AS_UINT32(int type, const unsigned char* value)
     }
 }
 
-float VALUE_AS_FLOAT(int type, const unsigned char* value)
-{
-    switch (type)
-    {
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-    case TINYGLTF_COMPONENT_TYPE_BYTE:
-        return static_cast<float>(*value);
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-    case TINYGLTF_COMPONENT_TYPE_SHORT:
-        return static_cast<float>(*(short*)value);
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-    case TINYGLTF_COMPONENT_TYPE_INT:
-        return static_cast<float>(*(int*)value);
-    case TINYGLTF_COMPONENT_TYPE_FLOAT:
-        return static_cast<float>(*(int*)value);
-    case TINYGLTF_COMPONENT_TYPE_DOUBLE:
-        return static_cast<float>(*(double*)value);
-    default:
-        return 0;
-    }
-}
-
-size_t ComponentTypeByteSize(int type) {
-    switch (type) {
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-    case TINYGLTF_COMPONENT_TYPE_BYTE:
-        return sizeof(char);
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-    case TINYGLTF_COMPONENT_TYPE_SHORT:
-        return sizeof(short);
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-    case TINYGLTF_COMPONENT_TYPE_INT:
-        return sizeof(int);
-    case TINYGLTF_COMPONENT_TYPE_FLOAT:
-        return sizeof(float);
-    case TINYGLTF_COMPONENT_TYPE_DOUBLE:
-        return sizeof(double);
-    default:
-        return 0;
-    }
-}
-
 } // anonymous namespace
 
 bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
@@ -164,7 +122,6 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                 part->setFaceCount(faceCount);
                 part->setIdentifier(gMesh.name); 
                 MeshIndexBuffer& indices = part->getIndices();
-                //indices.resize(indexCount);
                 size_t startLocation = gBufferView.byteOffset + gaccessor.byteOffset;
                 size_t byteStride = gaccessor.ByteStride(gBufferView);
 
@@ -192,23 +149,32 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                 }
                 if (!isTriangleList)
                 {
-                    std::cout << "Skip unsupported prim type: " << indexingType << " on mesh" <<
-                        gMesh.name << std::endl;
+                    if (_debugLevel > 0)
+                    {
+                        std::cout << "Skip unsupported prim type: " << indexingType << " on mesh" <<
+                            gMesh.name << std::endl;
+                    }
                     continue;
                 }
 
-                std::cout << "*** Read mesh: " << gMesh.name << std::endl;
-                std::cout << "Index start byte offset: " << std::to_string(startLocation) << std::endl;
-                std::cout << "-- Index byte stride: " << std::to_string(byteStride) << std::endl;
-                //std::cout << "*** Index values: {\n";
+                if (_debugLevel > 0)
+                {
+                    std::cout << "*** Read mesh: " << gMesh.name << std::endl;
+                    std::cout << "Index start byte offset: " << std::to_string(startLocation) << std::endl;
+                    std::cout << "-- Index byte stride: " << std::to_string(byteStride) << std::endl;
+                    if (_debugLevel > 1)
+                        std::cout << "{\n";
+                }
                 for (size_t i = 0; i < indexCount; i++)
                 {
                     size_t offset = startLocation + (i * byteStride);
                     uint32_t bufferIndex = VALUE_AS_UINT32(gaccessor.componentType, &(gBuffer.data[offset]));
                     indices.push_back(bufferIndex);
-                    //std::cout << "[" + std::to_string(i) + "] = " + std::to_string(bufferIndex) + "\n";
+                    if (_debugLevel > 1)
+                        std::cout << "[" + std::to_string(i) + "] = " + std::to_string(bufferIndex) + "\n";
                 }
-                //std::cout << "}\n";
+                if (_debugLevel > 1)
+                    std::cout << "}\n";
                 mesh->addPartition(part);
             }
 
@@ -236,7 +202,7 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                     vectorSize = 4;
                 }
 
-                if (gattrib.first.compare("POSITION") == 0)
+                if (_debugLevel > 0)
                 {
                     std::cout << "** READ ATTRIB: " << gattrib.first <<
                         " from buffer: " << std::to_string(gBufferView.buffer) << std::endl;
@@ -258,32 +224,36 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
 
                     // Resize data and get pointer to data as float. 
                     size_t dataCount = gAccessor.count;
-                    //buffer.resize(dataCount * vectorSize);
 
                     const unsigned char* charPointer = &(gBuffer.data[0]);
                     charPointer += byteOffset;
                     float* floatPointer = (float*)charPointer;
-                    //std::cout << "{\n";
+                    if (_debugLevel > 1)
+                        std::cout << "{\n";
                     for (size_t i = 0; i < dataCount; i++)
                     {
                         // Copy the vector over
-                        //std::cout << "[" + std::to_string(i) + "] = { ";
+                        if (_debugLevel > 1)
+                            std::cout << "[" + std::to_string(i) + "] = { ";
                         for (size_t v = 0; v < vectorSize; v++)
                         {
                             float bufferData = *(floatPointer + v);
                             buffer.push_back(bufferData);
-                            //std::cout << std::to_string(buffer[i]) + " ";
+                            if (_debugLevel > 1)
+                                std::cout << std::to_string(buffer[i]) + " ";
 
                             // Update bounds.
                             boxMin[v] = std::min(bufferData, boxMin[v]);
                             boxMax[v] = std::max(bufferData, boxMax[v]);
                         }
-                        //std::cout << " }" << std::endl;
+                        if (_debugLevel > 1)
+                            std::cout << " }" << std::endl;
 
                         // Jump to next vector
                         floatPointer += floatStride;
                     }
-                    //std::cout << "}\n";
+                    if (_debugLevel > 1)
+                        std::cout << "}\n";
                 }
                 else if (gattrib.first.compare("NORMAL") == 0)
                 {

@@ -8,7 +8,9 @@
 #include <MaterialXRender/OiioImageLoader.h>
 #include <MaterialXRender/StbImageLoader.h>
 #include <MaterialXRender/TinyObjLoader.h>
+#if defined(MATERIALX_BUILD_GLTF)
 #include <MaterialXRender/TinyGLTFLoader.h>
+#endif
 #include <MaterialXRender/Util.h>
 
 #include <MaterialXGenShader/DefaultColorManagementSystem.h>
@@ -336,10 +338,12 @@ void Viewer::initialize()
 
     // Create geometry handler.
     mx::TinyObjLoaderPtr loader = mx::TinyObjLoader::create();
-    mx::TinyGLTFLoaderPtr gltfLoader = mx::TinyGLTFLoader::create();
     _geometryHandler = mx::GeometryHandler::create();
     _geometryHandler->addLoader(loader);
+#if defined(MATERIALX_BUILD_GLTF)
+    mx::TinyGLTFLoaderPtr gltfLoader = mx::TinyGLTFLoader::create();
     _geometryHandler->addLoader(gltfLoader);
+#endif
     loadMesh(_searchPath.find(_meshFilename));
 
     // Create environment geometry handler.
@@ -592,7 +596,10 @@ void Viewer::createLoadMeshInterface(Widget* parent, const std::string& label)
     {
         mProcessEvents = false;
         std::string filename = ng::file_dialog({ { "obj", "Wavefront OBJ" },
-            { "gltf", "GLTF ASCII" }, { "glb", "GLTF Binary"} }, false);
+#if defined(MATERIALX_BUILD_GLTF)
+            { "gltf", "GLTF ASCII" }, { "glb", "GLTF Binary"} 
+#endif
+            }, false);
         if (!filename.empty())
         {
             loadMesh(filename);
@@ -1847,7 +1854,6 @@ void Viewer::renderFrame()
             {
                 if (mesh->getPartition(i) == geom)
                 {
-                    //std::cout << "Bind mesh: " << mesh->getIdentifier() << std::endl;
                     material->bindMesh(mesh);
                     break;
                 }
@@ -1860,7 +1866,6 @@ void Viewer::renderFrame()
         material->bindViewInformation(world, view, proj);
         material->bindLights(_genContext, _lightHandler, _imageHandler, lightingState, shadowState);
         material->bindImages(_imageHandler, _searchPath);
-        //std::cout << "- Bind partition: " << geom->getIdentifier() << std::endl;
         material->drawPartition(geom);
         material->unbindImages(_imageHandler);
         if (material->getShader()->getName() == "__WIRE_SHADER__")

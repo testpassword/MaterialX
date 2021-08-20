@@ -23,6 +23,7 @@ class MX_RENDER_API TinyGLTFLoader : public GeometryLoader
 {
   public:
     TinyGLTFLoader()
+    : _debugLevel(0)
     {
         _extensions = { "glb", "GLB", "gltf", "GLTF" };
     }
@@ -33,6 +34,9 @@ class MX_RENDER_API TinyGLTFLoader : public GeometryLoader
 
     /// Load geometry from file path
     bool load(const FilePath& filePath, MeshList& meshList) override;
+
+private:
+    unsigned int _debugLevel;
 };
 
 } // namespace MaterialX
