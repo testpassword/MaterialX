@@ -164,8 +164,8 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                 part->setFaceCount(faceCount);
                 part->setIdentifier(gMesh.name); 
                 MeshIndexBuffer& indices = part->getIndices();
-                indices.resize(indexCount);
-                size_t startLocation = gBufferView.byteOffset;
+                //indices.resize(indexCount);
+                size_t startLocation = gBufferView.byteOffset + gaccessor.byteOffset;
                 size_t byteStride = gaccessor.ByteStride(gBufferView);
 
                 bool isTriangleList = false;
@@ -197,6 +197,7 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                     continue;
                 }
 
+                std::cout << "*** Read mesh: " << gMesh.name << std::endl;
                 std::cout << "Index start byte offset: " << std::to_string(startLocation) << std::endl;
                 std::cout << "-- Index byte stride: " << std::to_string(byteStride) << std::endl;
                 //std::cout << "*** Index values: {\n";
@@ -204,7 +205,7 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                 {
                     size_t offset = startLocation + (i * byteStride);
                     uint32_t bufferIndex = VALUE_AS_UINT32(gaccessor.componentType, &(gBuffer.data[offset]));
-                    indices[i] = bufferIndex;
+                    indices.push_back(bufferIndex);
                     //std::cout << "[" + std::to_string(i) + "] = " + std::to_string(bufferIndex) + "\n";
                 }
                 //std::cout << "}\n";
@@ -235,14 +236,16 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                     vectorSize = 4;
                 }
 
-                std::cout << "** READ ATTRIB: " << gattrib.first <<  
-                    " from buffer: " << std::to_string(gBufferView.buffer) << std::endl;
-                std::cout << "-- Buffer start byte offset: " << std::to_string(byteOffset) << std::endl;
-                std::cout << "-- Buffer start float offset: " << std::to_string(startLocation) << std::endl;
-                std::cout << "-- Byte stride: " << std::to_string(byteStride) << std::endl;
-                std::cout << "-- Float stride: " << std::to_string(floatStride) << std::endl;
-                std::cout << "-- Vector size: " << std::to_string(vectorSize) << std::endl;
-
+                if (gattrib.first.compare("POSITION") == 0)
+                {
+                    std::cout << "** READ ATTRIB: " << gattrib.first <<
+                        " from buffer: " << std::to_string(gBufferView.buffer) << std::endl;
+                    std::cout << "-- Buffer start byte offset: " << std::to_string(byteOffset) << std::endl;
+                    std::cout << "-- Buffer start float offset: " << std::to_string(startLocation) << std::endl;
+                    std::cout << "-- Byte stride: " << std::to_string(byteStride) << std::endl;
+                    std::cout << "-- Float stride: " << std::to_string(floatStride) << std::endl;
+                    std::cout << "-- Vector size: " << std::to_string(vectorSize) << std::endl;
+                }
                 if (gattrib.first.compare("POSITION") == 0)
                 {
                     if (!positionStream)
