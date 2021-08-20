@@ -1,5 +1,5 @@
 //
-// TM & (c) 2017 Lucasfilm Entertainment Company Ltd. and Lucasfilm Ltd.
+// TM & (c) 2021 Lucasfilm Entertainment Company Ltd. and Lucasfilm Ltd.
 // All rights reserved.  See LICENSE.txt for license.
 //
 
@@ -48,12 +48,15 @@ uint32_t VALUE_AS_UINT32(int type, const unsigned char* value)
     }
 }
 
+// List of transforms which match to model meshes
 using MeshMatrixList = std::unordered_map<size_t, Matrix44>;
-// Use to accumulate transforms as we travers
+// Use to cache object-to-world transforms during traversal. 
 using Matrix44Stack = std::stack<Matrix44>;
 
 const float PI = std::acos(-1.0f);
 
+// Iterate through all levels until meshes are found. For each
+// mesh cache it's object-to-world matrix
 void computeMeshMatrices(MeshMatrixList& meshMatrices, tinygltf::Model& model, const tinygltf::Node& node,
                          Matrix44Stack& matrixStack, unsigned int debugLevel)
 {
@@ -105,6 +108,7 @@ void computeMeshMatrices(MeshMatrixList& meshMatrices, tinygltf::Model& model, c
         matrixStack.push(matrix);
     }
 
+    // Cache the matrix if this is a mesh
     if (node.mesh > -1 && (node.mesh < model.meshes.size()))
     {
         tinygltf::Mesh mesh = model.meshes[node.mesh];
@@ -125,6 +129,8 @@ void computeMeshMatrices(MeshMatrixList& meshMatrices, tinygltf::Model& model, c
             }
         }
     }
+
+    // Iterate over all children.
     for (auto childNodeIndex: node.children)
     {
         computeMeshMatrices(meshMatrices, model, model.nodes[childNodeIndex], matrixStack, debugLevel);
@@ -190,13 +196,13 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
 
     // Load model 
     // For each gltf mesh a new mesh is created
-    // A MeshStream == buffer view for an attribute + associated data.
-    // A MeshPartition == buffer view for indexing + associated data.
+    // - A MeshStream == buffer view for an attribute + associated data.
+    // - A MeshPartition == buffer view for indexing + associated data.
     for (size_t m=0; m< model.meshes.size(); m++)
     {
         tinygltf::Mesh& gMesh = model.meshes[m];
 
-        // Create new mesh
+        // Create new mesh. Generate a name if the mesh does not have one.
         std::string meshName = gMesh.name;
         if (meshName.empty())
         {
@@ -213,11 +219,11 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
         MeshStreamPtr texcoordStream = nullptr;
         MeshStreamPtr tangentStream = nullptr;
 
-        // Scane for primitives on the mesh
+        // Scan primitives on the mesh
         for (tinygltf::Primitive& gPrim : gMesh.primitives)
         {
-            // Get index accessor for the prim. Create a partition
-            // Only support triangle indexing
+            // Get index accessor for the prim and create a partition
+            // Only support triangle indexing for now
             int accessorIndex = gPrim.indices;
             if ((accessorIndex >= 0) &&
                 (gPrim.mode == TINYGLTF_MODE_TRIANGLES))
@@ -231,6 +237,7 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                 size_t faceCount = indexCount / FACE_VERTEX_COUNT;
                 part->setFaceCount(faceCount);
                 part->setIdentifier(meshName); 
+
                 MeshIndexBuffer& indices = part->getIndices();
                 size_t startLocation = gBufferView.byteOffset + gaccessor.byteOffset;
                 size_t byteStride = gaccessor.ByteStride(gBufferView);
@@ -288,6 +295,13 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                 mesh->addPartition(part);
             }
 
+            // Check for any matrix transform for positions
+            Matrix44 positionMatrix = Matrix44::IDENTITY;
+            if (meshMatrices.find(m) != meshMatrices.end())
+            {
+                positionMatrix = meshMatrices[m];
+            }
+
             // Get attributes. Note that bufferViews contain the content descriptioon
             for (auto& gattrib : gPrim.attributes)
             {
@@ -298,6 +312,7 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                 size_t byteStride = gAccessor.ByteStride(gBufferView);
                 size_t floatStride = byteStride / sizeof(float);
 
+                // Make sure to offset by both view and accessor
                 size_t byteOffset = gBufferView.byteOffset + gAccessor.byteOffset;
                 size_t startLocation = byteOffset / sizeof(float);
 
@@ -388,20 +403,12 @@ bool TinyGLTFLoader::load(const FilePath& filePath, MeshList& meshList)
                                     std::cout << std::to_string(buffer[i]) + " ";
                             }
                         }
+
+                        // Transform positions by an appropriate matrix
                         if (isPositionStream)
                         {
-                            Vector3 position;
-                            for (size_t v = 0; v < 3; v++)
-                            {
-                                position[v] = *(floatPointer + v);
-                            }
-
-                            // Transform matrix if needed
-                            if (meshMatrices.find(m) != meshMatrices.end())
-                            {
-                                Matrix44 meshMatrix = meshMatrices[m];
-                                position = meshMatrix.transformPoint(position);
-                            }
+                            Vector3 position(*(floatPointer + 0), *(floatPointer + 1), *(floatPointer + 2));
+                            position = positionMatrix.transformPoint(position);
 
                             // Update bounds.
                             for (size_t v = 0; v < 3; v++)
