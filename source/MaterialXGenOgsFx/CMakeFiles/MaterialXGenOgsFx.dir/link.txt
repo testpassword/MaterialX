@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc ../../lib/libMaterialXGenOgsFx.a CMakeFiles/MaterialXGenOgsFx.dir/MayaGlslPluginShaderGenerator.cpp.o CMakeFiles/MaterialXGenOgsFx.dir/OgsFxShaderGenerator.cpp.o CMakeFiles/MaterialXGenOgsFx.dir/OgsFxSyntax.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib ../../lib/libMaterialXGenOgsFx.a

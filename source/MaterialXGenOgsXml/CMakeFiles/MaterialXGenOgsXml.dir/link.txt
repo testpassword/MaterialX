@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc ../../lib/libMaterialXGenOgsXml.a CMakeFiles/MaterialXGenOgsXml.dir/GlslFragmentGenerator.cpp.o CMakeFiles/MaterialXGenOgsXml.dir/Nodes/SurfaceNodeMaya.cpp.o CMakeFiles/MaterialXGenOgsXml.dir/OgsFragment.cpp.o CMakeFiles/MaterialXGenOgsXml.dir/OgsXmlGenerator.cpp.o CMakeFiles/MaterialXGenOgsXml.dir/__/MaterialXFormat/PugiXML/pugixml.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib ../../lib/libMaterialXGenOgsXml.a

@@ -1,2 +1,0 @@
-# Hashes of file build rules.
-41d12ec7d52cad0d7a64ea4858165457 source/MaterialXView/external/NanoGUI/nanogui_resources.cpp

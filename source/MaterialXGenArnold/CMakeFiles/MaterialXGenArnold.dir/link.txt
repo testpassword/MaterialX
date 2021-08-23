@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc ../../lib/libMaterialXGenArnold.a CMakeFiles/MaterialXGenArnold.dir/ArnoldShaderGenerator.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib ../../lib/libMaterialXGenArnold.a

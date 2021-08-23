@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc ../../lib/libMaterialXFormat.a CMakeFiles/MaterialXFormat.dir/Environ.cpp.o CMakeFiles/MaterialXFormat.dir/File.cpp.o CMakeFiles/MaterialXFormat.dir/PugiXML/pugixml.cpp.o CMakeFiles/MaterialXFormat.dir/Util.cpp.o CMakeFiles/MaterialXFormat.dir/XmlExport.cpp.o CMakeFiles/MaterialXFormat.dir/XmlIo.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib ../../lib/libMaterialXFormat.a

@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc ../../lib/libMaterialXRenderHw.a CMakeFiles/MaterialXRenderHw.dir/SimpleWindowLinux.cpp.o CMakeFiles/MaterialXRenderHw.dir/SimpleWindowMac.cpp.o CMakeFiles/MaterialXRenderHw.dir/SimpleWindowWindows.cpp.o CMakeFiles/MaterialXRenderHw.dir/WindowWrapper.cpp.o CMakeFiles/MaterialXRenderHw.dir/WindowCocoaWrappers.m.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib ../../lib/libMaterialXRenderHw.a
