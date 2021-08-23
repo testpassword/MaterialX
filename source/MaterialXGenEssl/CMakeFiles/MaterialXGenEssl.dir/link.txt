@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc ../../lib/libMaterialXGenEssl.a CMakeFiles/MaterialXGenEssl.dir/EsslShaderGenerator.cpp.o CMakeFiles/MaterialXGenEssl.dir/EsslSyntax.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib ../../lib/libMaterialXGenEssl.a

@@ -28,7 +28,6 @@ export function prepareEnvTexture(texture, capabilities) {
     rgbaTexture.magFilter = THREE.LinearFilter;
     rgbaTexture.generateMipmaps = true;
     rgbaTexture.needsUpdate = true;
-
     return rgbaTexture;
 }
 
@@ -40,7 +39,6 @@ export function prepareEnvTexture(texture, capabilities) {
     const rgbData = texture.image.data;
     const length = (rgbData.length / 3) * 4;
     let rgbaData;
-
     switch (texture.type) {
         case THREE.FloatType:
             rgbaData = new Float32Array(length);
@@ -51,7 +49,6 @@ export function prepareEnvTexture(texture, capabilities) {
         default:
           break;
     }
-
     if (rgbaData) {
         for (let i = 0; i < length / 4; i++) {
             rgbaData[(i * 4) + 0] = rgbData[(i * 3) + 0];
@@ -61,36 +58,26 @@ export function prepareEnvTexture(texture, capabilities) {
         }
         return new THREE.DataTexture(rgbaData, texture.image.width, texture.image.height, THREE.RGBAFormat, texture.type);
     }
-
     return texture;
 }
 
 function fromVector(value, dimension) {
     let outValue;
-    if (value)
-        outValue = value.data();
+    if (value) outValue = value.data();
     else {
         outValue = []; 
-        for(let i = 0; i < dimension; ++i)
-            outValue.push(0.0);
+        for (let i = 0; i < dimension; ++i) outValue.push(0.0);
     }
-
     return outValue;
 }
 
 function fromMatrix(matrix, dimension) {
     let vec = [];
-    if (matrix) {
-        for (let i = 0; i < matrix.numRows(); ++i) {
-            for (let k = 0; k < matrix.numColumns(); ++k) {
+    if (matrix)
+        for (let i = 0; i < matrix.numRows(); ++i)
+            for (let k = 0; k < matrix.numColumns(); ++k)
                 vec.push(matrix.getItem(i, k));
-            }
-        }    
-    } else {
-        for (let i = 0; i < dimension; ++i)
-            vec.push(0.0);
-    }
-     
+    else for (let i = 0; i < dimension; ++i) vec.push(0.0);
     return vec;
 }
 
@@ -135,7 +122,6 @@ function toThreeUniform(type, value, name, uniforms, textureLoader) {
             // struct
             outValue = toThreeUniform(value);
     }
-
     return outValue;
 }
 
@@ -159,29 +145,18 @@ function getWrapping(mode) {
 }
 
 function getMinFilter(type, generateMipmaps) {
-    const filterType = generateMipmaps ? THREE.LinearMipMapLinearFilter : THREE.LinearFilter;
-    if (type === 0)
-    {
-        filterType = generateMipmaps ? THREE.NearestMipMapNearestFilter : THREE.NearestFilter;
-    }
+    let filterType = generateMipmaps ? THREE.LinearMipMapLinearFilter : THREE.LinearFilter;
+    if (type === 0) filterType = generateMipmaps ? THREE.NearestMipMapNearestFilter : THREE.NearestFilter;
     return filterType;
 }
 
 function setTextureParameters(texture, name, uniforms, generateMipmaps = true) {
-    const idx = name.lastIndexOf(IMAGE_PROPERTY_SEPARATOR);
-    const base = name.substring(0, idx) || name;
-
+    const base = name.substring(0, name.lastIndexOf(IMAGE_PROPERTY_SEPARATOR)) || name;
     texture.generateMipmaps = generateMipmaps;
-
-    const uaddressmode = uniforms.find(base + UADDRESS_MODE_SUFFIX)?.getValue().getData();
-    const vaddressmode = uniforms.find(base + VADDRESS_MODE_SUFFIX)?.getValue().getData();
-
-    texture.wrapS = getWrapping(uaddressmode);
-    texture.wrapT = getWrapping(vaddressmode);
-
-    const filterType = uniforms.get(base + FILTER_TYPE_SUFFIX) ? uniforms.get(base + FILTER_TYPE_SUFFIX).value : -1;
+    texture.wrapS = getWrapping(uniforms.find(base + UADDRESS_MODE_SUFFIX)?.getValue().getData());
+    texture.wrapT = getWrapping(uniforms.find(base + VADDRESS_MODE_SUFFIX)?.getValue().getData());
     texture.magFilter = THREE.LinearFilter;
-    texture.minFilter = getMinFilter(filterType, generateMipmaps);
+    texture.minFilter = getMinFilter(uniforms.get(base + FILTER_TYPE_SUFFIX) ? uniforms.get(base + FILTER_TYPE_SUFFIX).value : -1, generateMipmaps);
 }
 
 /**
@@ -192,11 +167,7 @@ function setTextureParameters(texture, name, uniforms, generateMipmaps = true) {
 export function findLights(doc) {
     let lights = [];
     for (let node of doc.getNodes())
-    {
-        if (node.getType() === "lightshader")
-            lights.push(node);
-    }
-
+        if (node.getType() === "lightshader") lights.push(node);
     return lights;
 }
 
@@ -209,7 +180,6 @@ export function findLights(doc) {
  */
 export function registerLights(mx, lights, genContext) {
     mx.HwShaderGenerator.unbindLightShaders(genContext);
-
     const lightTypesBound = {};
     const lightData = [];
     let lightId = 1;
@@ -220,11 +190,9 @@ export function registerLights(mx, lights, genContext) {
             lightTypesBound[nodeName] = lightId;
             mx.HwShaderGenerator.bindLightShader(nodeDef, lightId++, genContext);
         }
-
         const lightDirection = light.getValueElement("direction").getValue().getData().data();
         const lightColor = light.getValueElement("color").getValue().getData().data();
         const lightIntensity = light.getValueElement("intensity").getValue().getData();
-
         lightData.push({
             type: lightTypesBound[nodeName],
             direction: new THREE.Vector3(...lightDirection),
@@ -232,27 +200,21 @@ export function registerLights(mx, lights, genContext) {
             intensity: lightIntensity
         });
     }
-
     // Make sure max light count is large enough
     genContext.getOptions().hwMaxActiveLightSources = Math.max(genContext.getOptions().hwMaxActiveLightSources, lights.length);
-
     return lightData;
 }
 
 export function getUniformValues(shaderStage, textureLoader) {
     let threeUniforms = {};
-
-    const uniformBlocks = Object.values(shaderStage.getUniformBlocks());
-    uniformBlocks.forEach(uniforms => {
-        if (!uniforms.empty()) {
-            for (let i=0; i < uniforms.size(); ++i) {
+    Object.values(shaderStage.getUniformBlocks()).forEach(uniforms => {
+        if (!uniforms.empty())
+            for (let i = 0; i < uniforms.size(); ++i) {
                 const variable = uniforms.get(i);                
                 const value = variable.getValue()?.getData();
                 const name = variable.getVariable();
                 threeUniforms[name] = new THREE.Uniform(toThreeUniform(variable.getType().getName(), value, name, uniforms, textureLoader));
             }
-        }
     });
-
     return threeUniforms;
 }

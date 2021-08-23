@@ -2,12 +2,9 @@ const path = require('path');
 const fs = require('fs');
 const CopyPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-
 const stdSurfaceMaterials = "../../../resources/Materials/Examples/StandardSurface";
 const stdSurfaceMaterialsBaseURL = "Materials/Examples/StandardSurface";
-
-const materials = fs.readdirSync(stdSurfaceMaterials)
-  .map((fileName) => ({name: fileName, value: `${stdSurfaceMaterialsBaseURL}/${fileName}`}));
+const materials = fs.readdirSync(stdSurfaceMaterials).map( fileName => ({name: fileName, value: `${stdSurfaceMaterialsBaseURL}/${fileName}`}));
 
 module.exports = {
   entry: './src/index.js',
@@ -18,19 +15,14 @@ module.exports = {
   mode: "development",
   plugins: [
     new HtmlWebpackPlugin({
-      templateParameters: {
-        materials
-      },
+      templateParameters: { materials },
       template: 'index.ejs'
     }),
     new CopyPlugin({
       patterns: [
-        { 
-          context: "../../../resources/Images",
-          from: "*.jpg", 
-          to: "Images",
-        },
+        { context: "../../../resources/Images", from: "*.jpg", to: "Images" },
 
+        // custom materials
         { from: 'stdlib', context: 'materials', to: 'stdlib' },
         { from: 'alglib', context: 'materials', to: 'alglib' },
         { from: 'bxdf', context: 'materials', to: 'bxdf' },
