@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc ../../lib/libMaterialXContrib.a CMakeFiles/MaterialXContrib.dir/Handlers/SampleObjLoader.cpp.o CMakeFiles/MaterialXContrib.dir/Handlers/TinyEXRImageLoader.cpp.o CMakeFiles/MaterialXContrib.dir/__/MaterialXFormat/PugiXML/pugixml.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib ../../lib/libMaterialXContrib.a

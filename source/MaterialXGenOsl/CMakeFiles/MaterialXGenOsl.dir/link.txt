@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc ../../lib/libMaterialXGenOsl.a CMakeFiles/MaterialXGenOsl.dir/Nodes/BlurNodeOsl.cpp.o CMakeFiles/MaterialXGenOsl.dir/OslShaderGenerator.cpp.o CMakeFiles/MaterialXGenOsl.dir/OslSyntax.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib ../../lib/libMaterialXGenOsl.a

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/MaterialXView/NanoGUI" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/MaterialXView/NanoGUI/ext/eigen" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/MaterialXView/NanoGUI/ext/glfw" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/MaterialXView/NanoGUI/ext/nanovg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/MaterialXView/NanoGUI/ext/pybind11" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/MaterialXView/NanoGUI/ext/pybind11/tools/clang" vcs="Git" />
+  </component>
+</project>

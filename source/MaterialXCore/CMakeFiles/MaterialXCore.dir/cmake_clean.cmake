@@ -1,0 +1,41 @@
+file(REMOVE_RECURSE
+  "../../lib/libMaterialXCore.a"
+  "../../lib/libMaterialXCore.pdb"
+  "CMakeFiles/MaterialXCore.dir/Definition.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Definition.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Document.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Document.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Element.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Element.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Geom.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Geom.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Interface.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Interface.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Look.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Look.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/LookUtil.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/LookUtil.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Material.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Material.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Node.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Node.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Property.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Property.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Traversal.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Traversal.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Types.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Types.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Unit.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Unit.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Util.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Util.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Value.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Value.cpp.o.d"
+  "CMakeFiles/MaterialXCore.dir/Variant.cpp.o"
+  "CMakeFiles/MaterialXCore.dir/Variant.cpp.o.d"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/MaterialXCore.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

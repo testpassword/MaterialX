@@ -13,7 +13,7 @@ module.exports = {
   entry: './src/index.js',
   output: {
     filename: 'main.js',
-    path: path.resolve(__dirname, 'dist')
+    path: path.resolve(__dirname, 'dist'),
   },
   mode: "development",
   plugins: [
@@ -30,7 +30,13 @@ module.exports = {
           from: "*.jpg", 
           to: "Images",
         },
-        { from: "./public", to: 'public' },
+
+        { from: 'stdlib', context: 'materials', to: 'stdlib' },
+        { from: 'alglib', context: 'materials', to: 'alglib' },
+        { from: 'bxdf', context: 'materials', to: 'bxdf' },
+        { from: 'textures', context: 'materials', to: 'textures' },
+        { from: 'resources', context: 'materials', to: 'resources' },
+
         { from: "../../../resources/Images/greysphere_calibration.png", to: "Images" },
         { from: "../../../resources/Geometry/shaderball.glb",  to: "Geometry"},
         { from: "node_modules/three/examples/js/libs/draco",  to: "draco"},
