@@ -9,7 +9,7 @@ const IMAGE_PROPERTY_SEPARATOR = "_";
 const UADDRESS_MODE_SUFFIX = IMAGE_PROPERTY_SEPARATOR + "uaddressmode";
 const VADDRESS_MODE_SUFFIX = IMAGE_PROPERTY_SEPARATOR + "vaddressmode";
 const FILTER_TYPE_SUFFIX = IMAGE_PROPERTY_SEPARATOR + "filtertype";
-const FILE_PREFIX = '../../../Images/';
+const FILE_PREFIX = '../public/resources/Images/';
 const TARGET_FILE_PREFIX = 'Images/';
 
 /**

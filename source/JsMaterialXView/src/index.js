@@ -20,6 +20,7 @@ let viewProjMat = new THREE.Matrix4();
 let worldViewPos = new THREE.Vector3();
 const materialFilename = new URLSearchParams(document.location.search).get("material");
 const meshFilename = new URLSearchParams(document.location.search).get("mesh");
+const lightFilename = new URLSearchParams(document.location.search).get("light");
 
 init();
 
@@ -74,19 +75,22 @@ function fallbackMaterial(doc) {
     shaderElement.setNodeName(ssName);
 }
 
-function init() {
-    let canvas = document.getElementById('webglcanvas');
-    let context = canvas.getContext('webgl2');
+function setQueryParams() {
     let materialsSelect = document.getElementById('materials');
-   materialsSelect.value = (materialFilename != null) ? materialFilename : 'Materials/Examples/StandardSurface/standard_surface_brass_tiled.mtlx';
+    materialsSelect.value = (materialFilename != null) ? materialFilename : 'Materials/Examples/StandardSurface/standard_surface_brass_tiled.mtlx';
     let meshesSelect = document.getElementById('meshes');
     meshesSelect.value = (meshFilename != null) ? meshFilename : 'Geometry/adsk_shaderball.glb';
-    materialsSelect.addEventListener('change', e => {
-        window.location.href = `${window.location.origin}${window.location.pathname}?material=${e.target.value}&mesh=${meshFilename}`;
-    });
-    meshesSelect.addEventListener('change', e => {
-        window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${e.target.value}`;
-    });
+    let lightsSelect = document.getElementById('lights');
+    lightsSelect.value = (lightFilename != null) ? lightFilename : 'san_giuseppe_bridge_split.mtlx';
+    materialsSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${e.target.value}&mesh=${meshFilename}&light=${lightFilename}` });
+    meshesSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${e.target.value}&light=${lightFilename}` });
+    lightsSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${meshFilename}&light=${e.target.value}` });
+}
+
+function init() {
+    setQueryParams();
+    let canvas = document.getElementById('webglcanvas');
+    let context = canvas.getContext('webgl2');
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 100);
     // Set up scene
     scene = new THREE.Scene();
@@ -111,9 +115,9 @@ function init() {
     const hdrloader = new RGBELoader();
     const textureLoader = new THREE.TextureLoader();
     Promise.all([
-        new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load('Lights/san_giuseppe_bridge_split.hdr', resolve)),
-        new Promise(resolve => fileloader.load('Lights/san_giuseppe_bridge_split.mtlx', resolve)),
-        new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load('Lights/irradiance/san_giuseppe_bridge_split.hdr', resolve)),
+        new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load(`${lightFilename.replace('mtlx', 'hdr')}`, resolve)),
+        new Promise(resolve => fileloader.load(`${lightFilename}`, resolve)),
+        new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load(`Lights/irradiance/${lightFilename.replace('mtlx', 'hdr').split('/').pop()}`, resolve)),
         new Promise(resolve => gltfLoader.load(meshFilename, resolve)),
         new Promise( resolve => MaterialX().then( module => resolve(module))),
         new Promise(resolve => materialFilename ? fileloader.load(materialFilename, resolve) : resolve())

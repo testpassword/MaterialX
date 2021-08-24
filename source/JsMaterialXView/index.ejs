@@ -17,7 +17,13 @@
         </select>
         <label for="meshes" style="color: white;">Choose a mesh:</label>
         <select name="meshes" id="meshes">
-          <% meshes.forEach(function(m){ %>
+          <% meshes.forEach(function(m) { %>
+            <option value="<%-m.value%>"><%-m.name%></option>
+          <% }); %>
+        </select>
+        <label for="lights" style="color: white;">Choose a light:</label>
+        <select name="lights" id="lights">
+          <% lights.forEach(function(m) { %>
             <option value="<%-m.value%>"><%-m.name%></option>
           <% }); %>
         </select>
