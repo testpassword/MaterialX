@@ -15,6 +15,12 @@
             <option value="<%-m.value%>"><%-m.name%></option>
           <% }); %>
         </select>
+        <label for="meshes" style="color: white;">Choose a mesh:</label>
+        <select name="meshes" id="meshes">
+          <% meshes.forEach(function(m){ %>
+            <option value="<%-m.value%>"><%-m.name%></option>
+          <% }); %>
+        </select>
       </div>
       <canvas id="webglcanvas"></canvas>
     </div>

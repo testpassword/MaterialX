@@ -18,7 +18,8 @@ let camera, scene, model, renderer, composer, controls, mx;
 let normalMat = new THREE.Matrix3();
 let viewProjMat = new THREE.Matrix4();
 let worldViewPos = new THREE.Vector3();
-const materialFilename = new URLSearchParams(document.location.search).get("file");
+const materialFilename = new URLSearchParams(document.location.search).get("material");
+const meshFilename = new URLSearchParams(document.location.search).get("mesh");
 
 init();
 
@@ -75,11 +76,16 @@ function fallbackMaterial(doc) {
 
 function init() {
     let canvas = document.getElementById('webglcanvas');
-    let materialsSelect = document.getElementById('materials');
-    if (materialFilename) materialsSelect.value = materialFilename;
     let context = canvas.getContext('webgl2');
+    let materialsSelect = document.getElementById('materials');
+   materialsSelect.value = (materialFilename != null) ? materialFilename : 'Materials/Examples/StandardSurface/standard_surface_brass_tiled.mtlx';
+    let meshesSelect = document.getElementById('meshes');
+    meshesSelect.value = (meshFilename != null) ? meshFilename : 'Geometry/adsk_shaderball.glb';
     materialsSelect.addEventListener('change', e => {
-      window.location.href = `${window.location.origin}${window.location.pathname}?file=${e.target.value}`;
+        window.location.href = `${window.location.origin}${window.location.pathname}?material=${e.target.value}&mesh=${meshFilename}`;
+    });
+    meshesSelect.addEventListener('change', e => {
+        window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${e.target.value}`;
     });
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 100);
     // Set up scene
@@ -108,7 +114,7 @@ function init() {
         new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load('Lights/san_giuseppe_bridge_split.hdr', resolve)),
         new Promise(resolve => fileloader.load('Lights/san_giuseppe_bridge_split.mtlx', resolve)),
         new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load('Lights/irradiance/san_giuseppe_bridge_split.hdr', resolve)),
-        new Promise(resolve => gltfLoader.load('Geometry/shaderball.glb', resolve)),
+        new Promise(resolve => gltfLoader.load(meshFilename, resolve)),
         new Promise( resolve => MaterialX().then( module => resolve(module))),
         new Promise(resolve => materialFilename ? fileloader.load(materialFilename, resolve) : resolve())
     ]).then(async ([loadedRadianceTexture, loadedLightSetup, loadedIrradianceTexture, {scene: obj}, mxIn, mtlxMaterial]) => {
@@ -135,8 +141,6 @@ function init() {
         const lightData = registerLights(mx, lights, genContext);
         let shader = gen.generate(elem.getNamePath(), elem, genContext);
         // Get GL ES shaders and uniform values
-        let vShader = shader.getSourceCode("vertex");
-        let fShader = shader.getSourceCode("pixel");
         let uniforms = {
           ...getUniformValues(shader.getStage('vertex'), textureLoader),
           ...getUniformValues(shader.getStage('pixel'), textureLoader),
@@ -155,8 +159,8 @@ function init() {
         // Create Three JS Material
         const threeMaterial = new THREE.RawShaderMaterial({
           uniforms: uniforms,
-          vertexShader: vShader,
-          fragmentShader: fShader,
+          vertexShader: shader.getSourceCode("vertex"),
+          fragmentShader: shader.getSourceCode("pixel"),
           transparent: isTransparent,
           blendEquation: THREE.AddEquation,
           blendSrc: THREE.OneMinusSrcAlphaFactor,
