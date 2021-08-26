@@ -218,3 +218,16 @@ export function getUniformValues(shaderStage, textureLoader) {
     });
     return threeUniforms;
 }
+
+export function checkMaterialVersion(materialFilename, allowedVersions = ['1.37, 1.38'], onSuccess, onError) {
+    fetch(`${window.location.origin}/${materialFilename}`, { method: 'GET' })
+        .then( res => res.text() )
+        .then( rawFile => {
+            ((allowedVersions.includes(
+                new DOMParser().parseFromString(rawFile, "application/xml")
+                    .getElementsByTagName('materialx')[0]
+                    .getAttribute('version'))
+            ) ? onSuccess: onError)()
+        })
+        .catch( err => console.error(`Failed to load resource ${materialFilename} cause ${err}`) )
+}

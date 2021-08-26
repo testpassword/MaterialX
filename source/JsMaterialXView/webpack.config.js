@@ -2,18 +2,11 @@ const path = require('path');
 const fs = require('fs');
 const CopyPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const loadResources = (resDir, baseURL) => fs.readdirSync(resDir).map( filename => ({ name: filename, value: `${baseURL}/${filename}` }) );
+const loadResources = (resDir, baseURL) => fs.readdirSync(resDir).map( filename => ({ name: filename, value: `public/resources/${baseURL}/${filename}` }) );
 
-const stdSurfaceMaterials = "./public/resources/Materials/Examples/StandardSurface";
-const stdSurfaceMaterialsBaseURL = "Materials/Examples/StandardSurface";
-const materials = loadResources(stdSurfaceMaterials, stdSurfaceMaterialsBaseURL);
-
-const stdMeshes = "./public/resources/Geometry";
-const stdMeshesBaseURL = "Geometry";
-const meshes = loadResources(stdMeshes, stdMeshesBaseURL);
-
+const materials = loadResources("./public/resources/Materials/Examples/StandardSurface", "Materials/Examples/StandardSurface");
+const meshes = loadResources("./public/resources/Geometry", "Geometry");
 const stdLights = "./public/resources/Lights";
-const stdLightsBaseURL = "Lights";
 const lights = fs.readdirSync(stdLights)
     .filter( filename => filename.endsWith('.mtlx') )
     .map( filename => {
@@ -21,19 +14,14 @@ const lights = fs.readdirSync(stdLights)
       const irrad = `${stdLights}/irradiance/${filename.replace('mtlx', 'hdr')}`;
       return (fs.existsSync(hdr) && fs.existsSync(irrad)) ? {
         name: filename,
-        value: `${stdLightsBaseURL}/${filename}`,
-        hdr,
-        irrad
+        value: `public/resources/Lights/${filename}`,
       } : undefined
     })
     .filter( light => light !== undefined )
 
 module.exports = {
   entry: './src/index.js',
-  output: {
-    filename: 'main.js',
-    path: path.resolve(__dirname, 'dist'),
-  },
+  output: { filename: 'main.js', path: path.resolve(__dirname, 'dist') },
   mode: "development",
   plugins: [
     new HtmlWebpackPlugin({
@@ -42,11 +30,8 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { context: "./public/resources/Images", from: "*.jpg", to: "Images" },
-        { from: "./public/resources/Images/greysphere_calibration.png", to: "Images" },
-        { from: stdLights, to: stdLightsBaseURL },
-        { from: stdSurfaceMaterials, to: stdSurfaceMaterialsBaseURL },
-        { from: stdMeshes, to: stdMeshesBaseURL }
+        { from: "./public/resources/Images", to: "Images" },
+        { from: "node_modules/three/examples/js/libs/draco",  to: "draco" },
       ],
     }),
   ]

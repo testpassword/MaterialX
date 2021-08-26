@@ -12,12 +12,9 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
-import { prepareEnvTexture, findLights, registerLights, getUniformValues } from './helper.js'
+import { prepareEnvTexture, findLights, registerLights, getUniformValues, checkMaterialVersion } from './helper.js'
 
 let camera, scene, model, renderer, composer, controls, mx;
-let normalMat = new THREE.Matrix3();
-let viewProjMat = new THREE.Matrix4();
-let worldViewPos = new THREE.Vector3();
 const materialFilename = new URLSearchParams(document.location.search).get("material");
 const meshFilename = new URLSearchParams(document.location.search).get("mesh");
 const lightFilename = new URLSearchParams(document.location.search).get("light");
@@ -75,19 +72,20 @@ function fallbackMaterial(doc) {
     shaderElement.setNodeName(ssName);
 }
 
-function setQueryParams() {
-    let materialsSelect = document.getElementById('materials');
-    materialsSelect.value = (materialFilename != null) ? materialFilename : 'Materials/Examples/StandardSurface/standard_surface_brass_tiled.mtlx';
-    let meshesSelect = document.getElementById('meshes');
-    meshesSelect.value = (meshFilename != null) ? meshFilename : 'Geometry/adsk_shaderball.glb';
-    let lightsSelect = document.getElementById('lights');
-    lightsSelect.value = (lightFilename != null) ? lightFilename : 'san_giuseppe_bridge_split.mtlx';
-    materialsSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${e.target.value}&mesh=${meshFilename}&light=${lightFilename}` });
-    meshesSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${e.target.value}&light=${lightFilename}` });
-    lightsSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${meshFilename}&light=${e.target.value}` });
-}
-
 function init() {
+
+    const setQueryParams = () => {
+        let materialsSelect = document.getElementById('materials');
+        materialsSelect.value = materialFilename ?? 'public/resources/Materials/Examples/StandardSurface/standard_surface_brass_tiled.mtlx';
+        let meshesSelect = document.getElementById('meshes');
+        meshesSelect.value = meshFilename ?? 'public/resources/Geometry/adsk_shaderball.glb';
+        let lightsSelect = document.getElementById('lights');
+        lightsSelect.value = lightFilename ?? 'public/resources/Lights/san_giuseppe_bridge_split.mtlx';
+        materialsSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${e.target.value}&mesh=${meshFilename}&light=${lightFilename}` });
+        meshesSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${e.target.value}&light=${lightFilename}` });
+        lightsSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${meshFilename}&light=${e.target.value}` });
+    }
+
     setQueryParams();
     let canvas = document.getElementById('webglcanvas');
     let context = canvas.getContext('webgl2');
@@ -117,10 +115,10 @@ function init() {
     Promise.all([
         new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load(`${lightFilename.replace('mtlx', 'hdr')}`, resolve)),
         new Promise(resolve => fileloader.load(`${lightFilename}`, resolve)),
-        new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load(`Lights/irradiance/${lightFilename.replace('mtlx', 'hdr').split('/').pop()}`, resolve)),
-        new Promise(resolve => gltfLoader.load(meshFilename, resolve)),
+        new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load(`public/resources/Lights/irradiance/${lightFilename.replace('mtlx', 'hdr').split('/').pop()}`, resolve)),
+        new Promise(resolve => gltfLoader.load(`${meshFilename}`, resolve)),
         new Promise( resolve => MaterialX().then( module => resolve(module))),
-        new Promise(resolve => materialFilename ? fileloader.load(materialFilename, resolve) : resolve())
+        new Promise(resolve => materialFilename ? fileloader.load(`${materialFilename}`, resolve) : resolve())
     ]).then(async ([loadedRadianceTexture, loadedLightSetup, loadedIrradianceTexture, {scene: obj}, mxIn, mtlxMaterial]) => {
         // Initialize MaterialX and the shader generation context
         mx = mxIn;
@@ -210,9 +208,9 @@ function animate() {
         const uniforms = child.material.uniforms;
         if (uniforms) {
           uniforms.u_worldMatrix.value = child.matrixWorld;
-          uniforms.u_viewProjectionMatrix.value = viewProjMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-          if (uniforms.u_viewPosition) uniforms.u_viewPosition.value = camera.getWorldPosition(worldViewPos);
-          if (uniforms.u_worldInverseTransposeMatrix) uniforms.u_worldInverseTransposeMatrix.value = new THREE.Matrix4().setFromMatrix3(normalMat.getNormalMatrix(child.matrixWorld));
+          uniforms.u_viewProjectionMatrix.value = new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+          if (uniforms.u_viewPosition) uniforms.u_viewPosition.value = camera.getWorldPosition(new THREE.Vector3());
+          if (uniforms.u_worldInverseTransposeMatrix) uniforms.u_worldInverseTransposeMatrix.value = new THREE.Matrix4().setFromMatrix3(new THREE.Matrix3().getNormalMatrix(child.matrixWorld));
         }
       }
     });
