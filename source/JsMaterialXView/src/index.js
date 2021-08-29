@@ -12,7 +12,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
-import { prepareEnvTexture, findLights, registerLights, getUniformValues, checkMaterialVersion } from './helper.js'
+import { prepareEnvTexture, findLights, registerLights, getUniformValues } from './utils_3D.js'
 
 let camera, scene, model, renderer, composer, controls, mx;
 const materialFilename = new URLSearchParams(document.location.search).get("material");
