@@ -30,7 +30,10 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: "./public/resources/Images", to: "Images" },
+        { from: './JsMaterialXGenShader.data', to: 'JsMaterialXGenShader.data' },
+        { from: './JsMaterialXGenShader.js', to: 'JsMaterialXGenShader.js' },
+        { from: './JsMaterialXGenShader.wasm', to: 'JsMaterialXGenShader.wasm' },
+        { from: "./public", to: "public" },
         { from: "node_modules/three/examples/js/libs/draco",  to: "draco" },
       ],
     }),

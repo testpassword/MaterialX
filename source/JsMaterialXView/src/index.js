@@ -191,7 +191,6 @@ function init() {
         camera.far = bsphere.radius * 10;
         camera.updateProjectionMatrix();
     }).then(() => animate()).catch(err => console.error(Number.isInteger(err) ? mx.getExceptionMessage(err) : err))
-
 }
 
 function onWindowResize() {
