@@ -12,17 +12,15 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
-import { prepareEnvTexture, findLights, registerLights, getUniformValues } from './utils_3D.js'
+import { prepareEnvTexture, findLights, registerLights, getUniformValues, checkMaterialVersion } from './utils_3D.js'
 
 let camera, scene, model, renderer, composer, controls, mx;
 const materialFilename = new URLSearchParams(document.location.search).get("material");
 const meshFilename = new URLSearchParams(document.location.search).get("mesh");
 const lightFilename = new URLSearchParams(document.location.search).get("light");
 
-init();
-
 // If no material file is selected, we programmatically create a jade material as a fallback
-function fallbackMaterial(doc) {
+const fallbackMaterial = doc => {
     const ssName = 'SR_default';
     const ssNode = doc.addChildOfCategory('standard_surface', ssName);
     ssNode.setType('surfaceshader');
@@ -72,61 +70,62 @@ function fallbackMaterial(doc) {
     shaderElement.setNodeName(ssName);
 }
 
-function init() {
+const setQueryParams = () => {
+  let meshesSelect = document.getElementById('meshes');
+  meshesSelect.value = meshFilename;
+  let lightsSelect = document.getElementById('lights');
+  lightsSelect.value = lightFilename;
+  meshesSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${e.target.value}&light=${lightFilename}` });
+  lightsSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${meshFilename}&light=${e.target.value}` });
+}
 
-    const setQueryParams = () => {
-        let materialsSelect = document.getElementById('materials');
-        materialsSelect.value = materialFilename ?? 'public/resources/Materials/Examples/StandardSurface/standard_surface_brass_tiled.mtlx';
-        let meshesSelect = document.getElementById('meshes');
-        meshesSelect.value = meshFilename ?? 'public/resources/Geometry/adsk_shaderball.glb';
-        let lightsSelect = document.getElementById('lights');
-        lightsSelect.value = lightFilename ?? 'public/resources/Lights/san_giuseppe_bridge_split.mtlx';
-        materialsSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${e.target.value}&mesh=${meshFilename}&light=${lightFilename}` });
-        meshesSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${e.target.value}&light=${lightFilename}` });
-        lightsSelect.addEventListener('change', e => { window.location.href = `${window.location.origin}${window.location.pathname}?material=${materialFilename}&mesh=${meshFilename}&light=${e.target.value}` });
-    }
-
+const init = () => {
     setQueryParams();
-    let canvas = document.getElementById('webglcanvas');
-    let context = canvas.getContext('webgl2');
-    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 100);
-    // Set up scene
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x4c4c52);
-    scene.background.convertSRGBToLinear();
-    renderer = new THREE.WebGLRenderer({canvas, context});
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    composer = new EffectComposer( renderer );
-    const renderPass = new RenderPass( scene, camera );
-    composer.addPass( renderPass );
-    const gammaCorrectionPass = new ShaderPass( GammaCorrectionShader );
-    composer.addPass( gammaCorrectionPass );
-    window.addEventListener('resize', onWindowResize);
-    // controls
-    controls = new OrbitControls(camera, renderer.domElement);
-    // Load model and shaders
-    const fileloader = new THREE.FileLoader();
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath( 'draco/' );
-    const gltfLoader = new GLTFLoader();
-    gltfLoader.setDRACOLoader( dracoLoader );
-    const hdrloader = new RGBELoader();
-    const textureLoader = new THREE.TextureLoader();
-    Promise.all([
-        new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load(`${lightFilename.replace('mtlx', 'hdr')}`, resolve)),
+    checkMaterialVersion(materialFilename, () => {
+      let canvas = document.getElementById('webglcanvas');
+      let context = canvas.getContext('webgl2');
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 100);
+      // Set up scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x4c4c52);
+      scene.background.convertSRGBToLinear();
+      renderer = new THREE.WebGLRenderer({canvas, context});
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer = new EffectComposer( renderer );
+      const renderPass = new RenderPass( scene, camera );
+      composer.addPass( renderPass );
+      const gammaCorrectionPass = new ShaderPass( GammaCorrectionShader );
+      composer.addPass( gammaCorrectionPass );
+      window.addEventListener('resize', onWindowResize);
+      // controls
+      controls = new OrbitControls(camera, renderer.domElement);
+      // Load model and shaders
+      const fileloader = new THREE.FileLoader();
+      const dracoLoader = new DRACOLoader();
+      dracoLoader.setDecoderPath( 'draco/' );
+      const gltfLoader = new GLTFLoader();
+      gltfLoader.setDRACOLoader( dracoLoader );
+      const hdrloader = new RGBELoader();
+      const textureLoader = new THREE.TextureLoader();
+      const hdrLightFilename = lightFilename.replace('mtlx', 'hdr');
+      const hdrLightFilenameExploded = hdrLightFilename.split('/');
+      hdrLightFilenameExploded.splice(-1, 0, 'irradiance');
+      const irradLightFilename = hdrLightFilenameExploded.join('/');
+      Promise.all([
+        new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load(hdrLightFilename, resolve)),
         new Promise(resolve => fileloader.load(`${lightFilename}`, resolve)),
-        new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load(`public/resources/Lights/irradiance/${lightFilename.replace('mtlx', 'hdr').split('/').pop()}`, resolve)),
+        new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load(irradLightFilename, resolve)),
         new Promise(resolve => gltfLoader.load(`${meshFilename}`, resolve)),
         new Promise( resolve => MaterialX().then( module => resolve(module))),
+        //new Promise(resolve => fileloader.load('public/resources/materials/standard_surface_brass_tiled/standard_surface_brass_tiled.mtlx', resolve))
         new Promise(resolve => materialFilename ? fileloader.load(`${materialFilename}`, resolve) : resolve())
-    ]).then(async ([loadedRadianceTexture, loadedLightSetup, loadedIrradianceTexture, {scene: obj}, mxIn, mtlxMaterial]) => {
+      ]).then(async ([loadedRadianceTexture, loadedLightSetup, loadedIrradianceTexture, {scene: obj}, mxIn, mtlxMaterial]) => {
         // Initialize MaterialX and the shader generation context
         mx = mxIn;
         let doc = mx.createDocument();
         let gen = new mx.EsslShaderGenerator();
         let genContext = new mx.GenContext(gen);
-        let stdlib = mx.loadStandardLibraries(genContext);
-        doc.importLibrary(stdlib);
+        doc.importLibrary(mx.loadStandardLibraries(genContext));
         // Load material
         if (mtlxMaterial) await mx.readFromXmlString(doc, mtlxMaterial);
         else fallbackMaterial(doc);
@@ -140,7 +139,6 @@ function init() {
         doc.importLibrary(lightRigDoc);
         // Register lights with generation context
         const lights = findLights(doc);
-        const lightData = registerLights(mx, lights, genContext);
         let shader = gen.generate(elem.getNamePath(), elem, genContext);
         // Get GL ES shaders and uniform values
         let uniforms = {
@@ -151,7 +149,7 @@ function init() {
         const irradianceTexture = prepareEnvTexture(loadedIrradianceTexture, renderer.capabilities);
         Object.assign(uniforms, {
           u_numActiveLightSources: {value: lights.length},
-          u_lightData: {value: lightData},
+          u_lightData: {value: registerLights(mx, lights, genContext)},
           u_envMatrix: {value: new THREE.Matrix4().makeRotationY(Math.PI)},
           u_envRadiance: {value: radianceTexture},
           u_envRadianceMips: {value: Math.trunc(Math.log2(Math.max(radianceTexture.image.width, radianceTexture.image.height))) + 1},
@@ -169,37 +167,37 @@ function init() {
           blendDst: THREE.SrcAlphaFactor
         });
         obj.traverse((child) => {
-            if (child.isMesh) {
-              child.geometry.computeTangents();
-              // Use default MaterialX naming convention.
-              child.geometry.attributes.i_position = child.geometry.attributes.position;
-              child.geometry.attributes.i_normal = child.geometry.attributes.normal;
-              child.geometry.attributes.i_tangent = child.geometry.attributes.tangent;
-              child.geometry.attributes.i_texcoord_0 = child.geometry.attributes.uv;
-              child.material = threeMaterial;
-            }
+          if (child.isMesh) {
+            child.geometry.computeTangents();
+            // Use default MaterialX naming convention.
+            child.geometry.attributes.i_position = child.geometry.attributes.position;
+            child.geometry.attributes.i_normal = child.geometry.attributes.normal;
+            child.geometry.attributes.i_tangent = child.geometry.attributes.tangent;
+            child.geometry.attributes.i_texcoord_0 = child.geometry.attributes.uv;
+            child.material = threeMaterial;
+          }
         });
         model = obj;
         scene.add(model);
         // Fit camera to model
-        const bbox = new THREE.Box3().setFromObject(model);
         const bsphere = new THREE.Sphere();
-        bbox.getBoundingSphere(bsphere);
+        new THREE.Box3().setFromObject(model).getBoundingSphere(bsphere);
         controls.target = bsphere.center;
         camera.position.y = camera.position.z = bsphere.radius * 2.5;
         controls.update();
         camera.far = bsphere.radius * 10;
         camera.updateProjectionMatrix();
-    }).then(() => animate()).catch(err => console.error(Number.isInteger(err) ? mx.getExceptionMessage(err) : err))
+      }).then(() => animate()).catch(err => console.error(Number.isInteger(err) ? mx.getExceptionMessage(err) : err))
+    });
 }
 
-function onWindowResize() {
+const onWindowResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function animate() {  
+const animate = () => {
     requestAnimationFrame(animate);
     composer.render();
     model.traverse((child) => {
@@ -214,3 +212,5 @@ function animate() {
       }
     });
 }
+
+init();

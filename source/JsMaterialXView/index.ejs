@@ -2,19 +2,13 @@
 <html>
   <head>
     <meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">  
-    <title>Getting Started</title>
-    <link rel="icon" type="image/x-icon" href="public/favicon.ico" />
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>AMD GPU Open</title>
+    <link rel="icon" type="image/x-icon" href="public/favicon.png" />
   </head>
   <body style="margin: 0px; overflow: hidden;">
     <div id="container">
       <div style="position: absolute;margin: 10px;">
-        <label for="materials" style="color: white;">Choose a material:</label>
-        <select name="materials" id="materials">
-          <% materials.forEach(function(m){ %>
-            <option value="<%-m.value%>"><%-m.name%></option>
-          <% }); %>
-        </select>
         <label for="meshes" style="color: white;">Choose a mesh:</label>
         <select name="meshes" id="meshes">
           <% meshes.forEach(function(m) { %>

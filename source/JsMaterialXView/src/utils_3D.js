@@ -219,7 +219,10 @@ const getUniformValues = (shaderStage, textureLoader) => {
   return threeUniforms;
 }
 
-const checkMaterialVersion = (materialFilename, allowedVersions = ['1.37, 1.38'], onSuccess, onError) => {
+const checkMaterialVersion = (materialFilename,
+                              onSuccess,
+                              onError = () => console.error('failed to check material version'),
+                              allowedVersions = ['1.37', '1.38']) => {
   fetch(`${window.location.origin}/${materialFilename}`, { method: 'GET' })
     .then( res => res.text() )
     .then( rawFile => {
