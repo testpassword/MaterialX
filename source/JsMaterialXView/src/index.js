@@ -84,12 +84,11 @@ const init = () => {
     checkMaterialVersion(materialFilename, () => {
       let canvas = document.getElementById('webglcanvas');
       let context = canvas.getContext('webgl2');
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 100);
+      camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 100);
       // Set up scene
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x4c4c52);
-      scene.background.convertSRGBToLinear();
-      renderer = new THREE.WebGLRenderer({canvas, context});
+      scene.fog = new THREE.FogExp2( 0xaaccff, 0.0707 );
+      renderer = new THREE.WebGLRenderer({ canvas, context, antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       composer = new EffectComposer( renderer );
       const renderPass = new RenderPass( scene, camera );
@@ -117,8 +116,7 @@ const init = () => {
         new Promise(resolve => hdrloader.setDataType(THREE.FloatType).load(irradLightFilename, resolve)),
         new Promise(resolve => gltfLoader.load(`${meshFilename}`, resolve)),
         new Promise( resolve => MaterialX().then( module => resolve(module))),
-        //new Promise(resolve => fileloader.load('public/resources/materials/standard_surface_brass_tiled/standard_surface_brass_tiled.mtlx', resolve))
-        new Promise(resolve => materialFilename ? fileloader.load(`${materialFilename}`, resolve) : resolve())
+        new Promise(resolve => fileloader.load(`${materialFilename}`, resolve))
       ]).then(async ([loadedRadianceTexture, loadedLightSetup, loadedIrradianceTexture, {scene: obj}, mxIn, mtlxMaterial]) => {
         // Initialize MaterialX and the shader generation context
         mx = mxIn;
@@ -145,6 +143,9 @@ const init = () => {
           ...getUniformValues(shader.getStage('vertex'), textureLoader),
           ...getUniformValues(shader.getStage('pixel'), textureLoader),
         }
+        loadedRadianceTexture.mapping = THREE.EquirectangularReflectionMapping;
+        scene.background = loadedRadianceTexture;
+        scene.environment = loadedRadianceTexture;
         const radianceTexture = prepareEnvTexture(loadedRadianceTexture, renderer.capabilities);
         const irradianceTexture = prepareEnvTexture(loadedIrradianceTexture, renderer.capabilities);
         Object.assign(uniforms, {

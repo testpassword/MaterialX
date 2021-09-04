@@ -35,7 +35,7 @@ const prepareEnvTexture = (texture, capabilities) => {
  * Create a new (half)float texture containing an alpha channel with a value of 1 from a RGB (half)float texture.
  * @param {THREE.Texture} texture
  */
-const RGBToRGBA_Float = (texture) => {
+const RGBToRGBA_Float = texture => {
   const rgbData = texture.image.data;
   const length = (rgbData.length / 3) * 4;
   let rgbaData;
@@ -125,7 +125,7 @@ const toThreeUniform = (type, value, name, uniforms, textureLoader) => {
   return outValue;
 }
 
-const getWrapping = (mode) => {
+const getWrapping = mode => {
   let wrap;
   switch(mode) {
     case 1:
@@ -164,7 +164,7 @@ const setTextureParameters = (texture, name, uniforms, generateMipmaps = true) =
  * @param {mx.Document} doc
  * @returns {Array.<mx.Node>}
  */
-const findLights = (doc) => {
+const findLights = doc => {
   let lights = [];
   for (let node of doc.getNodes())
     if (node.getType() === "lightshader") lights.push(node);
@@ -219,11 +219,20 @@ const getUniformValues = (shaderStage, textureLoader) => {
   return threeUniforms;
 }
 
-const checkMaterialVersion = (materialFilename,
+// Luxoft 2021, Kulbako Artemy
+
+/**
+ * Continue scene initialization only if the version of the material coincides with the allowed
+ * @param materialURI path or URL to material
+ * @param onSuccess action if version is correct
+ * @param onError action if version isn't correct
+ * @param allowedVersions
+ */
+const checkMaterialVersion = (materialURI,
                               onSuccess,
                               onError = () => console.error('failed to check material version'),
                               allowedVersions = ['1.37', '1.38']) => {
-  fetch(`${window.location.origin}/${materialFilename}`, { method: 'GET' })
+  fetch(`${window.location.origin}/${materialURI}`, { method: 'GET' })
     .then( res => res.text() )
     .then( rawFile => {
       ((allowedVersions.includes(
@@ -232,7 +241,27 @@ const checkMaterialVersion = (materialFilename,
           .getAttribute('version'))
       ) ? onSuccess: onError)()
     })
-    .catch( err => console.error(`Failed to load resource ${materialFilename} cause ${err}`) )
+    .catch( err => console.error(`Failed to load resource ${materialURI} cause ${err}`) )
 }
 
-export { prepareEnvTexture, findLights, registerLights, getUniformValues, checkMaterialVersion };
+/**
+ * Compute lens distortion ration based on background image. Usage:
+ *```
+ * const camera = new THREE.PerspectiveCamera(...)
+ * new THREE.TextureLoader().load(..., texture => {
+ *   scene.background = texture
+ *   camera.aspect = computeLensDistortionRatio(texture)
+ * })
+ *```
+ * @param texture
+ * @returns {number} ratio for virtual camera
+ */
+const computeLensDistortionRatio = texture => {
+  const img = texture.image;
+  const ration = (window.innerWidth / window.innerHeight) / (img.width / img.height);
+  texture.repeat = new THREE.Vector2(Math.max(ration, 1), Math.max(1 / ration, 1));
+  texture.offset = new THREE.Vector2(-Math.max(ration - 1, 0) / 2, -Math.max(1 / ration - 1, 0) / 2);
+  return ration;
+};
+
+export { prepareEnvTexture, findLights, registerLights, getUniformValues, checkMaterialVersion, computeLensDistortionRatio };
