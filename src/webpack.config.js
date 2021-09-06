@@ -1,25 +1,20 @@
 const path = require('path');
 const fs = require('fs');
 const CopyPlugin = require("copy-webpack-plugin");
-const HtmlWebpackPlugin = require('html-webpack-plugin')
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const loadResources = (resDir, baseURL) => fs.readdirSync(resDir).map( filename => ({ name: filename, value: `public/resources/${baseURL}/${filename}` }) );
 
-const meshes = loadResources('public/resources/meshes', 'meshes')
-const stdLights = "public/resources/lights";
-const lights = fs.readdirSync(stdLights)
-  .map( folder => fs.readdirSync(`${stdLights}/${folder}`).map( innerFolder => `${stdLights}/${folder}/${innerFolder}`))
-  .flat()
-  .filter( filename => filename.endsWith('.mtlx'))
-  .map( filename => ({ name: filename.split('/').pop().replace('.mtlx', ''), value: filename }) )
+const meshes = loadResources('public/resources/meshes', 'meshes');
+const environments = loadResources('public/resources/environments', 'environments');
 
 module.exports = {
   entry: './src/index.js',
-  output: { filename: 'main.js', path: path.resolve(__dirname, 'dist') },
+  output: { filename: 'index.js', path: path.resolve(__dirname, 'dist') },
   mode: "development",
   plugins: [
     new HtmlWebpackPlugin({
-      templateParameters: { meshes, lights },
-      template: 'index.ejs'
+      templateParameters: { meshes, environments },
+      template: 'index.ejs',
     }),
     new CopyPlugin({
       patterns: [
