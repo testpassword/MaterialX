@@ -44,7 +44,6 @@ const buildScene = canvasID => {
 
 const init = () => {
     setQueryParams();
-    checkMaterialVersion(materialFilename, () => {
       buildScene('webglcanvas');
       // Load model and shaders
       const fileloader = new THREE.FileLoader();
@@ -126,7 +125,6 @@ const init = () => {
         camera.far = bsphere.radius * 10;
         camera.updateProjectionMatrix();
       }).then(() => animate()).catch(err => console.error(err))
-    });
 }
 
 const onWindowResize = () => {
