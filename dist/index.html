@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="author" content="Luxteam"/>
+    <meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"/>
+    <title>AMD GPU Open MTLX-VIEWER</title>
+    <link rel="icon" type="image/x-icon" href="public/favicon.png"/>
+    <link rel="stylesheet" href="public/style.css"/>
+  <script defer src="main.js"></script></head>
+  <body style="margin: 0px; overflow: hidden;">
+    <div id="container">
+      <div style="position: absolute;margin: 10px;">
+        <label for="meshes" style="color: white;">Choose a mesh:</label>
+        <select name="meshes" id="meshes">
+          
+            <option value="public/meshes/adsk_shaderball.glb">adsk_shaderball.glb</option>
+          
+            <option value="public/meshes/adsk_shaderball2.glb">adsk_shaderball2.glb</option>
+          
+            <option value="public/meshes/adsk_shaderball2_groups.glb">adsk_shaderball2_groups.glb</option>
+          
+            <option value="public/meshes/arnold_shaderball.glb">arnold_shaderball.glb</option>
+          
+            <option value="public/meshes/cloth.glb">cloth.glb</option>
+          
+            <option value="public/meshes/glass_filll.glb">glass_filll.glb</option>
+          
+            <option value="public/meshes/glass_splash.glb">glass_splash.glb</option>
+          
+            <option value="public/meshes/plane.glb">plane.glb</option>
+          
+            <option value="public/meshes/rectangle.glb">rectangle.glb</option>
+          
+            <option value="public/meshes/shaderball.glb">shaderball.glb</option>
+          
+            <option value="public/meshes/sphere.glb">sphere.glb</option>
+          
+            <option value="public/meshes/teapot.glb">teapot.glb</option>
+          
+        </select>
+        <br style="margin: 5%"/>
+        <label for="environments" style="color: white;">Choose an environment:</label>
+        <select name="environments" id="environments">
+          
+            <option value="public/environments/goegap_split.hdr">goegap_split.hdr</option>
+          
+            <option value="public/environments/moonless_golf.hdr">moonless_golf.hdr</option>
+          
+            <option value="public/environments/pedestrian_overpass.hdr">pedestrian_overpass.hdr</option>
+          
+            <option value="public/environments/quarry.hdr">quarry.hdr</option>
+          
+            <option value="public/environments/royal_esplanade.hdr">royal_esplanade.hdr</option>
+          
+            <option value="public/environments/san_giuseppe_bridge_split.hdr">san_giuseppe_bridge_split.hdr</option>
+          
+            <option value="public/environments/spot_lux.hdr">spot_lux.hdr</option>
+          
+            <option value="public/environments/table_mountain_split.hdr">table_mountain_split.hdr</option>
+          
+            <option value="public/environments/venice_sunset.hdr">venice_sunset.hdr</option>
+          
+        </select>
+      </div>
+      <canvas id="webglcanvas"/>
+    </div>
+    <script src="JsMaterialXGenShader.js"/>
+    <script src="main.js"></script>
+  </body>
+</html>

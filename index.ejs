@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="author" content="Luxteam"/>
+    <meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"/>
+    <title>AMD GPU Open MTLX-VIEWER</title>
+    <link rel="icon" type="image/x-icon" href="public/favicon.png"/>
+    <link rel="stylesheet" href="public/style.css"/>
+  </head>
+  <body style="margin: 0px; overflow: hidden;">
+    <table style="position: absolute;margin: 10px;">
+      <tbody>
+        <tr>
+          <td>
+            <label for="meshes">Choose a mesh:</label>
+          </td>
+          <td>
+            <select name="meshes" id="meshes">
+              <% meshes.forEach( m => { %>
+                <option value="<%-m.value%>"><%-m.name.replace('.glb', '')%></option>
+              <% }); %>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label for="environments">Choose an environment:</label>
+          </td>
+          <td>
+            <select name="environments" id="environments">
+              <% environments.forEach( e => { %>
+                <option value="<%-e.value%>"><%-e.name.replace('.hdr', '')%></option>
+              <% }); %>
+            </select>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <canvas id="webglcanvas"/>
+    <script src="JsMaterialXGenShader.js"/>
+    <script src="main.js"></script>
+  </body>
+</html>

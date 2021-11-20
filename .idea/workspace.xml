@@ -1,0 +1,501 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="0049a971-6667-4c78-83bd-1d905ded2f50" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/Klavika-Regular.ttf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/style.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MaterialX.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/javascript_build/bin/JsMaterialXCore.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/javascript_build/bin/JsMaterialXCore.wasm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/javascript_build/bin/JsMaterialXGenShader.data" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/javascript_build/bin/JsMaterialXGenShader.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/javascript_build/bin/JsMaterialXGenShader.wasm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/alglib/alglib_defs.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/alglib/alglib_ng.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/alglib/stdlib/stdlib_defs.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/alglib/stdlib/stdlib_ng.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bin/JsMaterialXGenShader.data" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bin/JsMaterialXGenShader.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bin/JsMaterialXGenShader.wasm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bxdf/disney_brdf_2012.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bxdf/disney_brdf_2015.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bxdf/standard_surface.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bxdf/substanceMetallicRoughness.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bxdf/ubershader_defs.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bxdf/usd_preview_surface.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.ejs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/package-lock.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/package.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/favicon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/environments/goegap_split.hdr" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/environments/moonless_golf.hdr" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/environments/pedestrian_overpass.hdr" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/environments/quarry.hdr" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/environments/royal_esplanade.hdr" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/environments/san_giuseppe_bridge_split.hdr" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/environments/spot1Lux.hdr" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/environments/table_mountain_split.hdr" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/environments/venice_sunset.hdr" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/lights/midday_sunshine.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/alglib/alglib_defs.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/alglib/alglib_ng.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/bxdf/disney_brdf_2012.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/bxdf/disney_brdf_2015.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/bxdf/standard_surface.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/bxdf/substanceMetallicRoughness.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/bxdf/ubershader_defs.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/bxdf/usd_preview_surface.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/onyx_gray_streaked.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/lib/mx_hsv.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/lib/mx_math.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/lib/mx_noise.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/lib/mx_sampling.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/lib/mx_transform_color.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/lib/mx_transform_uv.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/lib/mx_transform_uv_vflip.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_aastep.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_absval.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_acos.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_add.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_add_surfaceshader.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ap1_to_rec709_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ap1_to_rec709_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_asin.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_atan2.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_burn_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_burn_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_burn_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ceil.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_cellnoise2d_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_cellnoise3d_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_clamp.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_constant.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_cos.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_crossproduct.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_determinant.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_difference.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_disjointover_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_divide.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_dodge.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_dodge_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_dodge_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_dodge_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_dot.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_dotproduct.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_exp.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_floor.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_fractal3d_fa_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_fractal3d_fa_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_fractal3d_fa_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_fractal3d_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_fractal3d_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_fractal3d_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_fractal3d_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_g22_ap1_to_lin_rec709_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_g22_ap1_to_lin_rec709_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_gamma18_to_linear_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_gamma18_to_linear_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_gamma22_to_linear_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_gamma22_to_linear_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_gamma24_to_linear_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_gamma24_to_linear_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_hsvtorgb_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_hsvtorgb_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_image_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_image_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_image_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_image_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_image_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_image_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_in_color4.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_inside.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_invert.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_invertM.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ln.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_luminance_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_luminance_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_magnitude.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_mask_color4.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_matte_color4.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_max.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_min.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_minus.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_mix.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_mix_surfaceshader.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_modulo.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_multiply.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_multiply_surfaceshader_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_multiply_surfaceshader_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise2d_fa_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise2d_fa_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise2d_fa_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise2d_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise2d_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise2d_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise2d_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise3d_fa_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise3d_fa_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise3d_fa_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise3d_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise3d_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise3d_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_noise3d_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_normalize.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_normalmap.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_out_color2.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_out_color4.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_outside.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_over_color2.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_over_color4.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_overlay.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_overlay_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_overlay_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_overlay_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_plus.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_power.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_power_color3_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_power_color4_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_power_vector2_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_power_vector3_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_power_vector4_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_premult_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ramplr_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ramplr_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ramplr_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ramplr_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ramptb_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ramptb_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ramptb_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_ramptb_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_remap.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_rgbtohsv_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_rgbtohsv_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_rotate_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_rotate_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_screen.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_sign.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_sin.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_smoothstep_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_smoothstep_vec2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_smoothstep_vec2FA.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_smoothstep_vec3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_smoothstep_vec3FA.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_smoothstep_vec4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_smoothstep_vec4FA.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_splitlr_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_splitlr_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_splitlr_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_splitlr_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_splittb_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_splittb_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_splittb_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_splittb_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_sqrt.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_srgb_texture_to_lin_rec709_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_srgb_texture_to_lin_rec709_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_subtract.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_tan.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_transformmatrix.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_transformmatrix_vector2M3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_transformmatrix_vector3M4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_transpose.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/mx_unpremult_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/stdlib_genglsl_cm_impl.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/stdlib_genglsl_impl.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/genglsl/stdlib_genglsl_unit_impl.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/stdlib_defs.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/onyx_gray_streaked/stdlib/stdlib_ng.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/standard_surface_brass_tiled/standard_surface_brass_tiled.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/standard_surface_brass_tiled/textures/brass_color.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/standard_surface_brass_tiled/textures/brass_roughness.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/materials/standard_surface_thin_film/standard_surface_thin_film.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/adsk_shaderball.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/adsk_shaderball2.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/adsk_shaderball2_groups.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/arnold_shaderball.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/cloth.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/glass_filll.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/glass_splash.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/plane.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/rectangle.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/shaderball.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/sphere.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/resources/meshes/teapot.glb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/public/style.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/src/index.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/src/utils_3D.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/lib/mx_hsv.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/lib/mx_math.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/lib/mx_noise.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/lib/mx_sampling.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/lib/mx_transform_color.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/lib/mx_transform_uv.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/lib/mx_transform_uv_vflip.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_aastep.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_absval.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_acos.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_add.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_add_surfaceshader.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ap1_to_rec709_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ap1_to_rec709_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_asin.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_atan2.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_burn_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_burn_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_burn_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ceil.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_cellnoise2d_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_cellnoise3d_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_clamp.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_constant.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_cos.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_crossproduct.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_determinant.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_difference.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_disjointover_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_divide.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_dodge.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_dodge_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_dodge_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_dodge_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_dot.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_dotproduct.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_exp.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_floor.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_fractal3d_fa_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_fractal3d_fa_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_fractal3d_fa_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_fractal3d_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_fractal3d_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_fractal3d_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_fractal3d_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_g22_ap1_to_lin_rec709_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_g22_ap1_to_lin_rec709_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_gamma18_to_linear_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_gamma18_to_linear_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_gamma22_to_linear_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_gamma22_to_linear_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_gamma24_to_linear_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_gamma24_to_linear_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_hsvtorgb_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_hsvtorgb_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_image_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_image_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_image_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_image_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_image_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_image_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_in_color4.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_inside.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_invert.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_invertM.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ln.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_luminance_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_luminance_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_magnitude.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_mask_color4.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_matte_color4.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_max.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_min.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_minus.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_mix.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_mix_surfaceshader.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_modulo.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_multiply.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_multiply_surfaceshader_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_multiply_surfaceshader_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise2d_fa_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise2d_fa_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise2d_fa_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise2d_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise2d_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise2d_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise2d_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise3d_fa_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise3d_fa_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise3d_fa_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise3d_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise3d_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise3d_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_noise3d_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_normalize.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_normalmap.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_out_color2.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_out_color4.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_outside.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_over_color2.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_over_color4.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_overlay.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_overlay_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_overlay_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_overlay_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_plus.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_power.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_power_color3_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_power_color4_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_power_vector2_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_power_vector3_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_power_vector4_float.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_premult_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ramplr_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ramplr_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ramplr_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ramplr_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ramptb_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ramptb_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ramptb_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_ramptb_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_remap.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_rgbtohsv_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_rgbtohsv_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_rotate_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_rotate_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_screen.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_sign.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_sin.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_smoothstep_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_smoothstep_vec2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_smoothstep_vec2FA.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_smoothstep_vec3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_smoothstep_vec3FA.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_smoothstep_vec4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_smoothstep_vec4FA.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_splitlr_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_splitlr_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_splitlr_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_splitlr_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_splittb_float.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_splittb_vector2.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_splittb_vector3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_splittb_vector4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_sqrt.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_srgb_texture_to_lin_rec709_color3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_srgb_texture_to_lin_rec709_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_subtract.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_tan.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_transformmatrix.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_transformmatrix_vector2M3.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_transformmatrix_vector3M4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_transpose.inline" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/mx_unpremult_color4.glsl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/stdlib_genglsl_cm_impl.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/stdlib_genglsl_impl.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/genglsl/stdlib_genglsl_unit_impl.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/stdlib/stdlib_defs.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/stdlib/stdlib_ng.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/stdlib_defs.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stdlib/stdlib_ng.mtlx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/textures/baseColor.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/textures/normal.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/textures/roughness.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/webpack.config.js" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CodeStyleSettingsInfer">
+    <option name="done" value="true" />
+  </component>
+  <component name="ComposerSettings">
+    <execution />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
+  <component name="KotlinMultiplatform">
+    <allAvailableExecutables />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="n4sypx8g" />
+  </component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="2" />
+  </component>
+  <component name="ProjectId" id="218AWV9uOaIQcXUOv0e50YcfIuD" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="dart.analysis.tool.window.visible" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/public" />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="project.structure.last.edited" value="Project" />
+    <property name="project.structure.proportion" value="0.0" />
+    <property name="project.structure.side.proportion" value="0.0" />
+    <property name="settings.editor.selected.configurable" value="MTHome" />
+    <property name="show.migrate.to.gradle.popup" value="false" />
+    <property name="vue.rearranger.settings.migration" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/public" />
+    </key>
+  </component>
+  <component name="RunManager" selected="npm.start">
+    <configuration name="build" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="build" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="start" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="start" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="npm.start" />
+        <item itemvalue="npm.build" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="0049a971-6667-4c78-83bd-1d905ded2f50" name="Changes" comment="" />
+      <created>1637312375450</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1637312375450</updated>
+      <workItem from="1637312378460" duration="12559000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

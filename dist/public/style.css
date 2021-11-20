@@ -1,0 +1,16 @@
+@font-face {
+    font-family: "Klavika";
+    src: url("./Klavika-Regular.ttf");
+}
+
+* {
+    font-family: "Klavika", sans-serif;
+    text-align: center;
+    font-weight: normal;
+}
+
+select {
+    border: 2px solid #3c3d3e;
+    color: #9d9d9d;
+    background-color: #191919;
+}
