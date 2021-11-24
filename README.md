@@ -10,8 +10,15 @@
 `bxdf`, `stdlib`, `alglib` класть в директорию с материалом не нужно.
 [Пример.](public/materials/demo/demo.mtlx)
 
-# API
+# СБОРКА
 
+```shell
+npm install # установка зависимостей
+webpack # сборка проекта
+webpack serve # запуск для отладки
+```
+
+# API
 ```yaml
 openapi 3.0
 info:

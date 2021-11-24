@@ -205,17 +205,4 @@ const getMaterialVersion = material =>
       .getAttribute('version')
   )
 
-/**
- * Compute lens distortion ration based on background image.
- * @param {THREE.Texture} texture
- * @returns {number} ratio for virtual camera
- */
-const computeLensDistortionRatio = texture => {
-  const img = texture.image;
-  const ratio = (window.innerWidth / window.innerHeight) / (img.width / img.height);
-  texture.repeat = new THREE.Vector2(Math.max(ratio, 1), Math.max(1 / ratio, 1));
-  texture.offset = new THREE.Vector2(-Math.max(ratio - 1, 0) / 2, -Math.max(1 / ratio - 1, 0) / 2);
-  return ratio;
-};
-
-export { prepareEnvTexture, findLights, registerLights, getUniformValues, getMaterialVersion, computeLensDistortionRatio };
+export { prepareEnvTexture, findLights, registerLights, getUniformValues, getMaterialVersion };

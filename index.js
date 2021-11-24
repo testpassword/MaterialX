@@ -13,8 +13,9 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
 import { prepareEnvTexture, findLights, registerLights, getUniformValues, getMaterialVersion } from './mtlx-threejs_converter.js';
+import { FallbackMaterial } from "./FallbackMaterial";
 
-let camera, scene, renderer, composer, controls, model, mx;
+let camera, scene, renderer, composer, controls, model, mx, uniforms;
 
 const getQueryParam = param => new URLSearchParams(document.location.search).get(param);
 const getMaterialPath = () => getQueryParam('material') ?? 'public/materials/demo/demo.mtlx';
@@ -32,57 +33,6 @@ const setQueryParams = () => {
   environmentsSelect.addEventListener('change', e => {
     window.location.href = `${window.location.origin}${window.location.pathname}?material=${getMaterialPath()}&mesh=${getMeshPath()}&environment=${e.target.value}`
   });
-}
-
-// If no material file is selected, we programmatically create a jade material as a fallback
-const fallbackMaterial = doc => {
-  const ssName = 'SR_default';
-  const ssNode = doc.addChildOfCategory('standard_surface', ssName);
-  ssNode.setType('surfaceshader');
-  ssNode.setInputValueFloat('base', 1.0);
-  ssNode.setInputValueColor3('base_color', new mx.Color3(0.8, 0.8, 0.8));
-  ssNode.setInputValueFloat('diffuse_roughness', 0);
-  ssNode.setInputValueFloat('specular', 1);
-  ssNode.setInputValueColor3('specular_color', new mx.Color3(1, 1, 1));
-  ssNode.setInputValueFloat('specular_roughness', 0.2);
-  ssNode.setInputValueFloat('specular_IOR', 1.5);
-  ssNode.setInputValueFloat('specular_anisotropy', 0);
-  ssNode.setInputValueFloat('specular_rotation', 0);
-  ssNode.setInputValueFloat('metalness', 0);
-  ssNode.setInputValueFloat('transmission', 0);
-  ssNode.setInputValueColor3('transmission_color', new mx.Color3(1, 1, 1));
-  ssNode.setInputValueFloat('transmission_depth', 0);
-  ssNode.setInputValueColor3('transmission_scatter', new mx.Color3(0, 0, 0));
-  ssNode.setInputValueFloat('transmission_scatter_anisotropy', 0);
-  ssNode.setInputValueFloat('transmission_dispersion', 0);
-  ssNode.setInputValueFloat('transmission_extra_roughness', 0);
-  ssNode.setInputValueFloat('subsurface', 0)
-  ssNode.setInputValueColor3('subsurface_color', new mx.Color3(1, 1, 1));
-  ssNode.setInputValueColor3('subsurface_radius', new mx.Color3(1, 1, 1));
-  ssNode.setInputValueFloat('subsurface_scale', 1);
-  ssNode.setInputValueFloat('subsurface_anisotropy', 0);
-  ssNode.setInputValueFloat('sheen', 0);
-  ssNode.setInputValueColor3('sheen_color', new mx.Color3(1, 1, 1));
-  ssNode.setInputValueFloat('sheen_roughness', 0.3);
-  ssNode.setInputValueBoolean('thin_walled', false);
-  ssNode.setInputValueFloat('coat', 0);
-  ssNode.setInputValueColor3('coat_color', new mx.Color3(1, 1, 1));
-  ssNode.setInputValueFloat('coat_roughness', 0.1);
-  ssNode.setInputValueFloat('coat_anisotropy', 0.0);
-  ssNode.setInputValueFloat('coat_rotation', 0.0);
-  ssNode.setInputValueFloat('coat_IOR', 1.5);
-  ssNode.setInputValueFloat('coat_affect_color', 0);
-  ssNode.setInputValueFloat('coat_affect_roughness', 0);
-  ssNode.setInputValueFloat('thin_film_thickness', 0);
-  ssNode.setInputValueFloat('thin_film_IOR', 1.5);
-  ssNode.setInputValueFloat('emission', 0);
-  ssNode.setInputValueColor3('emission_color', new mx.Color3(1, 1, 1));
-  ssNode.setInputValueColor3('opacity', new mx.Color3(1, 1, 1));
-  const smNode = doc.addChildOfCategory('surfacematerial', 'Default');
-  smNode.setType('material');
-  const shaderElement = smNode.addInput('surfaceshader');
-  shaderElement.setType('surfaceshader');
-  shaderElement.setNodeName(ssName);
 }
 
 const buildScene = canvasId => {
@@ -113,7 +63,8 @@ const init = () => {
     new Promise(resolve => gltfLoader.load(getMeshPath(), resolve)),
     new Promise(resolve => MaterialX().then( module => resolve(module))),
     new Promise(resolve => fileloader.load(getMaterialPath(), resolve)),
-  ]).then(async ([loadedRadianceTexture, loadedLightSetup, { scene: obj }, mx, mtlxMaterial]) => {
+  ]).then(async ([loadedRadianceTexture, loadedLightSetup, { scene: obj }, mxIn, mtlxMaterial]) => {
+    mx = mxIn
     // Initialize MaterialX and the shader generation context
     let doc = mx.createDocument();
     let gen = new mx.EsslShaderGenerator();
@@ -123,7 +74,7 @@ const init = () => {
     // Load material
     if (mtlxMaterial && getMaterialVersion(mtlxMaterial) >= 1.38) await mx.readFromXmlString(doc, mtlxMaterial);
     else {
-      fallbackMaterial(doc);
+      new FallbackMaterial(mx, doc);
       alert('3D mode supports only materials version 1.38 or above');
       // TODO: большая надпись, что поддерживается 1.38 и выше
     }
@@ -138,15 +89,15 @@ const init = () => {
     // Register lights with generation context
     const lights = findLights(doc);
     const lightData = registerLights(mx, lights, genContext);
-    let shader = gen.generate(elem.getNamePath(), elem, genContext);
-    let uniforms = {
-      ...getUniformValues(shader.getStage('vertex'), textureLoader),
-      ...getUniformValues(shader.getStage('pixel'), textureLoader),
-    }
+    const shader = gen.generate(elem.getNamePath(), elem, genContext);
     loadedRadianceTexture.mapping = THREE.EquirectangularReflectionMapping;
     scene.background = loadedRadianceTexture;
     scene.environment = loadedRadianceTexture;
     const radianceTexture = prepareEnvTexture(loadedRadianceTexture, renderer.capabilities);
+    uniforms = {
+      ...getUniformValues(shader.getStage('vertex'), textureLoader),
+      ...getUniformValues(shader.getStage('pixel'), textureLoader),
+    }
     Object.assign(uniforms, {
       u_numActiveLightSources: { value: lights.length },
       u_lightData: { value: lightData },
@@ -190,12 +141,18 @@ const init = () => {
     .catch( err => console.error(Number.isInteger(err) ? mx.getExceptionMessage(err) : err) );
 }
 
+/**
+ * Update camera aspect ratio and on window resize.
+ */
 const onWindowResize = () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+/**
+ * Animate mesh on mouse movement.
+ */
 const animate = () => {
   requestAnimationFrame(animate);
   composer.render();
@@ -211,6 +168,19 @@ const animate = () => {
     }
   });
 }
+
+/**
+ * Compute lens distortion ration based on background image.
+ * @param {THREE.Texture} texture
+ * @returns {number} ratio for virtual camera
+ */
+const computeLensDistortionRatio = texture => {
+  const img = texture.image;
+  const ratio = (window.innerWidth / window.innerHeight) / (img.width / img.height);
+  texture.repeat = new THREE.Vector2(Math.max(ratio, 1), Math.max(1 / ratio, 1));
+  texture.offset = new THREE.Vector2(-Math.max(ratio - 1, 0) / 2, -Math.max(1 / ratio - 1, 0) / 2);
+  return ratio;
+};
 
 setQueryParams();
 init();
