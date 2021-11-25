@@ -20,3 +20,7 @@ label {
     color: white;
     margin-right: 10px;
 }
+
+canvas {
+    background-color: #292929;
+}
