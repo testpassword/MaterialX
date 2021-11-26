@@ -83,8 +83,18 @@ const catchingLoadMaterial = async (loader, materialPath) => {
 }
 
 const buildPropertyEditor = () => {
-  const zeroToOneParam = (folder, name) => folder.add(materialShader.uniforms[name], 'value', 0, 1).step(0.0001).name(name)
-  const colorParam = (folder, name) => folder.addColor(new ColorGUIController(materialShader.uniforms, name), 'value').name(name)
+  const zeroToOneParam = (folder, name) => {
+    const p = materialShader.uniforms[name]
+    if (p) folder.add(p, 'value', 0, 1).step(0.0001).name(name)
+  }
+  const colorParam = (folder, name) => {
+    const p = materialShader.uniforms[name]
+    if (p) folder.addColor(new ColorGUIController(materialShader.uniforms, name), 'value').name(name)
+  }
+  const numericParam = (folder, name, from, to, step) => {
+    const p = materialShader.uniforms[name]
+    if (p) folder.add(materialShader.uniforms[name], 'value', from, to).step(step).name(name)
+  }
   const base = gui.addFolder('Base')
   zeroToOneParam(base, 'base')
   zeroToOneParam(base, 'diffuse_roughness')
@@ -109,17 +119,17 @@ const buildPropertyEditor = () => {
   const specular = gui.addFolder('Specular')
   zeroToOneParam(specular, 'specular')
   colorParam(specular, 'specular_color')
-  specular.add(materialShader.uniforms['specular_IOR'], 'value', 0, 3).step(0.0001).name('specular_IOR')
+  numericParam(specular, 'specular_IOR', 0, 3, 0.0001)
   zeroToOneParam(specular, 'specular_anisotropy')
   zeroToOneParam(specular, 'specular_rotation')
   const subsurface = gui.addFolder('Subsurface')
   zeroToOneParam(subsurface, 'subsurface')
   colorParam(subsurface, 'subsurface_color')
   colorParam(subsurface, 'subsurface_radius')
-  subsurface.add(materialShader.uniforms['subsurface_scale'], 'value', 0, 10).step(0.0001).name('subsurface_scale')
+  numericParam(subsurface, 'subsurface_scale', 0, 10, 0.0001)
   const thin = gui.addFolder('Thin Film')
-  thin.add(materialShader.uniforms['thin_film_thickness'], 'value', 0, 2000).step(1).name('thin_film_thickness')
-  thin.add(materialShader.uniforms['thin_film_IOR'], 'value', 0, 3).step(0.0001).name('thin_film_IOR')
+  numericParam(thin, 'thin_film_thickness', 0, 2000, 1)
+  numericParam(thin, 'thin_film_IOR', 0, 3, 0.0001)
   const transmission = gui.addFolder('Transmission')
   zeroToOneParam(transmission, 'transmission')
 };

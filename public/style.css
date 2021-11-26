@@ -1,6 +1,6 @@
 @font-face {
-    font-family: "Klavika";
-    src: url("./Klavika-Regular.ttf");
+    font-family: "Klavika" !important;
+    src: url("./Klavika-Regular.ttf") !important;
 }
 
 * {
